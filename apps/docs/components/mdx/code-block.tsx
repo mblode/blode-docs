@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import { isValidElement, type ReactNode, useMemo, useState } from "react";
 
+const LANGUAGE_CLASS_REGEX = /language-([\w-]+)/;
+
 const getCodeString = (node: ReactNode): string => {
   if (typeof node === "string") {
     return node;
@@ -19,7 +21,7 @@ const getCodeString = (node: ReactNode): string => {
 const getLanguage = (node: ReactNode): string | undefined => {
   if (isValidElement<{ className?: string; children?: ReactNode }>(node)) {
     const className = node.props.className;
-    const match = /language-([\w-]+)/.exec(className ?? "");
+    const match = LANGUAGE_CLASS_REGEX.exec(className ?? "");
     return match?.[1];
   }
   if (Array.isArray(node)) {
@@ -43,7 +45,7 @@ export const CodeBlock = ({
   const [copied, setCopied] = useState(false);
   const code = useMemo(() => getCodeString(children), [children]);
   const language =
-    getLanguage(children) ?? /language-([\w-]+)/.exec(className ?? "")?.[1];
+    getLanguage(children) ?? LANGUAGE_CLASS_REGEX.exec(className ?? "")?.[1];
 
   const handleCopy = async () => {
     if (!code) {

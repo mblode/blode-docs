@@ -15,7 +15,7 @@ export interface ActivityCreateInput {
 
 export class ActivityDao {
   async listByProject(projectId: string): Promise<ActivityRecord[]> {
-    return prisma.activity.findMany({
+    return await prisma.activity.findMany({
       where: { projectId },
       select: activitySelect,
       orderBy: { occurredAt: "desc" },
@@ -23,14 +23,14 @@ export class ActivityDao {
   }
 
   async create(input: ActivityCreateInput): Promise<ActivityRecord> {
-    return prisma.activity.create({
+    return await prisma.activity.create({
       data: input,
       select: activitySelect,
     });
   }
 
   async delete(id: string): Promise<ActivityRecord> {
-    return prisma.activity.delete({
+    return await prisma.activity.delete({
       where: { id },
       select: activitySelect,
     });

@@ -13,28 +13,28 @@ export interface WorkspaceUpdateInput {
 
 export class WorkspaceDao {
   async list(): Promise<WorkspaceRecord[]> {
-    return prisma.workspace.findMany({
+    return await prisma.workspace.findMany({
       select: workspaceSelect,
       orderBy: { createdAt: "desc" },
     });
   }
 
   async getById(id: string): Promise<WorkspaceRecord | null> {
-    return prisma.workspace.findUnique({
+    return await prisma.workspace.findUnique({
       where: { id },
       select: workspaceSelect,
     });
   }
 
   async getBySlug(slug: string): Promise<WorkspaceRecord | null> {
-    return prisma.workspace.findUnique({
+    return await prisma.workspace.findUnique({
       where: { slug },
       select: workspaceSelect,
     });
   }
 
   async create(input: WorkspaceCreateInput): Promise<WorkspaceRecord> {
-    return prisma.workspace.create({
+    return await prisma.workspace.create({
       data: input,
       select: workspaceSelect,
     });
@@ -44,7 +44,7 @@ export class WorkspaceDao {
     id: string,
     input: WorkspaceUpdateInput
   ): Promise<WorkspaceRecord> {
-    return prisma.workspace.update({
+    return await prisma.workspace.update({
       where: { id },
       data: input,
       select: workspaceSelect,
@@ -52,7 +52,7 @@ export class WorkspaceDao {
   }
 
   async delete(id: string): Promise<WorkspaceRecord> {
-    return prisma.workspace.delete({
+    return await prisma.workspace.delete({
       where: { id },
       select: workspaceSelect,
     });

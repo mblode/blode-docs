@@ -6,13 +6,16 @@ export interface TocItem {
   level: number;
 }
 
+const NEWLINE_REGEX = /\r?\n/;
+const HEADING_REGEX = /^(#{2,4})\s+(.*)$/;
+
 export const extractToc = (source: string): TocItem[] => {
   const withoutCode = source.replace(/```[\s\S]*?```/g, "");
-  const lines = withoutCode.split(/\r?\n/);
+  const lines = withoutCode.split(NEWLINE_REGEX);
   const toc: TocItem[] = [];
 
   for (const line of lines) {
-    const match = /^(#{2,4})\s+(.*)$/.exec(line.trim());
+    const match = HEADING_REGEX.exec(line.trim());
     if (!match) {
       continue;
     }

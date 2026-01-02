@@ -50,6 +50,7 @@ const createPageItem = (page: string, registry: OpenApiRegistry): NavPage => {
 export const buildNavigation = (
   config: DocsConfig,
   registry: OpenApiRegistry
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor by extracting group and page processing into separate functions
 ) => {
   const entries: NavEntry[] = [];
   const groups = config.navigation.groups ?? [];

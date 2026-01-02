@@ -1,6 +1,12 @@
+const BACKSLASH_TO_SLASH_REGEX = /\\/g;
+const TRAILING_SLASHES_REGEX = /\/+$/g;
+const LEADING_SLASHES_REGEX = /^\/+/;
+
 export const normalizePath = (value: string) => {
-  const trimmed = value.replace(/\\/g, "/").replace(/\/+$/g, "");
-  return trimmed.replace(/^\/+/, "");
+  const trimmed = value
+    .replace(BACKSLASH_TO_SLASH_REGEX, "/")
+    .replace(TRAILING_SLASHES_REGEX, "");
+  return trimmed.replace(LEADING_SLASHES_REGEX, "");
 };
 
 export const withLeadingSlash = (value: string) => {

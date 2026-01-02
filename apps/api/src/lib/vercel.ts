@@ -101,7 +101,7 @@ export const addProjectDomain = async (
     ? { name: hostname, redirect, redirectStatusCode: 308 }
     : { name: hostname };
 
-  return vercelFetch(
+  return await vercelFetch(
     `/v10/projects/${config.projectId}/domains`,
     VercelProjectDomainSchema,
     {
@@ -118,7 +118,7 @@ export const getProjectDomain = async (
   if (!config) {
     throw new Error("Vercel config not set");
   }
-  return vercelFetch(
+  return await vercelFetch(
     `/v9/projects/${config.projectId}/domains/${hostname}`,
     VercelProjectDomainSchema
   );
@@ -131,7 +131,7 @@ export const verifyProjectDomain = async (
   if (!config) {
     throw new Error("Vercel config not set");
   }
-  return vercelFetch(
+  return await vercelFetch(
     `/v9/projects/${config.projectId}/domains/${hostname}/verify`,
     VercelProjectDomainSchema,
     { method: "POST" }

@@ -30,6 +30,8 @@ export const loadDocsConfig = async (
   }
 };
 
+const DOC_FILE_EXTENSION_REGEX = /(\.mdx|\.md)$/;
+
 const candidatePaths = (slug: string) => {
   const clean = normalizePath(slug || "");
   const base = clean.length ? clean : "index";
@@ -43,13 +45,15 @@ export const resolveDocPath = async (projectRoot: string, slug: string) => {
     try {
       await fs.access(absolutePath);
       return { exists: true, absolutePath, relativePath: candidate };
-    } catch {}
+    } catch {
+      // File doesn't exist, continue to next candidate
+    }
   }
   return { exists: false, absolutePath: "", relativePath: "" };
 };
 
 export const loadDocSource = async (absolutePath: string) => {
-  return fs.readFile(absolutePath, "utf-8");
+  return await fs.readFile(absolutePath, "utf-8");
 };
 
 export const listDocFiles = async (projectRoot: string) => {
@@ -65,7 +69,7 @@ export const listDocFiles = async (projectRoot: string) => {
       const relative = prefix ? path.join(prefix, item.name) : item.name;
       if (item.isDirectory()) {
         await walk(absolute, relative);
-      } else if (item.isFile() && /(\.mdx|\.md)$/.test(item.name)) {
+      } else if (item.isFile() && DOC_FILE_EXTENSION_REGEX.test(item.name)) {
         entries.push(relative);
       }
     }

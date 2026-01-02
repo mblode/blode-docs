@@ -1,3 +1,4 @@
+// biome-ignore lint/performance/noBarrelFile: This is the main entry point for the package
 export * from "./activity";
 export * from "./api-key";
 export * from "./auth";

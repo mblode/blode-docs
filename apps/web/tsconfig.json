@@ -9,7 +9,8 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "types": ["@testing-library/jest-dom", "vitest"]
   },
   "include": [
     "**/*.ts",

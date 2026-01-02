@@ -22,7 +22,7 @@ const mapZodErrors = <TFieldValues extends FieldValues>(
 export const createZodResolver = <T extends z.ZodType<FieldValues>>(
   schema: T
 ): Resolver<z.infer<T>> => {
-  return async (values) => {
+  return (values) => {
     const result = schema.safeParse(values);
     if (result.success) {
       return { values: result.data, errors: {} };

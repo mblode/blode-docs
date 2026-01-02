@@ -20,7 +20,7 @@ export interface DomainUpdateInput {
 
 export class DomainDao {
   async listByProject(projectId: string): Promise<DomainRecord[]> {
-    return prisma.domain.findMany({
+    return await prisma.domain.findMany({
       where: { projectId },
       select: domainSelect,
       orderBy: { createdAt: "desc" },
@@ -28,28 +28,28 @@ export class DomainDao {
   }
 
   async getById(id: string): Promise<DomainRecord | null> {
-    return prisma.domain.findUnique({
+    return await prisma.domain.findUnique({
       where: { id },
       select: domainSelect,
     });
   }
 
   async getByHostname(hostname: string): Promise<DomainRecord | null> {
-    return prisma.domain.findUnique({
+    return await prisma.domain.findUnique({
       where: { hostname },
       select: domainSelect,
     });
   }
 
   async create(input: DomainCreateInput): Promise<DomainRecord> {
-    return prisma.domain.create({
+    return await prisma.domain.create({
       data: input,
       select: domainSelect,
     });
   }
 
   async update(id: string, input: DomainUpdateInput): Promise<DomainRecord> {
-    return prisma.domain.update({
+    return await prisma.domain.update({
       where: { id },
       data: input,
       select: domainSelect,
@@ -57,7 +57,7 @@ export class DomainDao {
   }
 
   async delete(id: string): Promise<DomainRecord> {
-    return prisma.domain.delete({
+    return await prisma.domain.delete({
       where: { id },
       select: domainSelect,
     });

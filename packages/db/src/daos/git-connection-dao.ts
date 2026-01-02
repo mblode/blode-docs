@@ -25,14 +25,14 @@ export interface GitConnectionUpdateInput {
 
 export class GitConnectionDao {
   async getByProject(projectId: string): Promise<GitConnectionRecord | null> {
-    return prisma.gitConnection.findFirst({
+    return await prisma.gitConnection.findFirst({
       where: { projectId },
       select: gitConnectionSelect,
     });
   }
 
   async create(input: GitConnectionCreateInput): Promise<GitConnectionRecord> {
-    return prisma.gitConnection.create({
+    return await prisma.gitConnection.create({
       data: input,
       select: gitConnectionSelect,
     });
@@ -42,7 +42,7 @@ export class GitConnectionDao {
     id: string,
     input: GitConnectionUpdateInput
   ): Promise<GitConnectionRecord> {
-    return prisma.gitConnection.update({
+    return await prisma.gitConnection.update({
       where: { id },
       data: input,
       select: gitConnectionSelect,
@@ -50,7 +50,7 @@ export class GitConnectionDao {
   }
 
   async delete(id: string): Promise<GitConnectionRecord> {
-    return prisma.gitConnection.delete({
+    return await prisma.gitConnection.delete({
       where: { id },
       select: gitConnectionSelect,
     });

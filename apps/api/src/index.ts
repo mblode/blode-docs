@@ -68,6 +68,13 @@ import {
   mapWorkspaceMember,
 } from "./mappers/records.js";
 
+// Regex patterns for string normalization
+const PORT_REGEX = /:\d+$/;
+const PROTOCOL_REGEX = /^https?:\/\//;
+const TRAILING_SLASHES_REGEX = /\/+$/;
+const LEADING_SLASHES_REGEX = /^\/+/;
+const BACKSLASH_TO_SLASH_REGEX = /\\/g;
+
 export const app = Fastify({
   logger: true,
 }).withTypeProvider<ZodTypeProvider>();
@@ -136,10 +143,11 @@ const mapVerification = (domain: VercelProjectDomain | null) => {
   };
 };
 
-const normalizeHost = (host: string) => host.replace(/:\d+$/, "").toLowerCase();
+const normalizeHost = (host: string) =>
+  host.replace(PORT_REGEX, "").toLowerCase();
 const normalizeHostnameInput = (value: string) => {
   const trimmed = value.trim().toLowerCase();
-  const withoutProtocol = trimmed.replace(/^https?:\/\//, "");
+  const withoutProtocol = trimmed.replace(PROTOCOL_REGEX, "");
   const withoutPath = withoutProtocol.split("/")[0] ?? "";
   return normalizeHost(withoutPath);
 };
@@ -153,7 +161,7 @@ const normalizePathPrefix = (value?: string | null) => {
     return null;
   }
   const withSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return withSlash.replace(/\/+$/, "");
+  return withSlash.replace(TRAILING_SLASHES_REGEX, "");
 };
 
 const stripPrefix = (pathname: string, prefix: string | null) => {
@@ -175,8 +183,10 @@ const stripPrefix = (pathname: string, prefix: string | null) => {
 };
 
 const slugifyPath = (value: string) => {
-  const trimmed = value.replace(/\\/g, "/").replace(/\/+$/g, "");
-  return trimmed.replace(/^\/+/, "");
+  const trimmed = value
+    .replace(BACKSLASH_TO_SLASH_REGEX, "/")
+    .replace(TRAILING_SLASHES_REGEX, "");
+  return trimmed.replace(LEADING_SLASHES_REGEX, "");
 };
 
 const buildTenant = async (projectId: string): Promise<Tenant | null> => {
@@ -299,6 +309,7 @@ app.get(
       },
     },
   },
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor this handler by extracting resolution strategies into separate functions
   async (request, reply) => {
     const host = normalizeHost(request.query.host);
     const pathname = request.query.path ?? "/";
@@ -632,6 +643,7 @@ app.post(
       },
     },
   },
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor this handler by extracting domain provisioning logic into separate functions
   async (request, reply) => {
     const hostname = normalizeHostnameInput(request.body.hostname);
     if (!hostname) {

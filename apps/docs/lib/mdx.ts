@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { mdxComponents } from "@/components/mdx";
 
 export const renderMdx = async (source: string) => {
-  return compileMDX({
+  return await compileMDX({
     source,
     options: {
       parseFrontmatter: true,

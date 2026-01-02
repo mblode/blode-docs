@@ -19,7 +19,7 @@ export interface WorkspaceMemberUpdateInput {
 
 export class WorkspaceMemberDao {
   async listByWorkspace(workspaceId: string): Promise<WorkspaceMemberRecord[]> {
-    return prisma.workspaceMember.findMany({
+    return await prisma.workspaceMember.findMany({
       where: { workspaceId },
       select: workspaceMemberSelect,
       orderBy: { joinedAt: "desc" },
@@ -30,7 +30,7 @@ export class WorkspaceMemberDao {
     workspaceId: string,
     email: string
   ): Promise<WorkspaceMemberRecord | null> {
-    return prisma.workspaceMember.findFirst({
+    return await prisma.workspaceMember.findFirst({
       where: { workspaceId, email },
       select: workspaceMemberSelect,
     });
@@ -39,7 +39,7 @@ export class WorkspaceMemberDao {
   async create(
     input: WorkspaceMemberCreateInput
   ): Promise<WorkspaceMemberRecord> {
-    return prisma.workspaceMember.create({
+    return await prisma.workspaceMember.create({
       data: input,
       select: workspaceMemberSelect,
     });
@@ -49,7 +49,7 @@ export class WorkspaceMemberDao {
     id: string,
     input: WorkspaceMemberUpdateInput
   ): Promise<WorkspaceMemberRecord> {
-    return prisma.workspaceMember.update({
+    return await prisma.workspaceMember.update({
       where: { id },
       data: input,
       select: workspaceMemberSelect,
@@ -57,7 +57,7 @@ export class WorkspaceMemberDao {
   }
 
   async delete(id: string): Promise<WorkspaceMemberRecord> {
-    return prisma.workspaceMember.delete({
+    return await prisma.workspaceMember.delete({
       where: { id },
       select: workspaceMemberSelect,
     });

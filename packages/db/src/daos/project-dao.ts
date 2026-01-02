@@ -18,14 +18,14 @@ export interface ProjectUpdateInput {
 
 export class ProjectDao {
   async list(): Promise<ProjectRecord[]> {
-    return prisma.project.findMany({
+    return await prisma.project.findMany({
       select: projectSelect,
       orderBy: { createdAt: "desc" },
     });
   }
 
   async listByWorkspace(workspaceId: string): Promise<ProjectRecord[]> {
-    return prisma.project.findMany({
+    return await prisma.project.findMany({
       where: { workspaceId },
       select: projectSelect,
       orderBy: { createdAt: "desc" },
@@ -33,14 +33,14 @@ export class ProjectDao {
   }
 
   async getById(id: string): Promise<ProjectRecord | null> {
-    return prisma.project.findUnique({
+    return await prisma.project.findUnique({
       where: { id },
       select: projectSelect,
     });
   }
 
   async getBySlugUnique(slug: string): Promise<ProjectRecord | null> {
-    return prisma.project.findUnique({
+    return await prisma.project.findUnique({
       where: { slug },
       select: projectSelect,
     });
@@ -50,21 +50,21 @@ export class ProjectDao {
     workspaceId: string,
     slug: string
   ): Promise<ProjectRecord | null> {
-    return prisma.project.findFirst({
+    return await prisma.project.findFirst({
       where: { workspaceId, slug },
       select: projectSelect,
     });
   }
 
   async create(input: ProjectCreateInput): Promise<ProjectRecord> {
-    return prisma.project.create({
+    return await prisma.project.create({
       data: input,
       select: projectSelect,
     });
   }
 
   async update(id: string, input: ProjectUpdateInput): Promise<ProjectRecord> {
-    return prisma.project.update({
+    return await prisma.project.update({
       where: { id },
       data: input,
       select: projectSelect,
@@ -72,7 +72,7 @@ export class ProjectDao {
   }
 
   async delete(id: string): Promise<ProjectRecord> {
-    return prisma.project.delete({
+    return await prisma.project.delete({
       where: { id },
       select: projectSelect,
     });

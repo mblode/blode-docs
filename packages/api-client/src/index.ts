@@ -98,15 +98,15 @@ const request = async <T extends z.ZodTypeAny>(
 };
 
 export const listWorkspaces = async (): Promise<Workspace[]> => {
-  return request("/workspaces", z.array(WorkspaceSchema));
+  return await request("/workspaces", z.array(WorkspaceSchema));
 };
 
 export const listTenants = async (): Promise<Tenant[]> => {
-  return request("/tenants", z.array(TenantSchema));
+  return await request("/tenants", z.array(TenantSchema));
 };
 
 export const getTenant = async (slug: string): Promise<Tenant> => {
-  return request(`/tenants/${slug}`, TenantSchema);
+  return await request(`/tenants/${slug}`, TenantSchema);
 };
 
 export const resolveTenant = async (
@@ -114,7 +114,7 @@ export const resolveTenant = async (
   path: string
 ): Promise<TenantResolution> => {
   const params = new URLSearchParams({ host, path });
-  return request(
+  return await request(
     `/tenants/resolve?${params.toString()}`,
     TenantResolutionSchema
   );
@@ -124,7 +124,7 @@ export const bootstrapUser = async (
   input: BootstrapRequest
 ): Promise<BootstrapResponse> => {
   const parsed = BootstrapRequestSchema.parse(input);
-  return request("/bootstrap", BootstrapResponseSchema, {
+  return await request("/bootstrap", BootstrapResponseSchema, {
     method: "POST",
     body: parsed,
   });
@@ -134,22 +134,25 @@ export const createWorkspace = async (
   input: WorkspaceCreateInput
 ): Promise<Workspace> => {
   const parsed = WorkspaceCreateSchema.parse(input);
-  return request("/workspaces", WorkspaceSchema, {
+  return await request("/workspaces", WorkspaceSchema, {
     method: "POST",
     body: parsed,
   });
 };
 
 export const getWorkspaceBySlug = async (slug: string): Promise<Workspace> => {
-  return request(`/workspaces/slug/${slug}`, WorkspaceSchema);
+  return await request(`/workspaces/slug/${slug}`, WorkspaceSchema);
 };
 
 export const listProjects = async (workspaceId: string): Promise<Project[]> => {
-  return request(`/workspaces/${workspaceId}/projects`, z.array(ProjectSchema));
+  return await request(
+    `/workspaces/${workspaceId}/projects`,
+    z.array(ProjectSchema)
+  );
 };
 
 export const getProject = async (projectId: string): Promise<Project> => {
-  return request(`/projects/${projectId}`, ProjectSchema);
+  return await request(`/projects/${projectId}`, ProjectSchema);
 };
 
 export const updateProject = async (
@@ -157,14 +160,14 @@ export const updateProject = async (
   input: ProjectUpdateInput
 ): Promise<Project> => {
   const parsed = ProjectUpdateSchema.parse(input);
-  return request(`/projects/${projectId}`, ProjectSchema, {
+  return await request(`/projects/${projectId}`, ProjectSchema, {
     method: "PATCH",
     body: parsed,
   });
 };
 
 export const listDomains = async (projectId: string): Promise<Domain[]> => {
-  return request(`/projects/${projectId}/domains`, z.array(DomainSchema));
+  return await request(`/projects/${projectId}/domains`, z.array(DomainSchema));
 };
 
 export const createDomain = async (
@@ -172,17 +175,21 @@ export const createDomain = async (
   input: Omit<DomainCreateInput, "projectId">
 ): Promise<DomainCreateResponse> => {
   const parsed = DomainCreateSchema.omit({ projectId: true }).parse(input);
-  return request(`/projects/${projectId}/domains`, DomainCreateResponseSchema, {
-    method: "POST",
-    body: parsed,
-  });
+  return await request(
+    `/projects/${projectId}/domains`,
+    DomainCreateResponseSchema,
+    {
+      method: "POST",
+      body: parsed,
+    }
+  );
 };
 
 export const getDomainVerification = async (
   projectId: string,
   domainId: string
 ): Promise<DomainVerification> => {
-  return request(
+  return await request(
     `/projects/${projectId}/domains/${domainId}/verification`,
     DomainVerificationSchema
   );
@@ -192,7 +199,7 @@ export const verifyDomain = async (
   projectId: string,
   domainId: string
 ): Promise<DomainVerification> => {
-  return request(
+  return await request(
     `/projects/${projectId}/domains/${domainId}/verify`,
     DomainVerificationSchema,
     { method: "POST" }
@@ -202,7 +209,7 @@ export const verifyDomain = async (
 export const listDeployments = async (
   projectId: string
 ): Promise<Deployment[]> => {
-  return request(
+  return await request(
     `/projects/${projectId}/deployments`,
     z.array(DeploymentSchema)
   );
@@ -211,7 +218,7 @@ export const listDeployments = async (
 export const getGitSettings = async (
   projectId: string
 ): Promise<GitSettings> => {
-  return request(`/projects/${projectId}/git`, GitSettingsSchema);
+  return await request(`/projects/${projectId}/git`, GitSettingsSchema);
 };
 
 export const updateGitSettings = async (
@@ -219,18 +226,24 @@ export const updateGitSettings = async (
   input: GitSettingsUpdateInput
 ): Promise<GitSettings> => {
   const parsed = GitSettingsUpdateSchema.parse(input);
-  return request(`/projects/${projectId}/git`, GitSettingsSchema, {
+  return await request(`/projects/${projectId}/git`, GitSettingsSchema, {
     method: "PATCH",
     body: parsed,
   });
 };
 
 export const listActivity = async (projectId: string): Promise<Activity[]> => {
-  return request(`/projects/${projectId}/activity`, z.array(ActivitySchema));
+  return await request(
+    `/projects/${projectId}/activity`,
+    z.array(ActivitySchema)
+  );
 };
 
 export const listMembers = async (workspaceId: string): Promise<Member[]> => {
-  return request(`/workspaces/${workspaceId}/members`, z.array(MemberSchema));
+  return await request(
+    `/workspaces/${workspaceId}/members`,
+    z.array(MemberSchema)
+  );
 };
 
 export const inviteMember = async (
@@ -238,14 +251,17 @@ export const inviteMember = async (
   input: InviteMemberInput
 ): Promise<Member> => {
   const parsed = InviteMemberSchema.parse(input);
-  return request(`/workspaces/${workspaceId}/members`, MemberSchema, {
+  return await request(`/workspaces/${workspaceId}/members`, MemberSchema, {
     method: "POST",
     body: parsed,
   });
 };
 
 export const listApiKeys = async (workspaceId: string): Promise<ApiKey[]> => {
-  return request(`/workspaces/${workspaceId}/api-keys`, z.array(ApiKeySchema));
+  return await request(
+    `/workspaces/${workspaceId}/api-keys`,
+    z.array(ApiKeySchema)
+  );
 };
 
 export const createApiKey = async (
@@ -253,7 +269,7 @@ export const createApiKey = async (
   input: Omit<ApiKeyCreateInput, "workspaceId">
 ): Promise<ApiKey> => {
   const parsed = ApiKeyCreateSchema.omit({ workspaceId: true }).parse(input);
-  return request(`/workspaces/${workspaceId}/api-keys`, ApiKeySchema, {
+  return await request(`/workspaces/${workspaceId}/api-keys`, ApiKeySchema, {
     method: "POST",
     body: parsed,
   });

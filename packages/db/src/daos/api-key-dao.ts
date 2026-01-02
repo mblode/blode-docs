@@ -16,7 +16,7 @@ export interface ApiKeyUpdateInput {
 
 export class ApiKeyDao {
   async listByWorkspace(workspaceId: string): Promise<ApiKeyRecord[]> {
-    return prisma.apiKey.findMany({
+    return await prisma.apiKey.findMany({
       where: { workspaceId },
       select: apiKeySelect,
       orderBy: { createdAt: "desc" },
@@ -24,21 +24,21 @@ export class ApiKeyDao {
   }
 
   async getById(id: string): Promise<ApiKeyRecord | null> {
-    return prisma.apiKey.findUnique({
+    return await prisma.apiKey.findUnique({
       where: { id },
       select: apiKeySelect,
     });
   }
 
   async create(input: ApiKeyCreateInput): Promise<ApiKeyRecord> {
-    return prisma.apiKey.create({
+    return await prisma.apiKey.create({
       data: input,
       select: apiKeySelect,
     });
   }
 
   async update(id: string, input: ApiKeyUpdateInput): Promise<ApiKeyRecord> {
-    return prisma.apiKey.update({
+    return await prisma.apiKey.update({
       where: { id },
       data: input,
       select: apiKeySelect,
@@ -46,7 +46,7 @@ export class ApiKeyDao {
   }
 
   async delete(id: string): Promise<ApiKeyRecord> {
-    return prisma.apiKey.delete({
+    return await prisma.apiKey.delete({
       where: { id },
       select: apiKeySelect,
     });

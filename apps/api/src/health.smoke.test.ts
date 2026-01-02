@@ -10,7 +10,7 @@ process.env.NODE_ENV = "test";
 let app: FastifyInstance;
 
 beforeAll(async () => {
-  const apiModule = await import("./index");
+  const apiModule = await import("./index.js");
   app = apiModule.app;
   await app.ready();
 });

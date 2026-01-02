@@ -9,6 +9,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export type { Prisma } from "@prisma/client";
+// biome-ignore lint/performance/noBarrelFile: This is the main entry point for the package
 export { ActivityDao } from "./daos/activity-dao";
 export { ApiKeyDao } from "./daos/api-key-dao";
 export { DeploymentDao } from "./daos/deployment-dao";

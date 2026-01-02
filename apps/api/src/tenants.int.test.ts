@@ -14,7 +14,7 @@ let app: FastifyInstance;
 let prisma: PrismaClient;
 
 beforeAll(async () => {
-  const apiModule = await import("./index");
+  const apiModule = await import("./index.js");
   app = apiModule.app;
   const dbModule = await import("@repo/db");
   prisma = dbModule.prisma;

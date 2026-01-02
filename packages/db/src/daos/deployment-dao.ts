@@ -22,7 +22,7 @@ export interface DeploymentUpdateInput {
 
 export class DeploymentDao {
   async listByProject(projectId: string): Promise<DeploymentRecord[]> {
-    return prisma.deployment.findMany({
+    return await prisma.deployment.findMany({
       where: { projectId },
       select: deploymentSelect,
       orderBy: { createdAt: "desc" },
@@ -30,14 +30,14 @@ export class DeploymentDao {
   }
 
   async getById(id: string): Promise<DeploymentRecord | null> {
-    return prisma.deployment.findUnique({
+    return await prisma.deployment.findUnique({
       where: { id },
       select: deploymentSelect,
     });
   }
 
   async create(input: DeploymentCreateInput): Promise<DeploymentRecord> {
-    return prisma.deployment.create({
+    return await prisma.deployment.create({
       data: input,
       select: deploymentSelect,
     });
@@ -47,7 +47,7 @@ export class DeploymentDao {
     id: string,
     input: DeploymentUpdateInput
   ): Promise<DeploymentRecord> {
-    return prisma.deployment.update({
+    return await prisma.deployment.update({
       where: { id },
       data: input,
       select: deploymentSelect,
@@ -55,7 +55,7 @@ export class DeploymentDao {
   }
 
   async delete(id: string): Promise<DeploymentRecord> {
-    return prisma.deployment.delete({
+    return await prisma.deployment.delete({
       where: { id },
       select: deploymentSelect,
     });

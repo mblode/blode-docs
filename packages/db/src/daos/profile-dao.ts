@@ -17,14 +17,14 @@ export interface ProfileUpdateInput {
 
 export class ProfileDao {
   async getById(id: string): Promise<ProfileRecord | null> {
-    return prisma.profile.findUnique({
+    return await prisma.profile.findUnique({
       where: { id },
       select: profileSelect,
     });
   }
 
   async upsert(input: ProfileUpsertInput): Promise<ProfileRecord> {
-    return prisma.profile.upsert({
+    return await prisma.profile.upsert({
       where: { id: input.id },
       update: {
         email: input.email,
@@ -42,7 +42,7 @@ export class ProfileDao {
   }
 
   async update(id: string, input: ProfileUpdateInput): Promise<ProfileRecord> {
-    return prisma.profile.update({
+    return await prisma.profile.update({
       where: { id },
       data: input,
       select: profileSelect,
@@ -50,7 +50,7 @@ export class ProfileDao {
   }
 
   async delete(id: string): Promise<ProfileRecord> {
-    return prisma.profile.delete({
+    return await prisma.profile.delete({
       where: { id },
       select: profileSelect,
     });
