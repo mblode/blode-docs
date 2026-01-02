@@ -88,5 +88,3 @@ export const getDefaultTenant = async () => {
   const tenants = await listTenants();
   return tenants[0] ?? null;
 };
-
-export { platformConfig } from "./platform-config";
