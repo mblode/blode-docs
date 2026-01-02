@@ -101,7 +101,7 @@ model WorkspaceMember {
 model Project {
   id             String          @id @default(uuid()) @db.Uuid
   workspaceId    String          @db.Uuid @map("workspace_id")
-  slug           String
+  slug           String          @unique
   name           String
   deploymentName String          @map("deployment_name")
   description    String?
@@ -113,7 +113,6 @@ model Project {
   activity       Activity[]
   gitConnections GitConnection[]
 
-  @@unique([workspaceId, slug])
   @@map("projects")
 }
 

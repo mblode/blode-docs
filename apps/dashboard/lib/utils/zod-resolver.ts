@@ -4,16 +4,17 @@ import type { ZodError, z } from "zod";
 const mapZodErrors = <TFieldValues extends FieldValues>(
   error: ZodError
 ): FieldErrors<TFieldValues> => {
-  const fieldErrors: FieldErrors<TFieldValues> = {};
+  const fieldErrors = {} as FieldErrors<TFieldValues>;
   for (const issue of error.issues) {
     const [field] = issue.path;
     if (typeof field !== "string") {
       continue;
     }
-    fieldErrors[field] = {
+    const key = field as keyof FieldErrors<TFieldValues>;
+    fieldErrors[key] = {
       type: issue.code,
       message: issue.message,
-    };
+    } as FieldErrors<TFieldValues>[typeof key];
   }
   return fieldErrors;
 };

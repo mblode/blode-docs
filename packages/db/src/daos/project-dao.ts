@@ -40,7 +40,7 @@ export class ProjectDao {
   }
 
   async getBySlugUnique(slug: string): Promise<ProjectRecord | null> {
-    return prisma.project.findFirst({
+    return prisma.project.findUnique({
       where: { slug },
       select: projectSelect,
     });

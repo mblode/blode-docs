@@ -1,7 +1,8 @@
 # Vercel multi-tenant domains
 
 This project follows the Vercel multi-tenant best practices for wildcard subdomains and
-custom domains, with `neue.com` serving docs and `neue.com` serving the marketing site.
+custom domains, with `neue.com` serving the marketing site, `dashboard.neue.com` hosting
+the app shell, and docs resolving at `projectSlug.neue.com` (plus optional custom domains).
 
 ## Wildcard subdomains (*.neue.com)
 
@@ -24,6 +25,9 @@ Custom domains are provisioned through the API:
   - Fetches current verification records.
 - `POST /projects/:projectId/domains/:domainId/verify`
   - Triggers manual verification on Vercel.
+
+Custom domains must be external to `neue.com` because platform subdomains are
+reserved for project routing.
 
 Make sure Vercel credentials are present:
 

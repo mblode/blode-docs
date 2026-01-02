@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
 import Link from "next/link";
+import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -57,8 +57,8 @@ export const LandingPage = () => {
                 <label className="flex-1" htmlFor={emailId}>
                   <span className="sr-only">Work email</span>
                   <Input
-                    id={emailId}
                     className="h-12 rounded-full bg-white/80"
+                    id={emailId}
                     placeholder="Work email"
                     type="email"
                     {...form.register("email")}

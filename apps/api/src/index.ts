@@ -68,7 +68,9 @@ import {
   mapWorkspaceMember,
 } from "./mappers/records.js";
 
-const app = Fastify({ logger: true }).withTypeProvider<ZodTypeProvider>();
+export const app = Fastify({
+  logger: true,
+}).withTypeProvider<ZodTypeProvider>();
 
 app.register(cors, { origin: true, credentials: true });
 app.register(sensible);
@@ -89,6 +91,7 @@ const domainCreateBodySchema = DomainCreateSchema.omit({ projectId: true });
 const apiKeyCreateBodySchema = ApiKeyCreateSchema.omit({ workspaceId: true });
 const rootDomain = process.env.PLATFORM_ROOT_DOMAIN ?? "neue.com";
 const autoWwwRedirect = process.env.VERCEL_AUTO_WWW_REDIRECT === "true";
+const preferCustomDomain = process.env.PREFER_CUSTOM_DOMAIN === "true";
 
 const domainRecordTypes = new Set([
   "A",
@@ -134,6 +137,24 @@ const mapVerification = (domain: VercelProjectDomain | null) => {
 };
 
 const normalizeHost = (host: string) => host.replace(/:\d+$/, "").toLowerCase();
+const normalizeHostnameInput = (value: string) => {
+  const trimmed = value.trim().toLowerCase();
+  const withoutProtocol = trimmed.replace(/^https?:\/\//, "");
+  const withoutPath = withoutProtocol.split("/")[0] ?? "";
+  return normalizeHost(withoutPath);
+};
+
+const normalizePathPrefix = (value?: string | null) => {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const withSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return withSlash.replace(/\/+$/, "");
+};
 
 const stripPrefix = (pathname: string, prefix: string | null) => {
   if (!prefix) {
@@ -164,14 +185,26 @@ const buildTenant = async (projectId: string): Promise<Tenant | null> => {
     return null;
   }
   const domains = await domainDao.listByProject(projectId);
+  const customDomains = domains.map((domain) => domain.hostname);
+  const preferredCustomDomain =
+    domains.find(
+      (domain) =>
+        domain.status === mapDomainStatusFromContract("Valid Configuration")
+    ) ??
+    domains[0] ??
+    null;
+  const primaryDomain =
+    preferCustomDomain && preferredCustomDomain
+      ? preferredCustomDomain.hostname
+      : `${project.slug}.${rootDomain}`;
   return {
     id: project.id,
     slug: project.slug,
     name: project.name,
     description: project.description ?? undefined,
-    primaryDomain: `${project.slug}.${rootDomain}`,
+    primaryDomain,
     subdomain: project.slug,
-    customDomains: domains.map((domain) => domain.hostname),
+    customDomains,
     pathPrefix:
       domains.find((domain) => domain.pathPrefix)?.pathPrefix ?? undefined,
     status: "active",
@@ -600,10 +633,17 @@ app.post(
     },
   },
   async (request, reply) => {
-    const hostname = request.body.hostname;
+    const hostname = normalizeHostnameInput(request.body.hostname);
+    if (!hostname) {
+      return reply.badRequest("Domain hostname is required.");
+    }
+    if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
+      return reply.badRequest("Domain must be external to the neue.com zone.");
+    }
     let verification: DomainVerification | undefined;
     let status = mapDomainStatusFromContract("Pending Verification");
     let verifiedAt: Date | null = null;
+    const pathPrefix = normalizePathPrefix(request.body.pathPrefix);
 
     if (isVercelEnabled()) {
       try {
@@ -642,7 +682,7 @@ app.post(
     const record = await domainDao.create({
       projectId: request.params.projectId,
       hostname,
-      pathPrefix: request.body.pathPrefix ?? null,
+      pathPrefix,
       status,
       verifiedAt,
     });
@@ -978,4 +1018,6 @@ const start = async () => {
   }
 };
 
-start();
+if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+  start();
+}

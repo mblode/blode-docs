@@ -1,0 +1,54 @@
+import { describe, expect, it } from "vitest";
+import {
+  clamp,
+  ensureArray,
+  normalizePath,
+  safeJsonParse,
+  slugify,
+  uniq,
+  withLeadingSlash,
+  withoutLeadingSlash,
+} from "./index";
+
+describe("common utilities", () => {
+  it("normalizes paths", () => {
+    expect(normalizePath("/docs/guide/")).toBe("docs/guide");
+    expect(normalizePath("\\docs\\guide\\")).toBe("docs/guide");
+  });
+
+  it("adds and removes leading slashes", () => {
+    expect(withLeadingSlash("docs")).toBe("/docs");
+    expect(withLeadingSlash("/docs")).toBe("/docs");
+    expect(withLeadingSlash("")).toBe("/");
+    expect(withoutLeadingSlash("/docs")).toBe("docs");
+    expect(withoutLeadingSlash("docs")).toBe("docs");
+    expect(withoutLeadingSlash("")).toBe("");
+  });
+
+  it("slugifies strings", () => {
+    expect(slugify("Hello, neue Docs!")).toBe("hello-neue-docs");
+  });
+
+  it("normalizes arrays", () => {
+    expect(ensureArray(undefined)).toEqual([]);
+    expect(ensureArray("one")).toEqual(["one"]);
+    expect(ensureArray(["one", "two"])).toEqual(["one", "two"]);
+  });
+
+  it("deduplicates arrays", () => {
+    expect(uniq(["a", "a", "b"])).toEqual(["a", "b"]);
+  });
+
+  it("safely parses JSON", () => {
+    expect(safeJsonParse<{ ok: boolean }>('{"ok":true}')).toEqual({
+      ok: true,
+    });
+    expect(safeJsonParse("{")).toBeNull();
+  });
+
+  it("clamps values", () => {
+    expect(clamp(5, 0, 10)).toBe(5);
+    expect(clamp(-1, 0, 10)).toBe(0);
+    expect(clamp(11, 0, 10)).toBe(10);
+  });
+});

@@ -3,19 +3,19 @@ import { prisma } from "../index";
 import type { WorkspaceMemberRecord } from "../types/records";
 import { workspaceMemberSelect } from "../types/selects";
 
-export type WorkspaceMemberCreateInput = {
+export interface WorkspaceMemberCreateInput {
   workspaceId: string;
   email: string;
   role?: MemberRole;
   status?: MemberStatus;
   joinedAt?: Date | null;
-};
+}
 
-export type WorkspaceMemberUpdateInput = {
+export interface WorkspaceMemberUpdateInput {
   role?: MemberRole;
   status?: MemberStatus;
   joinedAt?: Date | null;
-};
+}
 
 export class WorkspaceMemberDao {
   async listByWorkspace(workspaceId: string): Promise<WorkspaceMemberRecord[]> {
