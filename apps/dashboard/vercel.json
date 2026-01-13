@@ -1,4 +1,5 @@
 {
-	"buildCommand": "npx turbo run build --filter=dashboard...",
-	"framework": "nextjs"
+	"buildCommand": "cd ../.. && npx turbo run build --filter=dashboard...",
+	"framework": "nextjs",
+	"outputDirectory": "apps/dashboard/.next"
 }

@@ -1,4 +1,5 @@
 {
-	"buildCommand": "npx turbo run build --filter=docs...",
-	"framework": "nextjs"
+	"buildCommand": "cd ../.. && npx turbo run build --filter=docs...",
+	"framework": "nextjs",
+	"outputDirectory": "apps/docs/.next"
 }
