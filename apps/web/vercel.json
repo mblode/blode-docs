@@ -1,6 +1,4 @@
 {
 	"buildCommand": "npx turbo run build --filter=web...",
-	"installCommand": "npm install --prefix=../..  --include-workspace-root",
-	"framework": "nextjs",
-	"outputDirectory": ".next"
+	"framework": "nextjs"
 }
