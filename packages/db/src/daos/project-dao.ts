@@ -1,6 +1,6 @@
-import { prisma } from "../index";
-import type { ProjectRecord } from "../types/records";
-import { projectSelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { ProjectRecord } from "../types/records.js";
+import { projectSelect } from "../types/selects.js";
 
 export interface ProjectCreateInput {
   workspaceId: string;

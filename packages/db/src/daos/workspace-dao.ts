@@ -1,6 +1,6 @@
-import { prisma } from "../index";
-import type { WorkspaceRecord } from "../types/records";
-import { workspaceSelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { WorkspaceRecord } from "../types/records.js";
+import { workspaceSelect } from "../types/selects.js";
 
 export interface WorkspaceCreateInput {
   slug: string;

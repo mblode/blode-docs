@@ -1,6 +1,6 @@
-import { prisma } from "../index";
-import type { ApiKeyRecord } from "../types/records";
-import { apiKeySelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { ApiKeyRecord } from "../types/records.js";
+import { apiKeySelect } from "../types/selects.js";
 
 export interface ApiKeyCreateInput {
   workspaceId: string;

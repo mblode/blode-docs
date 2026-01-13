@@ -1,7 +1,7 @@
 import type { DeploymentEnvironment, DeploymentStatus } from "@prisma/client";
-import { prisma } from "../index";
-import type { DeploymentRecord } from "../types/records";
-import { deploymentSelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { DeploymentRecord } from "../types/records.js";
+import { deploymentSelect } from "../types/selects.js";
 
 export interface DeploymentCreateInput {
   projectId: string;

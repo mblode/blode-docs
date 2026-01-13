@@ -1,7 +1,7 @@
 import type { DomainStatus } from "@prisma/client";
-import { prisma } from "../index";
-import type { DomainRecord } from "../types/records";
-import { domainSelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { DomainRecord } from "../types/records.js";
+import { domainSelect } from "../types/selects.js";
 
 export interface DomainCreateInput {
   projectId: string;

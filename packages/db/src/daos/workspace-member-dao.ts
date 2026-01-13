@@ -1,7 +1,7 @@
 import type { MemberRole, MemberStatus } from "@prisma/client";
-import { prisma } from "../index";
-import type { WorkspaceMemberRecord } from "../types/records";
-import { workspaceMemberSelect } from "../types/selects";
+import { prisma } from "../index.js";
+import type { WorkspaceMemberRecord } from "../types/records.js";
+import { workspaceMemberSelect } from "../types/selects.js";
 
 export interface WorkspaceMemberCreateInput {
   workspaceId: string;
