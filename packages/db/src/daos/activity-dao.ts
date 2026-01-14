@@ -1,7 +1,7 @@
 import type { ActivityStatus } from "@prisma/client";
-import { prisma } from "../index.js";
-import type { ActivityRecord } from "../types/records.js";
-import { activitySelect } from "../types/selects.js";
+import { prisma } from "../index";
+import type { ActivityRecord } from "../types/records";
+import { activitySelect } from "../types/selects";
 
 export interface ActivityCreateInput {
   projectId: string;

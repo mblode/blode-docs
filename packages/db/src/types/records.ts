@@ -9,7 +9,7 @@ import type {
   projectSelect,
   workspaceMemberSelect,
   workspaceSelect,
-} from "./selects.js";
+} from "./selects";
 
 export type WorkspaceRecord = Prisma.WorkspaceGetPayload<{
   select: typeof workspaceSelect;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HostnameSchema, IdSchema, PathSchema, SlugSchema } from "./ids.js";
+import { HostnameSchema, IdSchema, PathSchema, SlugSchema } from "./ids";
 
 export const TenantStatusSchema = z.enum(["active", "disabled"]);
 export type TenantStatus = z.infer<typeof TenantStatusSchema>;

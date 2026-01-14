@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { IsoDateSchema } from "./dates.js";
-import { IdSchema, PathSchema } from "./ids.js";
+import { IsoDateSchema } from "./dates";
+import { IdSchema, PathSchema } from "./ids";
 
 export const GitProviderSchema = z.enum(["github"]);
 export type GitProvider = z.infer<typeof GitProviderSchema>;

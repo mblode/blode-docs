@@ -1,6 +1,6 @@
-import { prisma } from "../index.js";
-import type { ProfileRecord } from "../types/records.js";
-import { profileSelect } from "../types/selects.js";
+import { prisma } from "../index";
+import type { ProfileRecord } from "../types/records";
+import { profileSelect } from "../types/selects";
 
 export interface ProfileUpsertInput {
   id: string;

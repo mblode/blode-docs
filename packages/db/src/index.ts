@@ -10,15 +10,15 @@ if (process.env.NODE_ENV !== "production") {
 
 export type { Prisma } from "@prisma/client";
 // biome-ignore lint/performance/noBarrelFile: This is the main entry point for the package
-export { ActivityDao } from "./daos/activity-dao.js";
-export { ApiKeyDao } from "./daos/api-key-dao.js";
-export { DeploymentDao } from "./daos/deployment-dao.js";
-export { DomainDao } from "./daos/domain-dao.js";
-export { GitConnectionDao } from "./daos/git-connection-dao.js";
-export { ProfileDao } from "./daos/profile-dao.js";
-export { ProjectDao } from "./daos/project-dao.js";
-export { WorkspaceDao } from "./daos/workspace-dao.js";
-export { WorkspaceMemberDao } from "./daos/workspace-member-dao.js";
-export * from "./mappers/status-mappers.js";
-export * from "./types/records.js";
-export * from "./types/selects.js";
+export { ActivityDao } from "./daos/activity-dao";
+export { ApiKeyDao } from "./daos/api-key-dao";
+export { DeploymentDao } from "./daos/deployment-dao";
+export { DomainDao } from "./daos/domain-dao";
+export { GitConnectionDao } from "./daos/git-connection-dao";
+export { ProfileDao } from "./daos/profile-dao";
+export { ProjectDao } from "./daos/project-dao";
+export { WorkspaceDao } from "./daos/workspace-dao";
+export { WorkspaceMemberDao } from "./daos/workspace-member-dao";
+export * from "./mappers/status-mappers";
+export * from "./types/records";
+export * from "./types/selects";

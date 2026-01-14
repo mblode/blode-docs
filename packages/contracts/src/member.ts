@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { IsoDateSchema } from "./dates.js";
-import { EmailSchema, IdSchema } from "./ids.js";
+import { IsoDateSchema } from "./dates";
+import { EmailSchema, IdSchema } from "./ids";
 
 export const MemberRoleSchema = z.enum(["owner", "admin", "member"]);
 export type MemberRole = z.infer<typeof MemberRoleSchema>;

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { IsoDateSchema } from "./dates.js";
-import { IdSchema, SlugSchema } from "./ids.js";
+import { IsoDateSchema } from "./dates";
+import { IdSchema, SlugSchema } from "./ids";
 
 export const WorkspaceSchema = z.object({
   id: IdSchema,

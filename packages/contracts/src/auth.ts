@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { IsoDateSchema } from "./dates.js";
-import { EmailSchema, IdSchema, UrlSchema } from "./ids.js";
-import { ProjectSchema } from "./project.js";
-import { WorkspaceSchema } from "./workspace.js";
+import { IsoDateSchema } from "./dates";
+import { EmailSchema, IdSchema, UrlSchema } from "./ids";
+import { ProjectSchema } from "./project";
+import { WorkspaceSchema } from "./workspace";
 
 export const OtpSchema = z.string().regex(/^[0-9]{6}$/);
 export type Otp = z.infer<typeof OtpSchema>;

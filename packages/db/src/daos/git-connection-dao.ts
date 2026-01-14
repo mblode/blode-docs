@@ -1,7 +1,7 @@
 import type { GitProvider } from "@prisma/client";
-import { prisma } from "../index.js";
-import type { GitConnectionRecord } from "../types/records.js";
-import { gitConnectionSelect } from "../types/selects.js";
+import { prisma } from "../index";
+import type { GitConnectionRecord } from "../types/records";
+import { gitConnectionSelect } from "../types/selects";
 
 export interface GitConnectionCreateInput {
   projectId: string;

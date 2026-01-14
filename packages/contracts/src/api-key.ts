@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { IsoDateSchema } from "./dates.js";
-import { IdSchema } from "./ids.js";
+import { IsoDateSchema } from "./dates";
+import { IdSchema } from "./ids";
 
 export const ApiKeySchema = z.object({
   id: IdSchema,
