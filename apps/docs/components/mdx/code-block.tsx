@@ -1,7 +1,8 @@
 "use client";
 
 import clsx from "clsx";
-import { isValidElement, type ReactNode, useMemo, useState } from "react";
+import { isValidElement, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 const LANGUAGE_CLASS_REGEX = /language-([\w-]+)/;
 
@@ -20,7 +21,7 @@ const getCodeString = (node: ReactNode): string => {
 
 const getLanguage = (node: ReactNode): string | undefined => {
   if (isValidElement<{ className?: string; children?: ReactNode }>(node)) {
-    const className = node.props.className;
+    const { className } = node.props;
     const match = LANGUAGE_CLASS_REGEX.exec(className ?? "");
     return match?.[1];
   }

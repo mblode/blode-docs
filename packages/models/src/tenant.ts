@@ -3,11 +3,13 @@ export interface Tenant {
   slug: string;
   name: string;
   description?: string;
+  activeDeploymentId?: string;
+  activeDeploymentManifestUrl?: string;
   primaryDomain: string;
   subdomain: string;
   customDomains: string[];
   pathPrefix?: string;
-  docsPath: string;
+  docsPath?: string;
   status: "active" | "disabled";
 }
 

@@ -6,5 +6,5 @@ export const toDocHref = (path: string, basePath = "") => {
   if (!clean || clean === "index") {
     return base || "/";
   }
-  return `${base}/${clean}`.replace(/\/+/g, "/");
+  return `${base}/${clean}`.replaceAll(/\/+/g, "/");
 };

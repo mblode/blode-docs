@@ -3,6 +3,7 @@
 ## ✅ What's Been Completed
 
 ### 1. Project Setup
+
 - ✅ Installed Vercel CLI
 - ✅ Logged in to Vercel
 - ✅ Created 4 Vercel projects: `web`, `dashboard`, `docs`, `api`
@@ -10,12 +11,14 @@
 - ✅ All code committed and pushed to GitHub
 
 ### 2. Configuration Files
+
 - ✅ Created `vercel.json` for each app with:
   - Optimized Turborepo build commands
   - Correct output directories
   - Framework detection
 
 ### 3. Build Fixes
+
 - ✅ Fixed ESM import issues for Next.js apps
   - Removed `.js` extensions from `packages/contracts` (exports .ts directly)
   - Removed `.js` extensions from `packages/db` (exports .ts directly)
@@ -28,9 +31,11 @@
 ## ⚠️ Known Issues
 
 ### Dashboard App
+
 **Status:** Build fails with Supabase server/client component conflict
 
 **Error:**
+
 ```
 You're importing a component that needs "next/headers". That only works in a Server Component
 ```
@@ -40,14 +45,17 @@ You're importing a component that needs "next/headers". That only works in a Ser
 **Cause:** The Supabase package imports `next/headers` (server-only) but is being used in a client component.
 
 **Solution Options:**
+
 1. Refactor the dashboard to ensure Supabase server functions are only called from Server Components
 2. Split the Supabase package into separate server/client modules
 3. Use dynamic imports with `next/dynamic` for client-side usage
 
 ### API App
+
 **Status:** Build fails with TypeScript module resolution errors
 
 **Error:**
+
 ```
 Relative import paths need explicit file extensions in ECMAScript imports
 ```
@@ -55,10 +63,12 @@ Relative import paths need explicit file extensions in ECMAScript imports
 **Cause:** The API app uses `tsc` to compile TypeScript (not Next.js), which requires `.js` extensions with NodeNext module resolution. However, the shared packages (contracts, db) were fixed to NOT have `.js` extensions for Next.js compatibility.
 
 **Conflict:**
+
 - Next.js apps (web, docs) need packages WITHOUT `.js` extensions
 - API app needs `.js` extensions for tsc compilation
 
 **Solution Options:**
+
 1. **Compile shared packages** (Recommended):
    - Add actual build steps to contracts/db packages
    - Export compiled `.js` files instead of `.ts` source
@@ -105,12 +115,12 @@ Relative import paths need explicit file extensions in ECMAScript imports
 
 ## 📊 Build Status Summary
 
-| App | Local Build | Vercel Ready | Notes |
-|-----|------------|--------------|-------|
-| **web** | ✅ Pass | ✅ Yes | Ready to deploy |
-| **docs** | ✅ Pass | ✅ Yes | Ready to deploy |
-| **dashboard** | ❌ Fail | ⚠️ Needs Fix | Supabase server/client issue |
-| **api** | ❌ Fail | ⚠️ Needs Fix | ESM/TypeScript compilation issue |
+| App           | Local Build | Vercel Ready | Notes                            |
+| ------------- | ----------- | ------------ | -------------------------------- |
+| **web**       | ✅ Pass     | ✅ Yes       | Ready to deploy                  |
+| **docs**      | ✅ Pass     | ✅ Yes       | Ready to deploy                  |
+| **dashboard** | ❌ Fail     | ⚠️ Needs Fix | Supabase server/client issue     |
+| **api**       | ❌ Fail     | ⚠️ Needs Fix | ESM/TypeScript compilation issue |
 
 ---
 

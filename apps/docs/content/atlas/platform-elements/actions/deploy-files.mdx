@@ -28,15 +28,15 @@ import type { InlinedFile } from "@vercel/sdk/models/createdeploymentop";
 const files: InlinedFile[] = [
   {
     file: "index.html",
-    data: "<html><body><h1>Hello from my platform!</h1></body></html>"
+    data: "<html><body><h1>Hello from my platform!</h1></body></html>",
   },
   {
     file: "package.json",
     data: JSON.stringify({
       name: "my-deployment",
-      version: "1.0.0"
-    })
-  }
+      version: "1.0.0",
+    }),
+  },
 ];
 
 await deployFiles(files, {
@@ -46,8 +46,8 @@ await deployFiles(files, {
   config: {
     framework: "nextjs",
     buildCommand: "npm run build",
-    outputDirectory: ".next"
-  }
+    outputDirectory: ".next",
+  },
 });
 ```
 
@@ -56,25 +56,27 @@ await deployFiles(files, {
 <TypeTable
   type={{
     projectId: {
-      description: "Optional existing Vercel project ID. If not provided, creates a new project",
+      description:
+        "Optional existing Vercel project ID. If not provided, creates a new project",
       type: "string",
-      optional: true
+      optional: true,
     },
     deploymentName: {
       description: "Custom deployment name. Defaults to a UUID",
       type: "string",
-      optional: true
+      optional: true,
     },
     config: {
-      description: "Build configuration including framework, commands, and environment",
+      description:
+        "Build configuration including framework, commands, and environment",
       type: "ProjectSettings",
-      optional: true
+      optional: true,
     },
     domain: {
       description: "Custom domain to add to the project after deployment",
       type: "string",
-      optional: true
-    }
+      optional: true,
+    },
   }}
 />
 
@@ -82,7 +84,10 @@ await deployFiles(files, {
 
 ```ts title="deploy-files.ts"
 import { deployFiles } from "@/actions/deploy-files";
-import type { InlinedFile, ProjectSettings } from "@vercel/sdk/models/createdeploymentop";
+import type {
+  InlinedFile,
+  ProjectSettings,
+} from "@vercel/sdk/models/createdeploymentop";
 
 const files: InlinedFile[] = [
   // Your application files here
@@ -96,17 +101,17 @@ const config: ProjectSettings = {
   devCommand: "npm run dev",
   env: {
     API_KEY: "your-api-key",
-    DATABASE_URL: "your-database-url"
+    DATABASE_URL: "your-database-url",
   },
   buildEnv: {
-    NODE_ENV: "production"
-  }
+    NODE_ENV: "production",
+  },
 };
 
 const deployment = await deployFiles(files, {
   deploymentName: `deployment-${Date.now()}`,
   config,
-  domain: "app.customer-domain.com"
+  domain: "app.customer-domain.com",
 });
 ```
 
@@ -117,10 +122,7 @@ After creating a deployment, show the Claim Deployment interface to let customer
 ```tsx title="deploy-files.tsx"
 const deployment = await deployFiles(files, { domain });
 
-<ClaimDeployment
-  url={deployment.url}
-  onClaimClick={handleTransferOwnership}
-/>
+<ClaimDeployment url={deployment.url} onClaimClick={handleTransferOwnership} />;
 ```
 
 ## Security considerations

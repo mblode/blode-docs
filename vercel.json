@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install --ignore-scripts",
+  "buildCommand": "npx turbo run build --filter=docs...",
+  "outputDirectory": "apps/docs/.next",
+  "framework": "nextjs"
+}

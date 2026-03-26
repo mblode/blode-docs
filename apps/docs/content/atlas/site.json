@@ -1,0 +1,103 @@
+{
+  "name": "Atlas Platform Docs",
+  "description": "Build a Mintlify-style documentation platform on Vercel.",
+  "theme": "mint",
+  "colors": {
+    "primary": "#0FB59F",
+    "light": "#CFF6EE",
+    "dark": "#0C3A33",
+    "surface": "#F5FBF9",
+    "border": "#D4E6E1",
+    "muted": "#6A7D78"
+  },
+  "fonts": {
+    "body": "Space Grotesk",
+    "heading": "Fraunces",
+    "mono": "JetBrains Mono",
+    "provider": "google"
+  },
+  "logo": {
+    "light": "/logos/atlas-mark-dark.svg",
+    "dark": "/logos/atlas-mark-light.svg",
+    "alt": "Atlas"
+  },
+  "navigation": {
+    "global": {
+      "links": [
+        { "label": "Dashboard", "href": "https://dashboard.atlas.example" },
+        { "label": "Status", "href": "https://status.atlas.example" }
+      ]
+    }
+  },
+  "collections": [
+    {
+      "id": "docs",
+      "type": "docs",
+      "navigation": {
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["index", "quickstart"]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["concepts"]
+          },
+          {
+            "group": "Domains",
+            "pages": [
+              "domains/wildcard-domains",
+              "domains/custom-domains",
+              "domains/verification",
+              "domains/custom-subpaths"
+            ]
+          },
+          {
+            "group": "Previews",
+            "pages": ["previews/multi-tenant-preview-urls"]
+          },
+          {
+            "group": "Platform Elements",
+            "pages": [
+              "platform-elements/actions/add-custom-domain",
+              "platform-elements/actions/deploy-files",
+              "platform-elements/blocks/custom-domain",
+              "platform-elements/blocks/dns-table"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": ["templates/multi-tenant-template"]
+          },
+          {
+            "group": "Reference",
+            "pages": ["reference/domain-api", "reference/troubleshooting"]
+          },
+          {
+            "group": "API Reference",
+            "openapi": {
+              "source": "openapi.yaml",
+              "directory": "api"
+            },
+            "pages": [
+              "api/overview",
+              "GET /projects",
+              "POST /projects",
+              "GET /projects/{projectId}"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "features": {
+    "search": true,
+    "toc": true,
+    "themeToggle": true,
+    "rightToc": true
+  },
+  "openapiProxy": {
+    "enabled": true,
+    "allowedHosts": ["api.atlas.example"]
+  }
+}

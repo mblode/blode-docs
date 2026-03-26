@@ -2,14 +2,25 @@
   "name": "@repo/docs-cli",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "bin": {
+    "blode-docs": "./bin.js",
     "docs-cli": "./bin.js"
   },
+  "type": "module",
   "scripts": {
-    "lint": "ultracite check"
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt ."
   },
   "devDependencies": {
-    "@types/node": "^22.15.3"
+    "@repo/typescript-config": "*",
+    "@types/node": "^22.15.3",
+    "lefthook": "^2.1.4",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "tsx": "^4.19.2",
+    "ultracite": "^7.3.2"
   }
 }

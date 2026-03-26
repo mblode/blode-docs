@@ -1,5 +1,10 @@
-import type { DomainStatus } from "@prisma/client";
-import { prisma } from "../index";
+// oxlint-disable eslint/class-methods-use-this
+import { desc, eq } from "drizzle-orm";
+
+import { assertRecord } from "../assert-record";
+import { db } from "../client";
+import type { DomainStatus } from "../schema";
+import { domains } from "../schema";
 import type { DomainRecord } from "../types/records";
 import { domainSelect } from "../types/selects";
 
@@ -20,46 +25,53 @@ export interface DomainUpdateInput {
 
 export class DomainDao {
   async listByProject(projectId: string): Promise<DomainRecord[]> {
-    return await prisma.domain.findMany({
-      where: { projectId },
-      select: domainSelect,
-      orderBy: { createdAt: "desc" },
-    });
+    return await db
+      .select(domainSelect)
+      .from(domains)
+      .where(eq(domains.projectId, projectId))
+      .orderBy(desc(domains.createdAt));
   }
 
   async getById(id: string): Promise<DomainRecord | null> {
-    return await prisma.domain.findUnique({
-      where: { id },
-      select: domainSelect,
-    });
+    const [record] = await db
+      .select(domainSelect)
+      .from(domains)
+      .where(eq(domains.id, id))
+      .limit(1);
+    return record ?? null;
   }
 
   async getByHostname(hostname: string): Promise<DomainRecord | null> {
-    return await prisma.domain.findUnique({
-      where: { hostname },
-      select: domainSelect,
-    });
+    const [record] = await db
+      .select(domainSelect)
+      .from(domains)
+      .where(eq(domains.hostname, hostname))
+      .limit(1);
+    return record ?? null;
   }
 
   async create(input: DomainCreateInput): Promise<DomainRecord> {
-    return await prisma.domain.create({
-      data: input,
-      select: domainSelect,
-    });
+    const [record] = await db
+      .insert(domains)
+      .values(input)
+      .returning(domainSelect);
+    return assertRecord(record, "Failed to create domain.");
   }
 
   async update(id: string, input: DomainUpdateInput): Promise<DomainRecord> {
-    return await prisma.domain.update({
-      where: { id },
-      data: input,
-      select: domainSelect,
-    });
+    const [record] = await db
+      .update(domains)
+      .set(input)
+      .where(eq(domains.id, id))
+      .returning(domainSelect);
+    return assertRecord(record, "Failed to update domain.");
   }
 
   async delete(id: string): Promise<DomainRecord> {
-    return await prisma.domain.delete({
-      where: { id },
-      select: domainSelect,
-    });
+    const [record] = await db
+      .delete(domains)
+      .where(eq(domains.id, id))
+      .returning(domainSelect);
+    return assertRecord(record, "Failed to delete domain.");
   }
 }

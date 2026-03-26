@@ -21,7 +21,7 @@ Your code is ready to deploy! Follow these steps to set up each app on Vercel:
 2. Select "Import from GitHub"
 3. Choose repository: **mblode/neue-docs**
 4. Configure project:
-   - **Project Name**: dashboard  
+   - **Project Name**: dashboard
    - **Root Directory**: apps/dashboard
    - **Framework Preset**: Next.js
 5. Click "Deploy"
@@ -55,6 +55,7 @@ Once set up, every push to `main` will automatically deploy all apps!
 ## Deployment URLs
 
 After setup, your apps will be available at:
+
 - Web: https://web-blode.vercel.app
 - Dashboard: https://dashboard-blode.vercel.app
 - Docs: https://docs-blode.vercel.app

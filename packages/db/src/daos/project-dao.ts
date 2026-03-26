@@ -1,9 +1,13 @@
-import { prisma } from "../index";
+// oxlint-disable eslint/class-methods-use-this
+import { desc, eq } from "drizzle-orm";
+
+import { assertRecord } from "../assert-record";
+import { db } from "../client";
+import { projects } from "../schema";
 import type { ProjectRecord } from "../types/records";
 import { projectSelect } from "../types/selects";
 
 export interface ProjectCreateInput {
-  workspaceId: string;
   slug: string;
   name: string;
   deploymentName: string;
@@ -18,63 +22,55 @@ export interface ProjectUpdateInput {
 
 export class ProjectDao {
   async list(): Promise<ProjectRecord[]> {
-    return await prisma.project.findMany({
-      select: projectSelect,
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  async listByWorkspace(workspaceId: string): Promise<ProjectRecord[]> {
-    return await prisma.project.findMany({
-      where: { workspaceId },
-      select: projectSelect,
-      orderBy: { createdAt: "desc" },
-    });
+    return await db
+      .select(projectSelect)
+      .from(projects)
+      .orderBy(desc(projects.createdAt));
   }
 
   async getById(id: string): Promise<ProjectRecord | null> {
-    return await prisma.project.findUnique({
-      where: { id },
-      select: projectSelect,
-    });
+    const [record] = await db
+      .select(projectSelect)
+      .from(projects)
+      .where(eq(projects.id, id))
+      .limit(1);
+    return record ?? null;
   }
 
   async getBySlugUnique(slug: string): Promise<ProjectRecord | null> {
-    return await prisma.project.findUnique({
-      where: { slug },
-      select: projectSelect,
-    });
-  }
-
-  async getBySlug(
-    workspaceId: string,
-    slug: string
-  ): Promise<ProjectRecord | null> {
-    return await prisma.project.findFirst({
-      where: { workspaceId, slug },
-      select: projectSelect,
-    });
+    const [record] = await db
+      .select(projectSelect)
+      .from(projects)
+      .where(eq(projects.slug, slug))
+      .limit(1);
+    return record ?? null;
   }
 
   async create(input: ProjectCreateInput): Promise<ProjectRecord> {
-    return await prisma.project.create({
-      data: input,
-      select: projectSelect,
-    });
+    const [record] = await db
+      .insert(projects)
+      .values(input)
+      .returning(projectSelect);
+    return assertRecord(record, "Failed to create project.");
   }
 
   async update(id: string, input: ProjectUpdateInput): Promise<ProjectRecord> {
-    return await prisma.project.update({
-      where: { id },
-      data: input,
-      select: projectSelect,
-    });
+    const [record] = await db
+      .update(projects)
+      .set({
+        ...input,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, id))
+      .returning(projectSelect);
+    return assertRecord(record, "Failed to update project.");
   }
 
   async delete(id: string): Promise<ProjectRecord> {
-    return await prisma.project.delete({
-      where: { id },
-      select: projectSelect,
-    });
+    const [record] = await db
+      .delete(projects)
+      .where(eq(projects.id, id))
+      .returning(projectSelect);
+    return assertRecord(record, "Failed to delete project.");
   }
 }

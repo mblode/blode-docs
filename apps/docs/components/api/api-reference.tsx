@@ -10,7 +10,7 @@ export const ApiReference = ({
   proxyEnabled: boolean;
   tenantSlug: string;
 }) => {
-  const operation = entry.operation;
+  const { operation } = entry;
   const parameters = operation.parameters ?? [];
   const requestBody = operation.requestBody as
     | { content?: Record<string, { schema?: unknown }> }

@@ -3,18 +3,18 @@ import { z } from "zod";
 const VERCEL_API_BASE = "https://api.vercel.com";
 
 const VercelVerificationRecordSchema = z.object({
-  type: z.string(),
   domain: z.string(),
-  value: z.string(),
   reason: z.string().optional(),
+  type: z.string(),
+  value: z.string(),
 });
 
 const VercelProjectDomainSchema = z.object({
-  name: z.string(),
   apexName: z.string().optional(),
-  verified: z.boolean().optional(),
+  name: z.string(),
   redirect: z.string().nullable().optional(),
   verification: z.array(VercelVerificationRecordSchema).optional(),
+  verified: z.boolean().optional(),
 });
 
 export type VercelProjectDomain = z.infer<typeof VercelProjectDomainSchema>;
@@ -33,10 +33,10 @@ const getVercelConfig = (): VercelConfig | null => {
     return null;
   }
   return {
-    token,
     projectId,
     teamId: process.env.VERCEL_TEAM_ID || undefined,
     teamSlug: process.env.VERCEL_TEAM_SLUG || undefined,
+    token,
   };
 };
 
@@ -66,7 +66,7 @@ const vercelFetch = async <T extends z.ZodTypeAny>(
     headers: {
       Authorization: `Bearer ${config.token}`,
       "Content-Type": "application/json",
-      ...(init.headers ?? {}),
+      ...init.headers,
     },
   });
 
@@ -105,8 +105,8 @@ export const addProjectDomain = async (
     `/v10/projects/${config.projectId}/domains`,
     VercelProjectDomainSchema,
     {
-      method: "POST",
       body: JSON.stringify(body),
+      method: "POST",
     }
   );
 };
@@ -152,8 +152,8 @@ export const removeProjectDomain = async (
     `/v9/projects/${config.projectId}/domains/${hostname}`,
     z.object({}),
     {
-      method: "DELETE",
       body: body ? JSON.stringify(body) : undefined,
+      method: "DELETE",
     }
   );
 };

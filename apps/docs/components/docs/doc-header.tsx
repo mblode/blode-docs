@@ -1,7 +1,9 @@
-import type { DocsConfig } from "@repo/models";
+import type { SiteConfig } from "@repo/models";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, type SearchItem } from "@/components/ui/search";
+
+import { Search } from "@/components/ui/search";
+import type { SearchItem } from "@/components/ui/search";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { toDocHref } from "@/lib/routes";
 
@@ -10,7 +12,7 @@ const Dropdown = ({
   items,
 }: {
   label: string;
-  items: Array<{ label: string; url: string }>;
+  items: { label: string; url: string }[];
 }) => {
   if (!items.length) {
     return null;
@@ -29,20 +31,25 @@ const Dropdown = ({
   );
 };
 
+// oxlint-disable-next-line eslint/complexity
 export const DocHeader = ({
   config,
   searchItems,
   basePath,
+  label,
 }: {
-  config: DocsConfig;
+  config: SiteConfig;
   searchItems: SearchItem[];
   basePath: string;
+  label?: string;
 }) => {
-  const globalLinks = config.navigation.global?.links ?? [];
-  const versions = config.navigation.versions ?? [];
-  const languages = config.navigation.languages ?? [];
+  const globalLinks = config.navigation?.global?.links ?? [];
+  const versions = config.navigation?.versions ?? [];
+  const languages = config.navigation?.languages ?? [];
   const [primaryVersion] = versions;
   const [primaryLanguage] = languages;
+  const searchDisabled = config.features?.search === false;
+  const themeToggleDisabled = config.features?.themeToggle === false;
 
   return (
     <header className="doc-header">
@@ -53,7 +60,9 @@ export const DocHeader = ({
               alt={config.logo.alt ?? config.name}
               className="doc-brand__logo doc-brand__logo--light"
               height={32}
+              loading="eager"
               src={config.logo.light}
+              unoptimized
               width={140}
             />
           ) : null}
@@ -62,7 +71,9 @@ export const DocHeader = ({
               alt={config.logo.alt ?? config.name}
               className="doc-brand__logo doc-brand__logo--dark"
               height={32}
+              loading="eager"
               src={config.logo.dark}
+              unoptimized
               width={140}
             />
           ) : null}
@@ -70,7 +81,7 @@ export const DocHeader = ({
             <span className="doc-brand__text">{config.name}</span>
           )}
         </Link>
-        <span className="doc-header__tagline">Docs</span>
+        <span className="doc-header__tagline">{label ?? "Docs"}</span>
       </div>
       <nav className="doc-header__nav">
         {globalLinks.map((link) => (
@@ -85,16 +96,16 @@ export const DocHeader = ({
         ))}
       </nav>
       <div className="doc-header__actions">
-        {config.features?.search !== false ? (
+        {searchDisabled ? null : (
           <Search basePath={basePath} items={searchItems} />
-        ) : null}
+        )}
         {primaryVersion ? (
           <Dropdown items={versions} label={primaryVersion.label} />
         ) : null}
         {primaryLanguage ? (
           <Dropdown items={languages} label={primaryLanguage.label} />
         ) : null}
-        {config.features?.themeToggle !== false ? <ThemeToggle /> : null}
+        {themeToggleDisabled ? null : <ThemeToggle />}
       </div>
     </header>
   );

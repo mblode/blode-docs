@@ -1,14 +1,13 @@
-import path from "node:path";
 import { ensureArray, normalizePath } from "@repo/common";
-import type { DocsConfig, DocsOpenApiSource } from "@repo/models";
+import type { CollectionConfig, DocsOpenApiSource } from "@repo/models";
 import {
   extractOpenApiOperations,
-  loadOpenApiSpec,
-  type OpenApiOperation,
-  type OpenApiSpec,
   openApiIdentifier,
   openApiSlug,
+  parseOpenApiSpec,
 } from "@repo/prebuild";
+import type { OpenApiOperation, OpenApiSpec } from "@repo/prebuild";
+import type { ContentSource } from "@repo/previewing";
 
 export interface OpenApiEntry {
   slug: string;
@@ -35,17 +34,17 @@ const toSourceObject = (
   return value;
 };
 
-export const collectOpenApiSources = (config: DocsConfig) => {
+export const collectOpenApiSources = (collection?: CollectionConfig) => {
   const sources: DocsOpenApiSource[] = [];
 
-  for (const item of ensureArray(config.openapi)) {
+  for (const item of ensureArray(collection?.openapi)) {
     if (!item) {
       continue;
     }
     sources.push(toSourceObject(item));
   }
 
-  const groups = config.navigation.groups ?? [];
+  const groups = collection?.navigation?.groups ?? [];
   for (const group of groups) {
     if (!group.openapi) {
       continue;
@@ -65,31 +64,46 @@ export const collectOpenApiSources = (config: DocsConfig) => {
 };
 
 export const buildOpenApiRegistry = async (
-  config: DocsConfig,
-  projectRoot: string
+  collection: CollectionConfig | undefined,
+  contentSource: ContentSource
 ): Promise<OpenApiRegistry> => {
+  if (!collection || collection.type !== "docs") {
+    return {
+      byIdentifier: new Map<string, OpenApiEntry>(),
+      bySlug: new Map<string, OpenApiEntry>(),
+      bySource: new Map<string, OpenApiEntry[]>(),
+      entries: [],
+    };
+  }
+
   const entries: OpenApiEntry[] = [];
   const bySlug = new Map<string, OpenApiEntry>();
   const byIdentifier = new Map<string, OpenApiEntry>();
   const bySource = new Map<string, OpenApiEntry[]>();
+  const slugPrefix = normalizePath(collection.slugPrefix ?? "");
 
-  for (const source of collectOpenApiSources(config)) {
-    const absolutePath = path.join(projectRoot, source.source);
-    const spec = await loadOpenApiSpec(absolutePath);
+  for (const source of collectOpenApiSources(collection)) {
+    const rawSpec = await contentSource.readFile(source.source);
+    const spec = parseOpenApiSpec(rawSpec, source.source);
     const directory = source.directory ?? "api";
     const { operations } = extractOpenApiOperations(spec, directory);
     const sourceKey = `${source.source}::${source.directory ?? ""}`;
 
     for (const operation of operations) {
-      const slug = openApiSlug(operation.method, operation.path, directory);
+      const baseSlug = normalizePath(
+        openApiSlug(operation.method, operation.path, directory)
+      );
+      const slug = slugPrefix
+        ? normalizePath(`${slugPrefix}/${baseSlug}`)
+        : baseSlug;
       const identifier = openApiIdentifier(operation.method, operation.path);
       const entry: OpenApiEntry = {
-        slug: normalizePath(slug),
         identifier,
         operation,
-        spec,
+        slug: normalizePath(slug),
         source,
         sourceKey,
+        spec,
       };
       entries.push(entry);
       bySlug.set(entry.slug, entry);
@@ -101,5 +115,5 @@ export const buildOpenApiRegistry = async (
     }
   }
 
-  return { entries, bySlug, byIdentifier, bySource };
+  return { byIdentifier, bySlug, bySource, entries };
 };

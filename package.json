@@ -1,15 +1,21 @@
 {
   "name": "neue-docs",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "prepare": "husky",
-    "lint": "ultracite check",
-    "lint:fix": "ultracite fix",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "check-types": "turbo run check-types",
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "prepare": "lefthook install",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "turbo format",
+    "format:check": "turbo format:check",
+    "check-types": "turbo check-types",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
     "test": "npm run test:unit && npm run test:component && npm run test:integration && npm run test:smoke && npm run test:e2e",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:component": "vitest run --config vitest.component.config.ts",
@@ -18,13 +24,13 @@
     "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.10",
     "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
-    "husky": "^9.1.7",
+    "drizzle-kit": "^1.0.0-beta.19",
+    "drizzle-orm": "^1.0.0-beta.19",
     "jsdom": "^26.1.0",
-    "lint-staged": "^16.2.7",
+    "lefthook": "^2.1.4",
     "turbo": "^2.7.2",
     "typescript": "5.9.2",
     "ultracite": "^7.0.5",
@@ -33,14 +39,5 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "npm@10.9.3",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "npx ultracite fix"
-    ]
-  }
+  "packageManager": "npm@10.9.3"
 }

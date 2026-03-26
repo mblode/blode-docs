@@ -14,9 +14,8 @@ export const PageInfoSchema = z.object({
 });
 export type PageInfo = z.infer<typeof PageInfoSchema>;
 
-export const createListResponseSchema = <T extends z.ZodTypeAny>(item: T) => {
-  return z.object({
+export const createListResponseSchema = <T extends z.ZodTypeAny>(item: T) =>
+  z.object({
     data: z.array(item),
     pageInfo: PageInfoSchema.optional(),
   });
-};

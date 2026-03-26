@@ -5,7 +5,8 @@ title: Multi-tenant preview URLs
 Multi-tenant preview URLs let you test tenant-specific experiences in preview deployments without adding new domains.
 
 <Callout type="info">
-This feature requires a custom preview deployment suffix. It does not work with the default `.vercel.app` suffix.
+  This feature requires a custom preview deployment suffix. It does not work
+  with the default `.vercel.app` suffix.
 </Callout>
 
 ## The problem
@@ -28,11 +29,11 @@ Vercel routes the request to `{preview-url}` and your code receives the full hos
 
 **Examples**
 
-| URL                                      | Routes to                       | Host header received                          |
-| ---------------------------------------- | ------------------------------- | --------------------------------------------- |
-| `acme---preview-xyz.vercel.dev`          | `preview-xyz.vercel.dev`        | `acme---preview-xyz.vercel.dev`               |
-| `globex---my-app-git-feature.vercel.dev` | `my-app-git-feature.vercel.dev` | `globex---my-app-git-feature.vercel.dev`      |
-| `tenant-123---my-app-abc123.vercel.dev`  | `my-app-abc123.vercel.dev`      | `tenant-123---my-app-abc123.vercel.dev`       |
+| URL                                      | Routes to                       | Host header received                     |
+| ---------------------------------------- | ------------------------------- | ---------------------------------------- |
+| `acme---preview-xyz.vercel.dev`          | `preview-xyz.vercel.dev`        | `acme---preview-xyz.vercel.dev`          |
+| `globex---my-app-git-feature.vercel.dev` | `my-app-git-feature.vercel.dev` | `globex---my-app-git-feature.vercel.dev` |
+| `tenant-123---my-app-abc123.vercel.dev`  | `my-app-abc123.vercel.dev`      | `tenant-123---my-app-abc123.vercel.dev`  |
 
 ## How it works
 

@@ -1,62 +1,40 @@
 import type {
-  ActivityStatus,
-  DeploymentStatus,
-  DomainStatus,
-} from "@prisma/client";
-import type {
-  ActivityStatus as ContractActivityStatus,
   DeploymentStatus as ContractDeploymentStatus,
   DomainStatus as ContractDomainStatus,
 } from "@repo/contracts";
 
+import type { DeploymentStatus, DomainStatus } from "../schema";
+
 const domainStatusToContract: Record<DomainStatus, ContractDomainStatus> = {
-  ValidConfiguration: "Valid Configuration",
-  PendingVerification: "Pending Verification",
-  InvalidConfiguration: "Invalid Configuration",
+  invalid_configuration: "Invalid Configuration",
+  pending_verification: "Pending Verification",
+  valid_configuration: "Valid Configuration",
 };
 
 const domainStatusFromContract: Record<ContractDomainStatus, DomainStatus> = {
-  "Valid Configuration": "ValidConfiguration",
-  "Pending Verification": "PendingVerification",
-  "Invalid Configuration": "InvalidConfiguration",
+  "Invalid Configuration": "invalid_configuration",
+  "Pending Verification": "pending_verification",
+  "Valid Configuration": "valid_configuration",
 };
 
 const deploymentStatusToContract: Record<
   DeploymentStatus,
   ContractDeploymentStatus
 > = {
-  Queued: "Queued",
-  Building: "Building",
-  Successful: "Successful",
-  Failed: "Failed",
+  building: "Building",
+  failed: "Failed",
+  queued: "Queued",
+  successful: "Successful",
 };
 
 const deploymentStatusFromContract: Record<
   ContractDeploymentStatus,
   DeploymentStatus
 > = {
-  Queued: "Queued",
-  Building: "Building",
-  Successful: "Successful",
-  Failed: "Failed",
-};
-
-const activityStatusToContract: Record<ActivityStatus, ContractActivityStatus> =
-  {
-    Queued: "Queued",
-    Building: "Building",
-    Successful: "Successful",
-    Failed: "Failed",
-  };
-
-const activityStatusFromContract: Record<
-  ContractActivityStatus,
-  ActivityStatus
-> = {
-  Queued: "Queued",
-  Building: "Building",
-  Successful: "Successful",
-  Failed: "Failed",
+  Building: "building",
+  Failed: "failed",
+  Queued: "queued",
+  Successful: "successful",
 };
 
 export const mapDomainStatusToContract = (
@@ -74,11 +52,3 @@ export const mapDeploymentStatusToContract = (
 export const mapDeploymentStatusFromContract = (
   status: ContractDeploymentStatus
 ): DeploymentStatus => deploymentStatusFromContract[status];
-
-export const mapActivityStatusToContract = (
-  status: ActivityStatus
-): ContractActivityStatus => activityStatusToContract[status];
-
-export const mapActivityStatusFromContract = (
-  status: ContractActivityStatus
-): ActivityStatus => activityStatusFromContract[status];

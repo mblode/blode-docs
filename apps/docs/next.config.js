@@ -1,15 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   assetPrefix: process.env.PLATFORM_ASSET_PREFIX || "",
-  async rewrites() {
+  images: {
+    remotePatterns: [
+      {
+        hostname: "**.public.blob.vercel-storage.com",
+        protocol: "https",
+      },
+    ],
+  },
+  rewrites() {
     const assetPrefix = process.env.PLATFORM_ASSET_PREFIX || "";
     if (!assetPrefix) {
       return [];
     }
     return [
       {
-        source: `${assetPrefix}/_next/:path*`,
         destination: "/_next/:path*",
+        source: `${assetPrefix}/_next/:path*`,
       },
     ];
   },

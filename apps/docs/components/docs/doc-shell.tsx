@@ -1,6 +1,7 @@
-import type { DocsConfig } from "@repo/models";
+import type { SiteConfig } from "@repo/models";
 import Script from "next/script";
 import type { ReactNode } from "react";
+
 import { DocHeader } from "@/components/docs/doc-header";
 import { DocSidebar } from "@/components/docs/doc-sidebar";
 import { DocToc } from "@/components/docs/doc-toc";
@@ -21,19 +22,29 @@ export const DocShell = ({
   searchItems,
   anchors,
   basePath,
+  headerLabel,
 }: {
-  config: DocsConfig;
+  config: SiteConfig;
   nav: NavEntry[];
   toc: TocItem[];
   content: ReactNode;
   currentPath: string;
-  breadcrumbs: Array<{ label: string; path: string }>;
+  breadcrumbs: { label: string; path: string }[];
   pageTitle: string;
   pageDescription?: string;
-  searchItems: Array<{ title: string; path: string }>;
-  anchors?: Array<{ label: string; href: string }>;
+  searchItems: { title: string; path: string }[];
+  anchors?: { label: string; href: string }[];
   basePath: string;
+  headerLabel?: string;
 }) => {
+  const hasSidebar = Boolean((nav?.length ?? 0) || (anchors?.length ?? 0));
+  const hasToc =
+    config.features?.rightToc !== false &&
+    config.features?.toc !== false &&
+    toc.length > 0;
+  const layoutClass =
+    hasSidebar || hasToc ? "docs-layout" : "docs-layout docs-layout--single";
+
   return (
     <div
       className={`docs-root theme-${config.theme ?? "mint"}`}
@@ -46,15 +57,18 @@ export const DocShell = ({
       <DocHeader
         basePath={basePath}
         config={config}
+        label={headerLabel}
         searchItems={searchItems}
       />
-      <div className="docs-layout">
-        <DocSidebar
-          anchors={anchors}
-          basePath={basePath}
-          currentPath={currentPath}
-          entries={nav}
-        />
+      <div className={layoutClass}>
+        {hasSidebar ? (
+          <DocSidebar
+            anchors={anchors}
+            basePath={basePath}
+            currentPath={currentPath}
+            entries={nav}
+          />
+        ) : null}
         <main className="doc-main">
           <div className="doc-content">
             {breadcrumbs.length ? (
@@ -82,10 +96,7 @@ export const DocShell = ({
             <div className="doc-body">{content}</div>
           </div>
         </main>
-        {config.features?.rightToc === false ||
-        config.features?.toc === false ? null : (
-          <DocToc toc={toc} />
-        )}
+        {hasToc ? <DocToc toc={toc} /> : null}
       </div>
       {config.scripts?.body?.map((script) => (
         <Script key={script} src={script} strategy="afterInteractive" />

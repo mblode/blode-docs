@@ -1,8 +1,10 @@
-import { loadDocsConfig } from "@repo/previewing";
+import { loadSiteConfig } from "@repo/previewing";
 import { NextResponse } from "next/server";
+
+import { getTenantContentSource } from "@/lib/content-source";
 import { getDefaultTenant, getTenantBySlug } from "@/lib/tenants";
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   const payload = (await request.json()) as {
     url: string;
     method: string;
@@ -22,12 +24,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown tenant" }, { status: 400 });
   }
 
-  const configResult = await loadDocsConfig(tenant.docsPath);
+  const configResult = await loadSiteConfig(getTenantContentSource(tenant));
   if (!configResult.ok) {
-    return NextResponse.json({ error: "Invalid docs config" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid site config" }, { status: 400 });
   }
 
-  const config = configResult.config;
+  const { config } = configResult;
   if (!config.openapiProxy?.enabled) {
     return NextResponse.json({ error: "Proxy disabled" }, { status: 403 });
   }
@@ -43,16 +45,16 @@ export async function POST(request: Request) {
 
   const method = payload.method.toUpperCase();
   const response = await fetch(payload.url, {
-    method,
-    headers: payload.headers,
     body: method === "GET" ? undefined : payload.body,
+    headers: payload.headers,
+    method,
   });
 
   const text = await response.text();
   return new NextResponse(text, {
-    status: response.status,
     headers: {
       "content-type": response.headers.get("content-type") ?? "text/plain",
     },
+    status: response.status,
   });
-}
+};

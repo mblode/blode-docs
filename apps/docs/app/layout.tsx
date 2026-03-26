@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+
 import "./globals.css";
 
 const bodyFont = Space_Grotesk({
@@ -18,8 +19,8 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Atlas Docs Runtime",
   description: "Tenant-aware documentation rendering service",
+  title: "Atlas Docs Runtime",
 };
 
 export default function RootLayout({

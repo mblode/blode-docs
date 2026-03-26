@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { isReservedPath, resolveTenant } from "./lib/tenancy";
 
 export const config = {
@@ -51,7 +52,7 @@ export async function middleware(request: NextRequest) {
       const customBasePath = resolution.tenant.pathPrefix ?? "";
       const normalizedPath = stripBasePath(pathname, resolution.basePath);
       redirectUrl.hostname = targetHost;
-      redirectUrl.pathname = `${customBasePath}${normalizedPath}`.replace(
+      redirectUrl.pathname = `${customBasePath}${normalizedPath}`.replaceAll(
         /\/+/g,
         "/"
       );

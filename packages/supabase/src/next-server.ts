@@ -1,5 +1,7 @@
-import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
+import type { CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+
 import type { Database } from "./database";
 import { getPublicSupabaseEnv } from "./env";
 
@@ -12,11 +14,11 @@ export const createNextServerSupabaseClient = async () => {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set(name: string, value: string, options: CookieOptions) {
-        cookieStore.set({ name, value, ...options });
-      },
       remove(name: string, options: CookieOptions) {
         cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        cookieStore.set({ name, value, ...options });
       },
     },
   });

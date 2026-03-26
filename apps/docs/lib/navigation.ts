@@ -1,5 +1,6 @@
 import { normalizePath } from "@repo/common";
-import type { DocsConfig } from "@repo/models";
+import type { DocsNavigation } from "@repo/models";
+
 import type { OpenApiRegistry } from "./openapi";
 
 export interface NavPage {
@@ -20,40 +21,50 @@ export interface NavGroup {
 export type NavEntry = NavGroup | NavPage;
 
 const titleFromSlug = (slug: string) => {
-  const clean = slug.replace(/-/g, " ").split("/").pop() ?? slug;
+  const clean = slug.replaceAll("-", " ").split("/").pop() ?? slug;
   if (clean === "index") {
     return "Overview";
   }
-  return clean.replace(/\b\w/g, (char) => char.toUpperCase());
+  return clean.replaceAll(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const createPageItem = (page: string, registry: OpenApiRegistry): NavPage => {
+const createPageItem = (
+  page: string,
+  registry: OpenApiRegistry,
+  slugPrefix: string
+): NavPage => {
   const entry = registry.byIdentifier.get(page);
   if (entry) {
     return {
-      type: "page",
-      title: entry.operation.summary ?? entry.identifier,
+      identifier: entry.identifier,
       path: entry.slug,
       source: "openapi",
-      identifier: entry.identifier,
+      title: entry.operation.summary ?? entry.identifier,
+      type: "page",
     };
   }
 
+  const normalized = normalizePath(page);
+  const path = slugPrefix
+    ? normalizePath(`${slugPrefix}/${normalized}`)
+    : normalized;
+
   return {
-    type: "page",
-    title: titleFromSlug(page),
-    path: normalizePath(page),
+    path,
     source: "mdx",
+    title: titleFromSlug(page),
+    type: "page",
   };
 };
 
 export const buildNavigation = (
-  config: DocsConfig,
-  registry: OpenApiRegistry
+  navigation: DocsNavigation | undefined,
+  registry: OpenApiRegistry,
+  slugPrefix = ""
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor by extracting group and page processing into separate functions
 ) => {
   const entries: NavEntry[] = [];
-  const groups = config.navigation.groups ?? [];
+  const groups = navigation?.groups ?? [];
 
   for (const group of groups) {
     const title = group.group ?? "Untitled";
@@ -61,7 +72,7 @@ export const buildNavigation = (
 
     if (group.pages?.length) {
       for (const page of group.pages) {
-        items.push(createPageItem(page, registry));
+        items.push(createPageItem(page, registry, slugPrefix));
       }
     } else if (group.openapi) {
       const sourceKey =
@@ -71,23 +82,23 @@ export const buildNavigation = (
       const sourceEntries = registry.bySource.get(sourceKey) ?? [];
       for (const entry of sourceEntries) {
         items.push({
-          type: "page",
-          title: entry.operation.summary ?? entry.identifier,
+          identifier: entry.identifier,
           path: entry.slug,
           source: "openapi",
-          identifier: entry.identifier,
+          title: entry.operation.summary ?? entry.identifier,
+          type: "page",
         });
       }
     }
 
     if (items.length) {
-      entries.push({ type: "group", title, items, expanded: group.expanded });
+      entries.push({ expanded: group.expanded, items, title, type: "group" });
     }
   }
 
-  const topPages = config.navigation.pages ?? [];
+  const topPages = navigation?.pages ?? [];
   for (const page of topPages) {
-    entries.push(createPageItem(page, registry));
+    entries.push(createPageItem(page, registry, slugPrefix));
   }
 
   return entries;
@@ -121,5 +132,5 @@ export const findBreadcrumbs = (entries: NavEntry[], path: string) => {
       }
     }
   }
-  return [] as Array<{ label: string; path: string }>;
+  return [] as { label: string; path: string }[];
 };

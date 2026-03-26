@@ -1,71 +1,66 @@
-import { randomUUID } from "node:crypto";
+// oxlint-disable oxc/no-async-endpoint-handlers, eslint/complexity
+import { Buffer } from "node:buffer";
+
 import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
-import { slugify } from "@repo/common";
 import type {
   DomainVerification,
   Tenant,
   TenantResolution,
 } from "@repo/contracts";
 import {
-  ActivitySchema,
   ApiKeyCreateSchema,
+  ApiKeyCreateResponseSchema,
   ApiKeySchema,
-  BootstrapRequestSchema,
-  BootstrapResponseSchema,
   DeploymentSchema,
   DomainCreateResponseSchema,
   DomainCreateSchema,
   DomainSchema,
   DomainVerificationSchema,
-  GitSettingsSchema,
-  GitSettingsUpdateSchema,
-  InviteMemberSchema,
-  MemberSchema,
+  PublishDeploymentCreateSchema,
+  PublishDeploymentFileResponseSchema,
+  PublishDeploymentFileSchema,
+  PublishDeploymentFinalizeSchema,
   ProjectSchema,
   ProjectUpdateSchema,
   TenantResolutionSchema,
   TenantSchema,
-  WorkspaceCreateSchema,
-  WorkspaceSchema,
 } from "@repo/contracts";
 import {
-  ActivityDao,
   ApiKeyDao,
   DeploymentDao,
   DomainDao,
-  GitConnectionDao,
   mapDomainStatusFromContract,
-  ProfileDao,
   ProjectDao,
-  WorkspaceDao,
-  WorkspaceMemberDao,
 } from "@repo/db";
 import Fastify from "fastify";
 import {
   serializerCompiler,
   validatorCompiler,
-  type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+
+import { authenticateApiKey, createApiKeyToken } from "./lib/api-key-auth.js";
+import {
+  finalizeDeploymentManifest,
+  uploadDeploymentFile,
+} from "./lib/publish.js";
+import { revalidateProject } from "./lib/revalidate.js";
 import {
   addProjectDomain,
   deleteDomain,
   getProjectDomain,
   isVercelEnabled,
   removeProjectDomain,
-  type VercelProjectDomain,
   verifyProjectDomain,
 } from "./lib/vercel.js";
+import type { VercelProjectDomain } from "./lib/vercel.js";
 import {
-  mapActivity,
   mapApiKey,
   mapDeployment,
   mapDomain,
-  mapGitSettings,
   mapProject,
-  mapWorkspace,
-  mapWorkspaceMember,
 } from "./mappers/records.js";
 
 // Regex patterns for string normalization
@@ -79,24 +74,19 @@ export const app = Fastify({
   logger: true,
 }).withTypeProvider<ZodTypeProvider>();
 
-app.register(cors, { origin: true, credentials: true });
+app.register(cors, { credentials: true, origin: true });
 app.register(sensible);
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
-const workspaceDao = new WorkspaceDao();
 const projectDao = new ProjectDao();
 const domainDao = new DomainDao();
 const deploymentDao = new DeploymentDao();
-const gitConnectionDao = new GitConnectionDao();
-const activityDao = new ActivityDao();
 const apiKeyDao = new ApiKeyDao();
-const workspaceMemberDao = new WorkspaceMemberDao();
-const profileDao = new ProfileDao();
 
 const domainCreateBodySchema = DomainCreateSchema.omit({ projectId: true });
-const apiKeyCreateBodySchema = ApiKeyCreateSchema.omit({ workspaceId: true });
-const rootDomain = process.env.PLATFORM_ROOT_DOMAIN ?? "neue.com";
+const apiKeyCreateBodySchema = ApiKeyCreateSchema.omit({ projectId: true });
+const rootDomain = process.env.PLATFORM_ROOT_DOMAIN ?? "blode.md";
 const autoWwwRedirect = process.env.VERCEL_AUTO_WWW_REDIRECT === "true";
 const preferCustomDomain = process.env.PREFER_CUSTOM_DOMAIN === "true";
 
@@ -121,10 +111,11 @@ type VerificationRecord = NonNullable<
 
 const mapVerification = (domain: VercelProjectDomain | null) => {
   if (!domain) {
-    return undefined;
+    return;
   }
   const records =
     domain.verification?.map((record: VerificationRecord) => ({
+      name: record.domain,
       type: (domainRecordTypes.has(record.type) ? record.type : "TXT") as
         | "A"
         | "AAAA"
@@ -133,13 +124,12 @@ const mapVerification = (domain: VercelProjectDomain | null) => {
         | "MX"
         | "NS"
         | "CAA",
-      name: record.domain,
       value: record.value,
     })) ?? [];
 
   return {
-    verified: Boolean(domain.verified),
     records,
+    verified: Boolean(domain.verified),
   };
 };
 
@@ -164,6 +154,13 @@ const normalizePathPrefix = (value?: string | null) => {
   return withSlash.replace(TRAILING_SLASHES_REGEX, "");
 };
 
+const slugifyPath = (value: string) => {
+  const trimmed = value
+    .replace(BACKSLASH_TO_SLASH_REGEX, "/")
+    .replace(TRAILING_SLASHES_REGEX, "");
+  return trimmed.replace(LEADING_SLASHES_REGEX, "");
+};
+
 const stripPrefix = (pathname: string, prefix: string | null) => {
   if (!prefix) {
     return slugifyPath(pathname);
@@ -182,19 +179,16 @@ const stripPrefix = (pathname: string, prefix: string | null) => {
   return normalizedPath;
 };
 
-const slugifyPath = (value: string) => {
-  const trimmed = value
-    .replace(BACKSLASH_TO_SLASH_REGEX, "/")
-    .replace(TRAILING_SLASHES_REGEX, "");
-  return trimmed.replace(LEADING_SLASHES_REGEX, "");
-};
+const isPresent = <T>(value: T | null): value is T => value !== null;
 
 const buildTenant = async (projectId: string): Promise<Tenant | null> => {
   const project = await projectDao.getById(projectId);
   if (!project) {
     return null;
   }
+
   const domains = await domainDao.listByProject(projectId);
+  const deployment = await deploymentDao.getLatestPromotedByProject(projectId);
   const customDomains = domains.map((domain) => domain.hostname);
   const preferredCustomDomain =
     domains.find(
@@ -208,16 +202,18 @@ const buildTenant = async (projectId: string): Promise<Tenant | null> => {
       ? preferredCustomDomain.hostname
       : `${project.slug}.${rootDomain}`;
   return {
-    id: project.id,
-    slug: project.slug,
-    name: project.name,
-    description: project.description ?? undefined,
-    primaryDomain,
-    subdomain: project.slug,
+    activeDeploymentId: deployment?.manifestUrl ? deployment.id : undefined,
+    activeDeploymentManifestUrl: deployment?.manifestUrl ?? undefined,
     customDomains,
+    description: project.description ?? undefined,
+    id: project.id,
+    name: project.name,
     pathPrefix:
       domains.find((domain) => domain.pathPrefix)?.pathPrefix ?? undefined,
+    primaryDomain,
+    slug: project.slug,
     status: "active",
+    subdomain: project.slug,
   };
 };
 
@@ -228,11 +224,11 @@ const buildTenantResolution = (
   basePath: string,
   rewrittenPath: string
 ): TenantResolution => ({
-  tenant,
-  strategy,
-  host,
   basePath,
+  host,
   rewrittenPath,
+  strategy,
+  tenant,
 });
 
 app.get(
@@ -247,7 +243,7 @@ app.get(
       },
     },
   },
-  async () => ({
+  () => ({
     ok: true as const,
     timestamp: new Date().toISOString(),
   })
@@ -267,9 +263,7 @@ app.get(
     const tenants = await Promise.all(
       projects.map((project) => buildTenant(project.id))
     );
-    return tenants.filter((tenant): tenant is NonNullable<typeof tenant> =>
-      Boolean(tenant)
-    );
+    return tenants.filter(isPresent);
   }
 );
 
@@ -309,6 +303,7 @@ app.get(
       },
     },
   },
+  // oxlint-disable-next-line eslint/complexity
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor this handler by extracting resolution strategies into separate functions
   async (request, reply) => {
     const host = normalizeHost(request.query.host);
@@ -412,7 +407,8 @@ app.get(
 
     if (host === rootDomain || localSuffixes.includes(host)) {
       const normalized = slugifyPath(pathname);
-      const [projectSlug, ...rest] = normalized.split("/").filter(Boolean);
+      const parts = normalized ? normalized.split("/") : [];
+      const [projectSlug, ...rest] = parts;
       if (projectSlug) {
         const project = await projectDao.getBySlugUnique(projectSlug);
         if (project) {
@@ -439,140 +435,6 @@ app.get(
   }
 );
 
-app.post(
-  "/bootstrap",
-  {
-    schema: {
-      body: BootstrapRequestSchema,
-      response: {
-        200: BootstrapResponseSchema,
-      },
-    },
-  },
-  async (request) => {
-    const { userId, email, fullName, avatarUrl } = request.body;
-    await profileDao.upsert({
-      id: userId,
-      email,
-      fullName: fullName ?? null,
-      avatarUrl: avatarUrl ?? null,
-    });
-
-    const localPart = email.split("@")[0] ?? "workspace";
-    const workspaceSlug = slugify(localPart) || "workspace";
-    let workspace = await workspaceDao.getBySlug(workspaceSlug);
-    if (!workspace) {
-      workspace = await workspaceDao.create({
-        slug: workspaceSlug,
-        name: localPart,
-      });
-    }
-
-    const existingMember = await workspaceMemberDao.getByWorkspaceEmail(
-      workspace.id,
-      email
-    );
-    if (!existingMember) {
-      await workspaceMemberDao.create({
-        workspaceId: workspace.id,
-        email,
-        role: "Owner",
-        status: "Active",
-        joinedAt: new Date(),
-      });
-    }
-
-    const projects = await projectDao.listByWorkspace(workspace.id);
-    let project = projects[0];
-    if (!project) {
-      project = await projectDao.create({
-        workspaceId: workspace.id,
-        slug: "docs",
-        name: "Docs",
-        deploymentName: "docs",
-        description: "Documentation site.",
-      });
-    }
-
-    return {
-      workspace: mapWorkspace(workspace),
-      project: mapProject(project),
-    };
-  }
-);
-
-app.get(
-  "/workspaces",
-  {
-    schema: {
-      response: {
-        200: z.array(WorkspaceSchema),
-      },
-    },
-  },
-  async () => {
-    const records = await workspaceDao.list();
-    return records.map(mapWorkspace);
-  }
-);
-
-app.post(
-  "/workspaces",
-  {
-    schema: {
-      body: WorkspaceCreateSchema,
-      response: {
-        201: WorkspaceSchema,
-      },
-    },
-  },
-  async (request, reply) => {
-    const slug = request.body.slug ?? slugify(request.body.name);
-    const record = await workspaceDao.create({
-      name: request.body.name,
-      slug,
-    });
-    return reply.code(201).send(mapWorkspace(record));
-  }
-);
-
-app.get(
-  "/workspaces/slug/:slug",
-  {
-    schema: {
-      params: z.object({ slug: z.string().min(1) }),
-      response: {
-        200: WorkspaceSchema,
-      },
-    },
-  },
-  async (request, reply) => {
-    const record = await workspaceDao.getBySlug(request.params.slug);
-    if (!record) {
-      return reply.notFound();
-    }
-    return mapWorkspace(record);
-  }
-);
-
-app.get(
-  "/workspaces/:workspaceId/projects",
-  {
-    schema: {
-      params: z.object({ workspaceId: z.string().uuid() }),
-      response: {
-        200: z.array(ProjectSchema),
-      },
-    },
-  },
-  async (request) => {
-    const records = await projectDao.listByWorkspace(
-      request.params.workspaceId
-    );
-    return records.map(mapProject);
-  }
-);
-
 app.get(
   "/projects/:projectId",
   {
@@ -596,8 +458,8 @@ app.patch(
   "/projects/:projectId",
   {
     schema: {
-      params: z.object({ projectId: z.string().uuid() }),
       body: ProjectUpdateSchema,
+      params: z.object({ projectId: z.string().uuid() }),
       response: {
         200: ProjectSchema,
       },
@@ -636,8 +498,8 @@ app.post(
   "/projects/:projectId/domains",
   {
     schema: {
-      params: z.object({ projectId: z.string().uuid() }),
       body: domainCreateBodySchema,
+      params: z.object({ projectId: z.string().uuid() }),
       response: {
         201: DomainCreateResponseSchema,
       },
@@ -692,9 +554,9 @@ app.post(
     }
 
     const record = await domainDao.create({
-      projectId: request.params.projectId,
       hostname,
       pathPrefix,
+      projectId: request.params.projectId,
       status,
       verifiedAt,
     });
@@ -708,8 +570,8 @@ app.get(
   {
     schema: {
       params: z.object({
-        projectId: z.string().uuid(),
         domainId: z.string().uuid(),
+        projectId: z.string().uuid(),
       }),
       response: {
         200: DomainVerificationSchema,
@@ -724,17 +586,17 @@ app.get(
 
     if (!isVercelEnabled()) {
       return {
+        records: [],
         verified:
           domain.status === mapDomainStatusFromContract("Valid Configuration"),
-        records: [],
       };
     }
 
     try {
       const domainResponse = await getProjectDomain(domain.hostname);
       const verification = mapVerification(domainResponse) ?? {
-        verified: Boolean(domainResponse.verified),
         records: [],
+        verified: Boolean(domainResponse.verified),
       };
       if (verification.verified && !domain.verifiedAt) {
         await domainDao.update(domain.id, {
@@ -755,8 +617,8 @@ app.post(
   {
     schema: {
       params: z.object({
-        projectId: z.string().uuid(),
         domainId: z.string().uuid(),
+        projectId: z.string().uuid(),
       }),
       response: {
         200: DomainVerificationSchema,
@@ -771,17 +633,17 @@ app.post(
 
     if (!isVercelEnabled()) {
       return {
+        records: [],
         verified:
           domain.status === mapDomainStatusFromContract("Valid Configuration"),
-        records: [],
       };
     }
 
     try {
       const domainResponse = await verifyProjectDomain(domain.hostname);
       const verification = mapVerification(domainResponse) ?? {
-        verified: Boolean(domainResponse.verified),
         records: [],
+        verified: Boolean(domainResponse.verified),
       };
       if (verification.verified) {
         await domainDao.update(domain.id, {
@@ -802,8 +664,8 @@ app.delete(
   {
     schema: {
       params: z.object({
-        projectId: z.string().uuid(),
         domainId: z.string().uuid(),
+        projectId: z.string().uuid(),
       }),
       response: {
         204: z.null(),
@@ -849,181 +711,250 @@ app.get(
   }
 );
 
-app.get(
-  "/projects/:projectId/git",
+app.patch(
+  "/projects/:projectId/deployments/:deploymentId",
   {
     schema: {
-      params: z.object({ projectId: z.string().uuid() }),
+      params: z.object({
+        deploymentId: z.string().uuid(),
+        projectId: z.string().uuid(),
+      }),
       response: {
-        200: GitSettingsSchema,
+        200: DeploymentSchema,
       },
     },
   },
   async (request, reply) => {
-    const record = await gitConnectionDao.getByProject(
-      request.params.projectId
+    const deployment = await deploymentDao.getByProjectId(
+      request.params.projectId,
+      request.params.deploymentId
     );
-    if (!record) {
+    if (!deployment) {
       return reply.notFound();
     }
-    return mapGitSettings(record);
-  }
-);
-
-app.patch(
-  "/projects/:projectId/git",
-  {
-    schema: {
-      params: z.object({ projectId: z.string().uuid() }),
-      body: GitSettingsUpdateSchema,
-      response: {
-        200: GitSettingsSchema,
-      },
-    },
-  },
-  async (request, reply) => {
-    const existing = await gitConnectionDao.getByProject(
-      request.params.projectId
-    );
-    if (!existing) {
-      if (
-        !(
-          request.body.organization &&
-          request.body.repository &&
-          request.body.branch
-        )
-      ) {
-        return reply.badRequest(
-          "Organization, repository, and branch are required."
-        );
-      }
-      const created = await gitConnectionDao.create({
-        projectId: request.params.projectId,
-        organization: request.body.organization,
-        repository: request.body.repository,
-        branch: request.body.branch,
-        isMonorepo: request.body.isMonorepo ?? false,
-        docsPath: request.body.docsPath ?? null,
-      });
-      return mapGitSettings(created);
-    }
-
-    const record = await gitConnectionDao.update(existing.id, {
-      organization: request.body.organization ?? undefined,
-      repository: request.body.repository ?? undefined,
-      branch: request.body.branch ?? undefined,
-      isMonorepo: request.body.isMonorepo ?? undefined,
-      docsPath:
-        request.body.docsPath === undefined ? undefined : request.body.docsPath,
+    const record = await deploymentDao.update(deployment.id, {
+      promotedAt: new Date(),
+      status: "successful",
     });
-    return mapGitSettings(record);
-  }
-);
-
-app.get(
-  "/projects/:projectId/activity",
-  {
-    schema: {
-      params: z.object({ projectId: z.string().uuid() }),
-      response: {
-        200: z.array(ActivitySchema),
-      },
-    },
-  },
-  async (request) => {
-    const records = await activityDao.listByProject(request.params.projectId);
-    return records.map(mapActivity);
-  }
-);
-
-app.get(
-  "/workspaces/:workspaceId/members",
-  {
-    schema: {
-      params: z.object({ workspaceId: z.string().uuid() }),
-      response: {
-        200: z.array(MemberSchema),
-      },
-    },
-  },
-  async (request) => {
-    const records = await workspaceMemberDao.listByWorkspace(
-      request.params.workspaceId
-    );
-    return records.map(mapWorkspaceMember);
+    return mapDeployment(record);
   }
 );
 
 app.post(
-  "/workspaces/:workspaceId/members",
+  "/projects/slug/:slug/deployments",
   {
     schema: {
-      params: z.object({ workspaceId: z.string().uuid() }),
-      body: InviteMemberSchema,
+      body: PublishDeploymentCreateSchema,
+      params: z.object({ slug: z.string().min(1) }),
       response: {
-        201: MemberSchema,
+        201: DeploymentSchema,
       },
     },
   },
   async (request, reply) => {
-    const roleMap = {
-      owner: "Owner",
-      admin: "Admin",
-      member: "Member",
-    } as const;
-    const roleKey = request.body.role ?? "member";
-    const record = await workspaceMemberDao.create({
-      workspaceId: request.params.workspaceId,
-      email: request.body.email,
-      role: roleMap[roleKey],
-      status: "Invited",
+    const apiKey = await authenticateApiKey(
+      request.headers as Record<string, unknown>,
+      apiKeyDao
+    );
+    if (!apiKey) {
+      return reply.unauthorized("Invalid API key.");
+    }
+
+    const project = await projectDao.getBySlugUnique(request.params.slug);
+    if (!project || project.id !== apiKey.projectId) {
+      return reply.notFound();
+    }
+
+    if (request.body.environment === "preview") {
+      return reply.badRequest("Preview deployments are not supported.");
+    }
+
+    const record = await deploymentDao.create({
+      branch: request.body.branch ?? "main",
+      changes: request.body.changes ?? null,
+      commitMessage: request.body.commitMessage ?? null,
+      environment: "production",
+      projectId: project.id,
+      status: "building",
     });
-    return reply.code(201).send(mapWorkspaceMember(record));
+    return reply.code(201).send(mapDeployment(record));
+  }
+);
+
+app.post(
+  "/projects/slug/:slug/deployments/:deploymentId/files",
+  {
+    schema: {
+      body: PublishDeploymentFileSchema,
+      params: z.object({
+        deploymentId: z.string().uuid(),
+        slug: z.string().min(1),
+      }),
+      response: {
+        200: PublishDeploymentFileResponseSchema,
+      },
+    },
+  },
+  async (request, reply) => {
+    const apiKey = await authenticateApiKey(
+      request.headers as Record<string, unknown>,
+      apiKeyDao
+    );
+    if (!apiKey) {
+      return reply.unauthorized("Invalid API key.");
+    }
+
+    const project = await projectDao.getBySlugUnique(request.params.slug);
+    if (!project || project.id !== apiKey.projectId) {
+      return reply.notFound();
+    }
+
+    const deployment = await deploymentDao.getByProjectId(
+      project.id,
+      request.params.deploymentId
+    );
+    if (!deployment) {
+      return reply.notFound();
+    }
+
+    if (!["building", "queued"].includes(deployment.status)) {
+      return reply.badRequest("Deployment is not accepting files.");
+    }
+
+    try {
+      const content = Buffer.from(request.body.contentBase64, "base64");
+      return await uploadDeploymentFile({
+        content,
+        contentType: request.body.contentType,
+        deploymentId: deployment.id,
+        projectSlug: project.slug,
+        relativePath: request.body.path,
+      });
+    } catch (error) {
+      request.log.error({ error }, "Failed to upload deployment file");
+      return reply.badRequest(
+        error instanceof Error ? error.message : "Unable to upload file."
+      );
+    }
+  }
+);
+
+app.post(
+  "/projects/slug/:slug/deployments/:deploymentId/finalize",
+  {
+    schema: {
+      body: PublishDeploymentFinalizeSchema,
+      params: z.object({
+        deploymentId: z.string().uuid(),
+        slug: z.string().min(1),
+      }),
+      response: {
+        200: DeploymentSchema,
+      },
+    },
+  },
+  async (request, reply) => {
+    const apiKey = await authenticateApiKey(
+      request.headers as Record<string, unknown>,
+      apiKeyDao
+    );
+    if (!apiKey) {
+      return reply.unauthorized("Invalid API key.");
+    }
+
+    const project = await projectDao.getBySlugUnique(request.params.slug);
+    if (!project || project.id !== apiKey.projectId) {
+      return reply.notFound();
+    }
+
+    const deployment = await deploymentDao.getByProjectId(
+      project.id,
+      request.params.deploymentId
+    );
+    if (!deployment) {
+      return reply.notFound();
+    }
+
+    try {
+      const manifest = await finalizeDeploymentManifest({
+        deploymentId: deployment.id,
+        projectSlug: project.slug,
+      });
+      const shouldPromote = request.body.promote !== false;
+      const updated = await deploymentDao.update(deployment.id, {
+        fileCount: manifest.fileCount,
+        manifestUrl: manifest.manifestUrl,
+        promotedAt: shouldPromote ? new Date() : null,
+        status: "successful",
+      });
+
+      if (shouldPromote) {
+        try {
+          await revalidateProject(project.slug);
+        } catch (error) {
+          request.log.warn({ error }, "Failed to revalidate docs project");
+        }
+      }
+
+      return mapDeployment(updated);
+    } catch (error) {
+      await deploymentDao.update(deployment.id, { status: "failed" });
+      request.log.error({ error }, "Failed to finalize deployment");
+      return reply.badRequest(
+        error instanceof Error
+          ? error.message
+          : "Unable to finalize deployment."
+      );
+    }
   }
 );
 
 app.get(
-  "/workspaces/:workspaceId/api-keys",
+  "/projects/:projectId/api-keys",
   {
     schema: {
-      params: z.object({ workspaceId: z.string().uuid() }),
+      params: z.object({ projectId: z.string().uuid() }),
       response: {
         200: z.array(ApiKeySchema),
       },
     },
   },
   async (request) => {
-    const records = await apiKeyDao.listByWorkspace(request.params.workspaceId);
+    const records = await apiKeyDao.listByProject(request.params.projectId);
     return records.map(mapApiKey);
   }
 );
 
 app.post(
-  "/workspaces/:workspaceId/api-keys",
+  "/projects/:projectId/api-keys",
   {
     schema: {
-      params: z.object({ workspaceId: z.string().uuid() }),
       body: apiKeyCreateBodySchema,
+      params: z.object({ projectId: z.string().uuid() }),
       response: {
-        201: ApiKeySchema,
+        201: ApiKeyCreateResponseSchema,
       },
     },
   },
   async (request, reply) => {
-    const prefix = `nk_${randomUUID().slice(0, 8)}`;
+    const { prefix, token, tokenHash } = createApiKeyToken();
     const record = await apiKeyDao.create({
-      workspaceId: request.params.workspaceId,
       name: request.body.name,
       prefix,
+      projectId: request.params.projectId,
+      tokenHash,
     });
-    return reply.code(201).send(mapApiKey(record));
+    return reply.code(201).send({
+      apiKey: mapApiKey(record),
+      token,
+    });
   }
 );
 
 const start = async () => {
   try {
     const port = Number(process.env.PORT ?? 4000);
-    await app.listen({ port, host: "0.0.0.0" });
+    await app.listen({ host: "0.0.0.0", port });
   } catch (error) {
     app.log.error(error);
     process.exit(1);

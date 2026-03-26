@@ -1,5 +1,6 @@
 import { normalizePath } from "@repo/common";
 import Link from "next/link";
+
 import type { NavEntry } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
 
@@ -11,7 +12,7 @@ export const DocSidebar = ({
 }: {
   entries: NavEntry[];
   currentPath: string;
-  anchors?: Array<{ label: string; href: string }>;
+  anchors?: { label: string; href: string }[];
   basePath: string;
 }) => {
   const activePath = normalizePath(currentPath);

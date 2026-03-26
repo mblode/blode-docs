@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import type { OpenApiEntry } from "@/lib/openapi";
 
-const extractParams = (entry: OpenApiEntry, location: "path" | "query") => {
-  return (entry.operation.parameters ?? []).filter(
+const extractParams = (entry: OpenApiEntry, location: "path" | "query") =>
+  (entry.operation.parameters ?? []).filter(
     (param) => (param as { in?: string }).in === location
-  ) as Array<{ name?: string; required?: boolean; description?: string }>;
-};
+  ) as { name?: string; required?: boolean; description?: string }[];
 
 export const ApiPlayground = ({
   entry,
@@ -36,7 +36,7 @@ export const ApiPlayground = ({
   const canSend = Boolean(baseUrl);
 
   const buildUrl = () => {
-    let path = entry.operation.path;
+    let { path } = entry.operation;
     for (const param of pathParams) {
       const key = param.name ?? "";
       const value = pathValues[key] ?? "";
@@ -62,17 +62,17 @@ export const ApiPlayground = ({
     setStatus(null);
 
     try {
-      const method = entry.operation.method;
+      const { method } = entry.operation;
       const requestHeaders = {
         "Content-Type": "application/json",
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       };
 
       const payload = {
-        url,
-        method,
-        headers: requestHeaders,
         body,
+        headers: requestHeaders,
+        method,
+        url,
       };
 
       const requestUrl = useProxy ? "/api/proxy" : url;
@@ -94,9 +94,9 @@ export const ApiPlayground = ({
       }
 
       const res = await fetch(requestUrl, {
-        method: requestMethod,
-        headers: requestHeadersToSend,
         body: requestBody,
+        headers: requestHeadersToSend,
+        method: requestMethod,
       });
 
       const text = await res.text();

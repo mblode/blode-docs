@@ -1,8 +1,8 @@
 {
   "name": "@repo/db",
   "version": "0.0.0",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -14,19 +14,31 @@
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",
-    "lint": "ultracite check",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy"
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt .",
+    "db:pull": "NODE_PATH=./node_modules drizzle-kit pull --config=drizzle.config.ts",
+    "db:push": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts",
+    "db:push:init": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts --init",
+    "db:local:push": "node ./scripts/local-db.mjs push --force",
+    "db:local:push:init": "node ./scripts/local-db.mjs push --init --force",
+    "db:local:url": "node ./scripts/local-db.mjs print-url"
   },
   "dependencies": {
-    "@prisma/client": "^6.5.0",
-    "@repo/contracts": "*"
+    "@repo/contracts": "*",
+    "drizzle-orm": "^1.0.0-beta.19",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
     "@types/node": "^22.15.3",
-    "prisma": "^6.5.0",
-    "typescript": "5.9.2"
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^1.0.0-beta.19",
+    "lefthook": "^2.1.4",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "typescript": "5.9.2",
+    "ultracite": "^7.3.2"
   }
 }

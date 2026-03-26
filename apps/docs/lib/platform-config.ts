@@ -1,6 +1,6 @@
-const rootDomain = process.env.PLATFORM_ROOT_DOMAIN ?? "neue.com";
+const rootDomain = process.env.PLATFORM_ROOT_DOMAIN ?? "blode.md";
 
 export const platformConfig = {
-  rootDomain,
   assetPrefix: process.env.PLATFORM_ASSET_PREFIX ?? "",
+  rootDomain,
 };

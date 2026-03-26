@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+
 import { toDocHref } from "@/lib/routes";
 
 export interface SearchItem {
@@ -34,10 +35,10 @@ export const Search = ({
   return (
     <div className="search">
       <input
-        aria-label="Search documentation"
+        aria-label="Search content"
         className="search__input"
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search docs"
+        placeholder="Search content"
         value={query}
       />
       {results.length ? (

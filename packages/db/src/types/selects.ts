@@ -1,96 +1,52 @@
-import type { Prisma } from "@prisma/client";
-
-export const workspaceSelect = {
-  id: true,
-  slug: true,
-  name: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.WorkspaceSelect;
+import { apiKeys, deployments, domains, projects } from "../schema";
 
 export const projectSelect = {
-  id: true,
-  workspaceId: true,
-  slug: true,
-  name: true,
-  deploymentName: true,
-  description: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.ProjectSelect;
+  createdAt: projects.createdAt,
+  deploymentName: projects.deploymentName,
+  description: projects.description,
+  id: projects.id,
+  name: projects.name,
+  slug: projects.slug,
+  updatedAt: projects.updatedAt,
+} as const;
 
 export const domainSelect = {
-  id: true,
-  projectId: true,
-  hostname: true,
-  pathPrefix: true,
-  status: true,
-  createdAt: true,
-  verifiedAt: true,
-} as const satisfies Prisma.DomainSelect;
+  createdAt: domains.createdAt,
+  hostname: domains.hostname,
+  id: domains.id,
+  pathPrefix: domains.pathPrefix,
+  projectId: domains.projectId,
+  status: domains.status,
+  verifiedAt: domains.verifiedAt,
+} as const;
 
 export const deploymentSelect = {
-  id: true,
-  projectId: true,
-  environment: true,
-  status: true,
-  branch: true,
-  commitMessage: true,
-  changes: true,
-  previewUrl: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.DeploymentSelect;
-
-export const activitySelect = {
-  id: true,
-  projectId: true,
-  summary: true,
-  status: true,
-  changes: true,
-  actorName: true,
-  actorAvatarUrl: true,
-  occurredAt: true,
-} as const satisfies Prisma.ActivitySelect;
-
-export const gitConnectionSelect = {
-  id: true,
-  projectId: true,
-  provider: true,
-  organization: true,
-  repository: true,
-  branch: true,
-  isMonorepo: true,
-  docsPath: true,
-  appInstalled: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.GitConnectionSelect;
+  branch: deployments.branch,
+  changes: deployments.changes,
+  commitMessage: deployments.commitMessage,
+  createdAt: deployments.createdAt,
+  environment: deployments.environment,
+  fileCount: deployments.fileCount,
+  id: deployments.id,
+  manifestUrl: deployments.manifestUrl,
+  previewUrl: deployments.previewUrl,
+  projectId: deployments.projectId,
+  promotedAt: deployments.promotedAt,
+  status: deployments.status,
+  updatedAt: deployments.updatedAt,
+} as const;
 
 export const apiKeySelect = {
-  id: true,
-  workspaceId: true,
-  name: true,
-  prefix: true,
-  createdAt: true,
-  lastUsedAt: true,
-  revokedAt: true,
-} as const satisfies Prisma.ApiKeySelect;
+  createdAt: apiKeys.createdAt,
+  id: apiKeys.id,
+  lastUsedAt: apiKeys.lastUsedAt,
+  name: apiKeys.name,
+  prefix: apiKeys.prefix,
+  projectId: apiKeys.projectId,
+  revokedAt: apiKeys.revokedAt,
+} as const;
 
-export const workspaceMemberSelect = {
-  id: true,
-  workspaceId: true,
-  email: true,
-  role: true,
-  status: true,
-  joinedAt: true,
-} as const satisfies Prisma.WorkspaceMemberSelect;
-
-export const profileSelect = {
-  id: true,
-  email: true,
-  fullName: true,
-  avatarUrl: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.ProfileSelect;
+export const apiKeyAuthSelect = {
+  ...apiKeySelect,
+  tokenHash: apiKeys.tokenHash,
+} as const;

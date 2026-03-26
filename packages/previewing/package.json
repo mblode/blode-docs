@@ -1,24 +1,32 @@
 {
   "name": "@repo/previewing",
   "version": "0.0.0",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "ultracite check"
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt ."
   },
   "dependencies": {
     "@repo/common": "*",
     "@repo/models": "*",
-    "@repo/validation": "*"
+    "@repo/validation": "*",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
     "@types/node": "^22.15.3",
-    "typescript": "5.9.2"
+    "lefthook": "^2.1.4",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "typescript": "5.9.2",
+    "ultracite": "^7.3.2"
   }
 }

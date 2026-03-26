@@ -1,0 +1,107 @@
+{
+  "$schema": "https://mintlify.com/site.json",
+  "theme": "almond",
+  "name": "examples",
+  "collections": [
+    {
+      "id": "site",
+      "type": "site",
+      "root": "site",
+      "slugPrefix": ""
+    },
+    {
+      "id": "docs",
+      "type": "docs",
+      "root": "docs",
+      "slugPrefix": "docs",
+      "navigation": {
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "installation"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "blog",
+      "type": "blog",
+      "root": "blog",
+      "slugPrefix": "blog",
+      "index": {
+        "slug": "blog",
+        "title": "Blog"
+      }
+    },
+    {
+      "id": "courses",
+      "type": "courses",
+      "root": "courses",
+      "slugPrefix": "courses",
+      "index": {
+        "slug": "courses",
+        "title": "Courses"
+      }
+    },
+    {
+      "id": "products",
+      "type": "products",
+      "root": "products",
+      "slugPrefix": "products",
+      "index": {
+        "slug": "products",
+        "title": "Products"
+      }
+    },
+    {
+      "id": "notes",
+      "type": "notes",
+      "root": "notes",
+      "slugPrefix": "notes",
+      "index": {
+        "slug": "notes",
+        "title": "Notes"
+      }
+    },
+    {
+      "id": "forms",
+      "type": "forms",
+      "root": "forms",
+      "slugPrefix": "forms",
+      "index": {
+        "slug": "forms",
+        "title": "Forms"
+      }
+    },
+    {
+      "id": "sheets",
+      "type": "sheets",
+      "root": "sheets",
+      "slugPrefix": "sheets",
+      "index": {
+        "slug": "sheets",
+        "title": "Sheets"
+      }
+    },
+    {
+      "id": "slides",
+      "type": "slides",
+      "root": "slides",
+      "slugPrefix": "slides",
+      "index": {
+        "slug": "slides",
+        "title": "Slides"
+      }
+    },
+    {
+      "id": "todos",
+      "type": "todos",
+      "root": "todos",
+      "slugPrefix": "todos",
+      "index": {
+        "slug": "todos",
+        "title": "Todos"
+      }
+    }
+  ]
+}

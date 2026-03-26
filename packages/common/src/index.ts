@@ -23,13 +23,12 @@ export const withoutLeadingSlash = (value: string) => {
   return value.startsWith("/") ? value.slice(1) : value;
 };
 
-export const slugify = (value: string) => {
-  return value
+export const slugify = (value: string) =>
+  value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-};
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/(^-|-$)+/g, "");
 
 export const ensureArray = <T>(value?: T | T[]) => {
   if (value === undefined) {
@@ -38,7 +37,7 @@ export const ensureArray = <T>(value?: T | T[]) => {
   return Array.isArray(value) ? value : [value];
 };
 
-export const uniq = <T>(values: T[]) => Array.from(new Set(values));
+export const uniq = <T>(values: T[]) => [...new Set(values)];
 
 export const safeJsonParse = <T>(value: string): T | null => {
   try {

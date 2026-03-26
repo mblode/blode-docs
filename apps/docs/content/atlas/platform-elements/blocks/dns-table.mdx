@@ -51,14 +51,14 @@ export default function DNSConfiguration() {
     records: {
       description: "Array of DNS records to display",
       type: "DNSRecord[]",
-      optional: false
+      optional: false,
     },
     copyTimeout: {
       description: "Duration to show copy confirmation (ms)",
       type: "number",
       optional: true,
-      default: "2000"
-    }
+      default: "2000",
+    },
   }}
 />
 
@@ -66,8 +66,17 @@ export default function DNSConfiguration() {
 
 ```ts
 type DNSRecord = {
-  type: "A" | "AAAA" | "CNAME" | "MX" | "NS" |
-        "SOA" | "PTR" | "SRV" | "TXT" | "CAA";
+  type:
+    | "A"
+    | "AAAA"
+    | "CNAME"
+    | "MX"
+    | "NS"
+    | "SOA"
+    | "PTR"
+    | "SRV"
+    | "TXT"
+    | "CAA";
   name: string;
   value: string;
   ttl?: string;

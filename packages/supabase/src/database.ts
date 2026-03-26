@@ -344,12 +344,8 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      [_ in never]: never;
-    };
+    Views: Record<never, never>;
+    Functions: Record<never, never>;
     Enums: {
       activity_status: "successful" | "failed" | "building" | "queued";
       deployment_environment: "production" | "preview";
@@ -362,8 +358,6 @@ export interface Database {
       member_role: "owner" | "admin" | "member";
       member_status: "active" | "invited" | "suspended";
     };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    CompositeTypes: Record<never, never>;
   };
 }

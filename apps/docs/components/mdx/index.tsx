@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
+
 import { Callout } from "./callout";
 import { CodeBlock } from "./code-block";
 import { Installer } from "./installer";
@@ -26,12 +27,12 @@ const MdxLink = ({
 
 export const mdxComponents: MDXComponents = {
   Callout,
-  Tabs,
-  Tab,
-  Video,
-  Preview,
   Installer,
+  Preview,
+  Tab,
+  Tabs,
   TypeTable,
-  pre: CodeBlock,
+  Video,
   a: MdxLink,
+  pre: CodeBlock,
 };

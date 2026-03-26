@@ -1,5 +1,0 @@
-{
-  "buildCommand": "cd ../.. && npx turbo run build --filter=dashboard...",
-  "framework": "nextjs",
-  "outputDirectory": "apps/dashboard/.next"
-}

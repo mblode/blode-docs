@@ -10,7 +10,7 @@ const NEWLINE_REGEX = /\r?\n/;
 const HEADING_REGEX = /^(#{2,4})\s+(.*)$/;
 
 export const extractToc = (source: string): TocItem[] => {
-  const withoutCode = source.replace(/```[\s\S]*?```/g, "");
+  const withoutCode = source.replaceAll(/```[\s\S]*?```/g, "");
   const lines = withoutCode.split(NEWLINE_REGEX);
   const toc: TocItem[] = [];
 
@@ -26,7 +26,7 @@ export const extractToc = (source: string): TocItem[] => {
     const level = hashes.length;
     const title = heading.trim();
     const id = slugify(title);
-    toc.push({ id, title, level });
+    toc.push({ id, level, title });
   }
 
   return toc;

@@ -7,10 +7,8 @@ interface ButtonProps {
   className?: string;
 }
 
-export const Button = ({ children, className }: ButtonProps) => {
-  return (
-    <button className={className} type="button">
-      {children}
-    </button>
-  );
-};
+export const Button = ({ children, className }: ButtonProps) => (
+  <button className={className} type="button">
+    {children}
+  </button>
+);

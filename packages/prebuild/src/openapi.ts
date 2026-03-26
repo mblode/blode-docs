@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+
 import { normalizePath, slugify } from "@repo/common";
 import YAML from "yaml";
 
@@ -38,11 +39,8 @@ export interface OpenApiOperation {
   responses?: Record<string, unknown>;
 }
 
-export const loadOpenApiSpec = async (
-  absolutePath: string
-): Promise<OpenApiSpec> => {
-  const raw = await fs.readFile(absolutePath, "utf-8");
-  const ext = path.extname(absolutePath).toLowerCase();
+export const parseOpenApiSpec = (raw: string, sourcePath = ""): OpenApiSpec => {
+  const ext = path.extname(sourcePath).toLowerCase();
 
   if (ext === ".json") {
     return JSON.parse(raw) as OpenApiSpec;
@@ -59,9 +57,13 @@ export const loadOpenApiSpec = async (
   }
 };
 
-export const openApiIdentifier = (method: string, routePath: string) => {
-  return `${method.toUpperCase()} ${routePath}`;
-};
+export const loadOpenApiSpec = async (
+  absolutePath: string
+): Promise<OpenApiSpec> =>
+  parseOpenApiSpec(await fs.readFile(absolutePath, "utf8"), absolutePath);
+
+export const openApiIdentifier = (method: string, routePath: string) =>
+  `${method.toUpperCase()} ${routePath}`;
 
 export const openApiSlug = (
   method: string,
@@ -70,7 +72,7 @@ export const openApiSlug = (
 ) => {
   const normalized = normalizePath(routePath)
     .split("/")
-    .map((segment) => segment.replace(/[{}]/g, ""))
+    .map((segment) => segment.replaceAll(/[{}]/g, ""))
     .filter(Boolean)
     .join("-");
   const base = normalized.length ? normalized : "root";
@@ -91,15 +93,15 @@ export const extractOpenApiOperations = (
       const id = operation.operationId ?? openApiIdentifier(upper, routePath);
 
       ops.push({
+        description: operation.description,
         id,
         method: upper,
-        path: routePath,
-        summary: operation.summary,
-        description: operation.description,
-        tags: operation.tags ?? [],
         parameters: operation.parameters ?? [],
+        path: routePath,
         requestBody: operation.requestBody,
         responses: operation.responses,
+        summary: operation.summary,
+        tags: operation.tags ?? [],
       });
     }
   }
@@ -110,5 +112,5 @@ export const extractOpenApiOperations = (
     map.set(slug, op);
   }
 
-  return { operations: ops, bySlug: map };
+  return { bySlug: map, operations: ops };
 };

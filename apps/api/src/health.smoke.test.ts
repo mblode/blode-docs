@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const databaseUrl =
   process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  "postgresql://postgres:postgres@127.0.0.1:54322/neue_docs_drizzle_test";
 process.env.DATABASE_URL = databaseUrl;
 process.env.NODE_ENV = "test";
 
@@ -11,7 +11,7 @@ let app: FastifyInstance;
 
 beforeAll(async () => {
   const apiModule = await import("./index.js");
-  app = apiModule.app;
+  ({ app } = apiModule);
   await app.ready();
 });
 

@@ -1,4 +1,5 @@
 import { TenantResolutionSchema } from "@repo/contracts";
+
 import { platformConfig } from "./platform-config";
 
 const DEFAULT_RESERVED_PATHS = [
@@ -13,7 +14,7 @@ const apiBase =
   "http://localhost:4000";
 
 export const isReservedPath = (pathname: string) => {
-  const assetPrefix = platformConfig.assetPrefix;
+  const { assetPrefix } = platformConfig;
   if (assetPrefix && pathname.startsWith(assetPrefix)) {
     return true;
   }

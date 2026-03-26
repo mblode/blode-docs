@@ -1,0 +1,104 @@
+import {
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+export const domainStatusEnum = pgEnum("domain_status", [
+  "valid_configuration",
+  "pending_verification",
+  "invalid_configuration",
+]);
+
+export const deploymentStatusEnum = pgEnum("deployment_status", [
+  "queued",
+  "building",
+  "successful",
+  "failed",
+]);
+
+export const deploymentEnvironmentEnum = pgEnum("deployment_environment", [
+  "production",
+  "preview",
+]);
+
+export type DomainStatus = (typeof domainStatusEnum.enumValues)[number];
+export type DeploymentStatus = (typeof deploymentStatusEnum.enumValues)[number];
+export type DeploymentEnvironment =
+  (typeof deploymentEnvironmentEnum.enumValues)[number];
+
+const timestampColumn = (name: string) =>
+  timestamp(name, { mode: "date", withTimezone: true });
+
+export const projects = pgTable(
+  "projects",
+  {
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    deploymentName: text("deployment_name").notNull(),
+    description: text("description"),
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("projects_slug_key").on(table.slug)]
+);
+
+export const domains = pgTable(
+  "domains",
+  {
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    hostname: text("hostname").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    pathPrefix: text("path_prefix"),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    status: domainStatusEnum("status")
+      .default("pending_verification")
+      .notNull(),
+    verifiedAt: timestampColumn("verified_at"),
+  },
+  (table) => [uniqueIndex("domains_hostname_key").on(table.hostname)]
+);
+
+export const deployments = pgTable("deployments", {
+  branch: text("branch").notNull(),
+  changes: text("changes"),
+  commitMessage: text("commit_message"),
+  createdAt: timestampColumn("created_at").defaultNow().notNull(),
+  environment: deploymentEnvironmentEnum("environment")
+    .default("production")
+    .notNull(),
+  fileCount: integer("file_count"),
+  id: uuid("id").defaultRandom().primaryKey(),
+  manifestUrl: text("manifest_url"),
+  previewUrl: text("preview_url"),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  promotedAt: timestampColumn("promoted_at"),
+  status: deploymentStatusEnum("status").default("queued").notNull(),
+  updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
+});
+
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    lastUsedAt: timestampColumn("last_used_at"),
+    name: text("name").notNull(),
+    prefix: text("prefix").notNull(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    revokedAt: timestampColumn("revoked_at"),
+    tokenHash: text("token_hash"),
+  },
+  (table) => [uniqueIndex("api_keys_prefix_key").on(table.prefix)]
+);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   clamp,
   ensureArray,
@@ -30,7 +31,7 @@ describe("common utilities", () => {
   });
 
   it("normalizes arrays", () => {
-    expect(ensureArray(undefined)).toEqual([]);
+    expect(ensureArray()).toEqual([]);
     expect(ensureArray("one")).toEqual(["one"]);
     expect(ensureArray(["one", "two"])).toEqual(["one", "two"]);
   });
