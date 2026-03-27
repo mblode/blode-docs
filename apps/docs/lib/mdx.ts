@@ -17,7 +17,11 @@ export const renderMdx = async (source: string) =>
             rehypeAutolinkHeadings,
             {
               behavior: "append",
-              properties: { className: ["heading-anchor"] },
+              properties: {
+                className: [
+                  "ml-2 text-[0.9em] opacity-0 transition-opacity hover:opacity-100",
+                ],
+              },
             },
           ],
           rehypePrism,

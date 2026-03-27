@@ -141,7 +141,7 @@ After evaluating four storage strategies (git-based, blob, database, hybrid), **
 | **Raw MDX**         | Cloudflare R2 or Vercel Blob       | `.mdx` files, images, assets                                                           | Cheap ($0/GB for R2 free tier), fast CDN reads, simple PUT/GET |
 | **Compiled cache**  | Same blob, separate prefix         | Pre-compiled MDX output                                                                | Avoids re-compilation on every ISR hit                         |
 | **Metadata**        | Turso (SQLite at edge) or Postgres | Project configs, navigation trees, deployment history, domain mappings, file manifests | Structured queries, version tracking, fast edge reads          |
-| **Source of truth** | User's own Git repo                | Everything                                                                             | Blode-docs never becomes the git host                           |
+| **Source of truth** | User's own Git repo                | Everything                                                                             | Blode-docs never becomes the git host                          |
 
 **Storage key scheme for blob:**
 

@@ -18,11 +18,17 @@ const Dropdown = ({
     return null;
   }
   return (
-    <details className="doc-dropdown">
-      <summary>{label}</summary>
-      <div className="doc-dropdown__menu">
+    <details className="relative">
+      <summary className="cursor-pointer rounded-full border border-border bg-background px-3 py-1.5 text-sm">
+        {label}
+      </summary>
+      <div className="absolute right-0 top-11 z-20 grid min-w-36 overflow-hidden rounded-xl border border-border bg-popover shadow-popover">
         {items.map((item) => (
-          <Link href={item.url} key={item.label}>
+          <Link
+            className="px-3 py-2 hover:bg-accent"
+            href={item.url}
+            key={item.label}
+          >
             {item.label}
           </Link>
         ))}
@@ -52,13 +58,17 @@ export const DocHeader = ({
   const themeToggleDisabled = config.features?.themeToggle === false;
 
   return (
-    <header className="doc-header">
-      <div className="doc-header__brand">
-        <Link className="doc-brand" href={toDocHref("index", basePath)}>
+    <header className="sticky top-0 z-50 flex w-full items-center justify-between gap-6 border-b border-border/50 bg-background/80 px-8 py-4.5 backdrop-blur-lg">
+      <div className="flex items-center gap-4">
+        <Link
+          className="flex items-center gap-2.5"
+          href={toDocHref("index", basePath)}
+        >
           {config.logo?.light ? (
             <Image
               alt={config.logo.alt ?? config.name}
-              className="doc-brand__logo doc-brand__logo--light"
+              className="dark:hidden"
+              data-logo="light"
               height={32}
               loading="eager"
               src={config.logo.light}
@@ -69,7 +79,8 @@ export const DocHeader = ({
           {config.logo?.dark ? (
             <Image
               alt={config.logo.alt ?? config.name}
-              className="doc-brand__logo doc-brand__logo--dark"
+              className="hidden dark:inline-block"
+              data-logo="dark"
               height={32}
               loading="eager"
               src={config.logo.dark}
@@ -78,14 +89,17 @@ export const DocHeader = ({
             />
           ) : null}
           {config.logo?.light || config.logo?.dark ? null : (
-            <span className="doc-brand__text">{config.name}</span>
+            <span className="text-xl font-bold">{config.name}</span>
           )}
         </Link>
-        <span className="doc-header__tagline">{label ?? "Docs"}</span>
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">
+          {label ?? "Docs"}
+        </span>
       </div>
-      <nav className="doc-header__nav">
+      <nav className="flex gap-4 text-sm text-muted-foreground">
         {globalLinks.map((link) => (
           <a
+            className="rounded-full px-2.5 py-1.5 transition-colors hover:bg-accent hover:text-foreground"
             href={link.href}
             key={link.label}
             rel="noopener noreferrer"
@@ -95,7 +109,7 @@ export const DocHeader = ({
           </a>
         ))}
       </nav>
-      <div className="doc-header__actions">
+      <div className="ml-auto flex items-center gap-3">
         {searchDisabled ? null : (
           <Search basePath={basePath} items={searchItems} />
         )}

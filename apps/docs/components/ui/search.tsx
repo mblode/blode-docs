@@ -43,25 +43,25 @@ export const Search = ({
   }, [items, query]);
 
   return (
-    <div className="search">
+    <div className="relative">
       <input
         aria-label="Search content"
-        className="search__input"
+        className="min-w-44 rounded-full border border-border bg-background px-3 py-2 text-sm text-foreground"
         onChange={handleQueryChange}
         placeholder="Search content"
         value={query}
       />
       {results.length ? (
-        <div className="search__results">
+        <div className="absolute right-0 top-11 z-20 grid min-w-56 gap-2 rounded-xl border border-border bg-popover p-2.5 shadow-popover">
           {results.map((item) => (
             <Link
-              className="search__result"
+              className="flex flex-col gap-0.5 rounded-lg px-2.5 py-2 hover:bg-accent"
               href={toDocHref(item.path, basePath)}
               key={item.path}
               onClick={clearQuery}
             >
               <span>{item.title}</span>
-              <small>/{item.path}</small>
+              <small className="text-muted-foreground">/{item.path}</small>
             </Link>
           ))}
         </div>

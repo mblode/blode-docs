@@ -14,15 +14,27 @@ export const TypeTable = ({ type }: { type: Record<string, TypeField> }) => {
   const hasDefault = entries.some((entry) => entry.default);
 
   return (
-    <div className="type-table">
-      <table>
+    <div className="no-scrollbar my-4 w-full overflow-y-auto rounded-xl border border-border">
+      <table className="relative w-full overflow-hidden border-none text-sm">
         <thead>
           <tr>
-            <th>Field</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-            {hasDefault ? <th>Default</th> : null}
+            <th className="border-b border-border bg-background/70 px-3 py-2.5 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              Field
+            </th>
+            <th className="border-b border-border bg-background/70 px-3 py-2.5 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              Type
+            </th>
+            <th className="border-b border-border bg-background/70 px-3 py-2.5 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              Description
+            </th>
+            <th className="border-b border-border bg-background/70 px-3 py-2.5 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              Required
+            </th>
+            {hasDefault ? (
+              <th className="border-b border-border bg-background/70 px-3 py-2.5 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                Default
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -30,13 +42,25 @@ export const TypeTable = ({ type }: { type: Record<string, TypeField> }) => {
             const required = entry.required ?? !entry.optional;
             return (
               <tr key={entry.name}>
-                <td>
-                  <code>{entry.name}</code>
+                <td className="border-b border-border px-3 py-2.5 text-left align-top">
+                  <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">
+                    {entry.name}
+                  </code>
                 </td>
-                <td>{entry.type ?? "—"}</td>
-                <td>{entry.description ?? ""}</td>
-                <td>{required ? "Yes" : "Optional"}</td>
-                {hasDefault ? <td>{entry.default ?? "—"}</td> : null}
+                <td className="border-b border-border px-3 py-2.5 text-left align-top">
+                  {entry.type ?? "\u2014"}
+                </td>
+                <td className="border-b border-border px-3 py-2.5 text-left align-top">
+                  {entry.description ?? ""}
+                </td>
+                <td className="border-b border-border px-3 py-2.5 text-left align-top">
+                  {required ? "Yes" : "Optional"}
+                </td>
+                {hasDefault ? (
+                  <td className="border-b border-border px-3 py-2.5 text-left align-top">
+                    {entry.default ?? "\u2014"}
+                  </td>
+                ) : null}
               </tr>
             );
           })}

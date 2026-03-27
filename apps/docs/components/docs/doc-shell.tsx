@@ -5,10 +5,12 @@ import type { ReactNode } from "react";
 import { DocHeader } from "@/components/docs/doc-header";
 import { DocSidebar } from "@/components/docs/doc-sidebar";
 import { DocToc } from "@/components/docs/doc-toc";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import type { NavEntry } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
 import { themeStylesFromConfig } from "@/lib/theme";
 import type { TocItem } from "@/lib/toc";
+import { cn } from "@/lib/utils";
 
 const renderScripts = (scripts?: string[]) =>
   scripts?.map((script) => (
@@ -27,7 +29,7 @@ const Breadcrumbs = ({
   }
 
   return (
-    <nav className="doc-breadcrumbs">
+    <nav className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
       {breadcrumbs.map((crumb, index) => {
         const key = `${crumb.path || "current"}-${crumb.label}`;
         const isLast = index === breadcrumbs.length - 1;
@@ -38,7 +40,7 @@ const Breadcrumbs = ({
             ) : (
               <span>{crumb.label}</span>
             )}
-            {isLast ? null : <span className="doc-breadcrumbs__sep">/</span>}
+            {isLast ? null : <span className="mx-1.5">/</span>}
           </span>
         );
       })}
@@ -78,12 +80,13 @@ export const DocShell = ({
     config.features?.rightToc !== false &&
     config.features?.toc !== false &&
     toc.length > 0;
-  const layoutClass =
-    hasSidebar || hasToc ? "docs-layout" : "docs-layout docs-layout--single";
 
   return (
     <div
-      className={`docs-root theme-${config.theme ?? "mint"}`}
+      className={cn(
+        "min-h-screen font-sans",
+        `theme-${config.theme ?? "mint"}`
+      )}
       data-has-dark-logo={config.logo?.dark ? "true" : "false"}
       style={themeStylesFromConfig(config)}
     >
@@ -94,26 +97,52 @@ export const DocShell = ({
         label={headerLabel}
         searchItems={searchItems}
       />
-      <div className={layoutClass}>
-        {hasSidebar ? (
-          <DocSidebar
-            anchors={anchors}
-            basePath={basePath}
-            currentPath={currentPath}
-            entries={nav}
-          />
-        ) : null}
-        <main className="doc-main">
-          <div className="doc-content">
-            <Breadcrumbs basePath={basePath} breadcrumbs={breadcrumbs} />
-            <h1>{pageTitle}</h1>
-            {pageDescription ? (
-              <p className="doc-description">{pageDescription}</p>
-            ) : null}
-            <div className="doc-body">{content}</div>
+      <div className="container-wrapper flex flex-1 flex-col px-2">
+        <SidebarProvider
+          className={cn(
+            "min-h-min flex-1 items-start px-0 [--top-spacing:0] lg:[--top-spacing:calc(var(--spacing)*4)]",
+            hasSidebar &&
+              "lg:grid lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]"
+          )}
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+            } as React.CSSProperties
+          }
+        >
+          {hasSidebar ? (
+            <DocSidebar
+              anchors={anchors}
+              basePath={basePath}
+              currentPath={currentPath}
+              entries={nav}
+            />
+          ) : null}
+          <div className="h-full w-full">
+            <main
+              className={cn(
+                "flex scroll-mt-24 items-stretch gap-1 px-4 pb-8 pt-8 lg:px-8",
+                !hasSidebar && "mx-auto max-w-[960px]"
+              )}
+            >
+              <div className="flex min-w-0 flex-1 flex-col">
+                <Breadcrumbs basePath={basePath} breadcrumbs={breadcrumbs} />
+                <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
+                  {pageTitle}
+                </h1>
+                {pageDescription ? (
+                  <p className="mt-3 text-lg text-muted-foreground">
+                    {pageDescription}
+                  </p>
+                ) : null}
+                <div className="mt-6 grid gap-4.5 leading-relaxed [&_blockquote]:border-l-3 [&_blockquote]:border-primary [&_blockquote]:pl-3.5 [&_blockquote]:text-muted-foreground [&_h2]:mt-6 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:mt-6 [&_h4]:text-lg [&_h4]:font-semibold [&_ol]:pl-5 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-2 [&_td]:text-left [&_th]:border-b [&_th]:border-border [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_ul]:pl-5">
+                  {content}
+                </div>
+              </div>
+              {hasToc ? <DocToc toc={toc} /> : null}
+            </main>
           </div>
-        </main>
-        {hasToc ? <DocToc toc={toc} /> : null}
+        </SidebarProvider>
       </div>
       {renderScripts(config.scripts?.body)}
     </div>

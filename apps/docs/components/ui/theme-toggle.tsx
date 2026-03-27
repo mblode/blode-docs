@@ -29,16 +29,12 @@ export const ThemeToggle = () => {
   return (
     <button
       aria-label="Toggle theme"
-      className="theme-toggle"
+      className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm"
       onClick={toggle}
       type="button"
     >
-      <span className="theme-toggle__label">
-        {mode === "dark" ? "Dark" : "Light"}
-      </span>
-      <span aria-hidden className="theme-toggle__icon">
-        {mode === "dark" ? "☾" : "☀"}
-      </span>
+      <span>{mode === "dark" ? "Dark" : "Light"}</span>
+      <span aria-hidden>{mode === "dark" ? "\u263E" : "\u2600"}</span>
     </button>
   );
 };

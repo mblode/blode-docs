@@ -15,8 +15,8 @@ export const themeStylesFromConfig = (config: SiteConfig): CSSProperties => {
     "--color-primary-dark": themeValue(colors?.dark, "#0C3A33"),
     "--color-primary-soft": themeValue(colors?.light, "#CFF6EE"),
     "--color-surface": themeValue(colors?.surface, "#F5FBF9"),
-    "--font-body": themeValue(fonts?.body, "var(--font-body-default)"),
-    "--font-heading": themeValue(fonts?.heading, "var(--font-heading-default)"),
-    "--font-mono": themeValue(fonts?.mono, "var(--font-mono-default)"),
+    "--font-body": "var(--font-body-default)",
+    "--font-heading": "var(--font-heading-default)",
+    "--font-mono": "var(--font-mono-default)",
   } as CSSProperties;
 };

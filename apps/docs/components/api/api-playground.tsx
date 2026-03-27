@@ -10,6 +10,10 @@ const extractParams = (entry: OpenApiEntry, location: "path" | "query") =>
     (param) => (param as { in?: string }).in === location
   ) as { name?: string; required?: boolean; description?: string }[];
 
+const fieldClass = "grid gap-1.5 text-sm";
+const inputClass =
+  "rounded-lg border border-border bg-background px-2.5 py-2 text-foreground";
+
 export const ApiPlayground = ({
   entry,
   proxyEnabled,
@@ -167,14 +171,15 @@ export const ApiPlayground = ({
   }, [authToken, body, buildUrl, entry.operation, useProxy]);
 
   return (
-    <section className="api-section">
-      <div className="api-playground">
-        <div className="api-playground__header">
+    <section className="mt-7 grid gap-3">
+      <div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
+        <div className="flex items-center justify-between">
           <h2>Try it out</h2>
           {proxyEnabled ? (
-            <label className="api-playground__toggle">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 checked={useProxy}
+                className="accent-primary"
                 onChange={handleUseProxyChange}
                 type="checkbox"
               />
@@ -184,9 +189,13 @@ export const ApiPlayground = ({
         </div>
 
         {servers.length ? (
-          <label className="api-playground__field">
+          <label className={fieldClass}>
             <span>Server</span>
-            <select onChange={handleServerChange} value={serverIndex}>
+            <select
+              className={inputClass}
+              onChange={handleServerChange}
+              value={serverIndex}
+            >
               {servers.map((server, index) => (
                 <option key={server.url} value={index}>
                   {server.url}
@@ -197,11 +206,12 @@ export const ApiPlayground = ({
         ) : null}
 
         {pathParams.length ? (
-          <div className="api-playground__params">
+          <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
             {pathParams.map((param) => (
-              <label className="api-playground__field" key={param.name}>
+              <label className={fieldClass} key={param.name}>
                 <span>{param.name}</span>
                 <input
+                  className={inputClass}
                   name={param.name ?? ""}
                   onChange={handlePathValueChange}
                   placeholder={param.required ? "Required" : "Optional"}
@@ -214,11 +224,12 @@ export const ApiPlayground = ({
         ) : null}
 
         {queryParams.length ? (
-          <div className="api-playground__params">
+          <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
             {queryParams.map((param) => (
-              <label className="api-playground__field" key={param.name}>
+              <label className={fieldClass} key={param.name}>
                 <span>{param.name}</span>
                 <input
+                  className={inputClass}
                   name={param.name ?? ""}
                   onChange={handleQueryValueChange}
                   placeholder={param.required ? "Required" : "Optional"}
@@ -230,9 +241,10 @@ export const ApiPlayground = ({
           </div>
         ) : null}
 
-        <label className="api-playground__field">
+        <label className={fieldClass}>
           <span>Auth token</span>
           <input
+            className={inputClass}
             onChange={handleAuthTokenChange}
             placeholder="Bearer token"
             type="password"
@@ -241,14 +253,19 @@ export const ApiPlayground = ({
         </label>
 
         {entry.operation.method === "GET" ? null : (
-          <label className="api-playground__field">
+          <label className={fieldClass}>
             <span>Request body</span>
-            <textarea onChange={handleBodyChange} rows={6} value={body} />
+            <textarea
+              className={inputClass}
+              onChange={handleBodyChange}
+              rows={6}
+              value={body}
+            />
           </label>
         )}
 
         <button
-          className="api-playground__send"
+          className="rounded-xl border-none bg-primary px-3.5 py-2.5 font-semibold text-primary-foreground disabled:opacity-50"
           disabled={isLoading || !canSend}
           onClick={handleSend}
           type="button"
@@ -256,15 +273,15 @@ export const ApiPlayground = ({
           {isLoading ? "Sending..." : "Send request"}
         </button>
         {canSend ? null : (
-          <p className="api-playground__hint">
+          <p className="text-sm text-muted-foreground">
             Add a server URL in your OpenAPI spec to enable requests.
           </p>
         )}
 
         {response === null ? null : (
-          <div className="api-playground__response">
-            <div className="api-playground__status">Status: {status}</div>
-            <pre>{response}</pre>
+          <div className="rounded-xl border border-border bg-primary/[0.08] p-3">
+            <div className="font-semibold">Status: {status}</div>
+            <pre className="mt-2 overflow-x-auto">{response}</pre>
           </div>
         )}
       </div>

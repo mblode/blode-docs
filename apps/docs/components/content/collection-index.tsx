@@ -86,24 +86,26 @@ export const CollectionIndex = ({
   entries: CollectionEntry[];
   basePath: string;
 }) => (
-  <div className="content-index">
+  <div className="grid gap-4">
     {entries.map((entry) => {
       const meta = buildMeta(entry);
       return (
         <Link
-          className="content-index__item"
+          className="block rounded-xl border border-border bg-surface p-4.5 transition-[border-color,box-shadow] hover:border-primary hover:shadow-md"
           href={toDocHref(entry.slug, basePath)}
           key={`${entry.collectionId}-${entry.slug}`}
         >
-          <div className="content-index__title">{entry.title}</div>
+          <div className="text-lg font-semibold">{entry.title}</div>
           {entry.description ? (
-            <p className="content-index__description">{entry.description}</p>
+            <p className="mt-1.5 text-muted-foreground">{entry.description}</p>
           ) : null}
           {meta.length ? (
-            <div className="content-index__meta">{meta.join(" | ")}</div>
+            <div className="mt-2 text-sm text-muted-foreground">
+              {meta.join(" | ")}
+            </div>
           ) : null}
           {entry.type === "slides" ? (
-            <div className="content-index__meta">Slide deck</div>
+            <div className="mt-2 text-sm text-muted-foreground">Slide deck</div>
           ) : null}
         </Link>
       );

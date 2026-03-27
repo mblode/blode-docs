@@ -1,5 +1,14 @@
 import { ApiPlayground } from "@/components/api/api-playground";
 import type { OpenApiEntry } from "@/lib/openapi";
+import { cn } from "@/lib/utils";
+
+const methodColors: Record<string, string> = {
+  delete: "bg-red-500",
+  get: "bg-blue-500",
+  patch: "bg-amber-500",
+  post: "bg-green-500",
+  put: "bg-orange-500",
+};
 
 export const ApiReference = ({
   entry,
@@ -16,27 +25,30 @@ export const ApiReference = ({
   const responses = operation.responses ?? {};
 
   return (
-    <div className="api-page">
-      <header className="api-page__header">
+    <div>
+      <header className="mb-4 flex items-center gap-4">
         <div
-          className={`api-method api-method--${operation.method.toLowerCase()}`}
+          className={cn(
+            "rounded-full px-2.5 py-1.5 text-xs font-semibold uppercase text-white",
+            methodColors[operation.method.toLowerCase()] ?? "bg-primary"
+          )}
         >
           {operation.method}
         </div>
-        <div className="api-page__path">{operation.path}</div>
+        <div className="font-mono">{operation.path}</div>
       </header>
       {operation.summary ? (
-        <p className="api-page__summary">{operation.summary}</p>
+        <p className="font-semibold">{operation.summary}</p>
       ) : null}
       {operation.description ? (
-        <p className="api-page__description">{operation.description}</p>
+        <p className="text-muted-foreground">{operation.description}</p>
       ) : null}
 
       {parameters.length ? (
-        <section className="api-section">
+        <section className="mt-7 grid gap-3">
           <h2>Parameters</h2>
-          <div className="api-table">
-            <div className="api-table__row api-table__head">
+          <div className="grid gap-2">
+            <div className="grid grid-cols-[120px_80px_80px_1fr] gap-3 rounded-lg border border-border bg-background/60 p-2.5 font-bold">
               <span>Name</span>
               <span>In</span>
               <span>Required</span>
@@ -52,7 +64,10 @@ export const ApiReference = ({
                 (param as { description?: string }).description ?? "";
 
               return (
-                <div className="api-table__row" key={name}>
+                <div
+                  className="grid grid-cols-[120px_80px_80px_1fr] gap-3 rounded-lg border border-border bg-background/60 p-2.5"
+                  key={name}
+                >
                   <span>{name}</span>
                   <span>{location}</span>
                   <span>{required}</span>
@@ -65,25 +80,28 @@ export const ApiReference = ({
       ) : null}
 
       {requestBody?.content ? (
-        <section className="api-section">
+        <section className="mt-7 grid gap-3">
           <h2>Request Body</h2>
-          <pre className="api-code">
+          <pre className="overflow-x-auto rounded-lg bg-code p-3 text-code-foreground">
             {JSON.stringify(requestBody.content, null, 2)}
           </pre>
         </section>
       ) : null}
 
       {Object.keys(responses).length ? (
-        <section className="api-section">
+        <section className="mt-7 grid gap-3">
           <h2>Responses</h2>
-          <div className="api-responses">
+          <div className="grid gap-2">
             {Object.entries(responses).map(([status, response]) => {
               const description =
                 (response as { description?: string }).description ?? "";
               return (
-                <div className="api-response" key={status}>
-                  <span className="api-response__status">{status}</span>
-                  <span className="api-response__desc">{description}</span>
+                <div
+                  className="flex justify-between rounded-lg border border-border bg-background/60 p-2.5"
+                  key={status}
+                >
+                  <span className="font-semibold">{status}</span>
+                  <span className="text-muted-foreground">{description}</span>
                 </div>
               );
             })}

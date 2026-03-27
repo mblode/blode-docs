@@ -1,8 +1,9 @@
 "use client";
 
-import cx from "clsx";
 import { isValidElement, useCallback, useMemo, useState } from "react";
 import type { MouseEvent, ReactElement, ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
 
 interface TabProps {
   label: string;
@@ -10,7 +11,7 @@ interface TabProps {
 }
 
 export const Tab = ({ children }: TabProps) => (
-  <div className="tabs__panel">{children}</div>
+  <div className="p-4">{children}</div>
 );
 
 export const Tabs = ({ children }: { children: ReactNode }) => {
@@ -33,14 +34,17 @@ export const Tabs = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <div className="tabs">
-      <div className="tabs__list" role="tablist">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="flex gap-2 bg-muted p-2" role="tablist">
         {items.map((item, index) => (
           <button
             aria-selected={index === active}
-            className={cx("tabs__trigger", {
-              "tabs__trigger--active": index === active,
-            })}
+            className={cn(
+              "rounded-full border-none bg-transparent px-3 py-2 text-sm cursor-pointer transition-colors",
+              index === active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
             data-index={index}
             key={String(item.key ?? item.props.label)}
             onClick={handleTabClick}
@@ -51,7 +55,7 @@ export const Tabs = ({ children }: { children: ReactNode }) => {
           </button>
         ))}
       </div>
-      <div className="tabs__content" role="tabpanel">
+      <div className="p-4" role="tabpanel">
         {activeItem}
       </div>
     </div>

@@ -256,9 +256,9 @@ const MintlifyNavigationSchema = z
     (value) =>
       Boolean(
         value.groups?.length ||
-          value.pages?.length ||
-          value.languages?.length ||
-          value.versions?.length
+        value.pages?.length ||
+        value.languages?.length ||
+        value.versions?.length
       ),
     {
       message:
@@ -290,7 +290,9 @@ const MintlifyApiSchema = z
           })
           .strict()
           .optional(),
-        server: z.union([z.string().min(1), z.array(z.string().min(1))]).optional(),
+        server: z
+          .union([z.string().min(1), z.array(z.string().min(1))])
+          .optional(),
       })
       .strict()
       .optional(),
@@ -337,13 +339,15 @@ const MintlifySearchSchema = z
 export const MintlifyDocsConfigSchema = z
   .object({
     $schema: z.string().optional(),
-    appearance: MintlifyAppearanceSchema.optional(),
     api: MintlifyApiSchema.optional(),
-    colors: z.object({
-      dark: z.string().optional(),
-      light: z.string().optional(),
-      primary: z.string().min(1),
-    }).strict(),
+    appearance: MintlifyAppearanceSchema.optional(),
+    colors: z
+      .object({
+        dark: z.string().optional(),
+        light: z.string().optional(),
+        primary: z.string().min(1),
+      })
+      .strict(),
     description: z.string().optional(),
     favicon: MintlifyFaviconSchema.optional(),
     fonts: MintlifyFontsSchema.optional(),

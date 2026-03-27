@@ -307,7 +307,7 @@ const DocPage = async ({
     const errors = data.configErrors ?? [];
     const warnings = data.configWarnings ?? [];
     return (
-      <div className="doc-error">
+      <div className="p-10">
         <h1>Invalid docs.json</h1>
         {warnings.length ? (
           <>

@@ -8,10 +8,7 @@ import type {
   MintlifyDocsConfig,
   SiteConfig,
 } from "@repo/models";
-import {
-  validateDocsConfig,
-  validateFrontmatter,
-} from "@repo/validation";
+import { validateDocsConfig, validateFrontmatter } from "@repo/validation";
 import YAML from "yaml";
 
 import type { ContentSource } from "./content-source";
@@ -133,9 +130,7 @@ const buildGoogleFontsCssUrl = (
 
   const googleFamilies = [
     ...new Set(
-      fontEntries
-        .filter((entry) => !entry.source)
-        .map((entry) => entry.family)
+      fontEntries.filter((entry) => !entry.source).map((entry) => entry.family)
     ),
   ];
   if (!googleFamilies.length) {
@@ -218,7 +213,7 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
     },
     fonts,
     logo: docs.logo
-      ? typeof docs.logo === "string"
+      ? (typeof docs.logo === "string"
         ? {
             dark: docs.logo,
             light: docs.logo,
@@ -226,7 +221,7 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
         : {
             dark: docs.logo.dark,
             light: docs.logo.light,
-          }
+          })
       : undefined,
     name: docs.name,
     navigation,

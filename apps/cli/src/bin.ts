@@ -113,7 +113,7 @@ const validateConfigFile = async (root: string): Promise<string> => {
     return CONTENT_CONFIG_FILE;
   } catch (error) {
     if (isMissingFileError(error)) {
-      throw new Error(`${CONTENT_CONFIG_FILE} not found.`);
+      throw new Error(`${CONTENT_CONFIG_FILE} not found.`, { cause: error });
     }
     throw error;
   }
