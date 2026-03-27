@@ -1,6 +1,10 @@
 {
   "name": "blode-docs",
   "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mblode/blode-docs"
+  },
   "bin": {
     "blode-docs": "./dist/bin.mjs"
   },
