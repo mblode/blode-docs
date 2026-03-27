@@ -1,41 +1,12 @@
 "use client";
 
-import { isValidElement, useCallback, useMemo, useState } from "react";
+import { CheckIcon, ClipboardIcon } from "blode-icons-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-const LANGUAGE_CLASS_REGEX = /language-([\w-]+)/;
-
-const getCodeString = (node: ReactNode): string => {
-  if (typeof node === "string") {
-    return node;
-  }
-  if (Array.isArray(node)) {
-    return node.map(getCodeString).join("");
-  }
-  if (isValidElement<{ children?: ReactNode }>(node)) {
-    return getCodeString(node.props.children);
-  }
-  return "";
-};
-
-const getLanguage = (node: ReactNode): string | undefined => {
-  if (isValidElement<{ className?: string; children?: ReactNode }>(node)) {
-    const { className } = node.props;
-    const match = LANGUAGE_CLASS_REGEX.exec(className ?? "");
-    return match?.[1];
-  }
-  if (Array.isArray(node)) {
-    for (const child of node) {
-      const match = getLanguage(child);
-      if (match) {
-        return match;
-      }
-    }
-  }
-  return undefined;
-};
+import { getTextContent } from "./get-text-content";
 
 export const CodeBlock = ({
   children,
@@ -45,9 +16,14 @@ export const CodeBlock = ({
   className?: string;
 }) => {
   const [copied, setCopied] = useState(false);
-  const code = useMemo(() => getCodeString(children), [children]);
-  const language =
-    getLanguage(children) ?? LANGUAGE_CLASS_REGEX.exec(className ?? "")?.[1];
+  const code = useMemo(() => getTextContent(children), [children]);
+
+  useEffect(() => {
+    if (copied) {
+      const timer = setTimeout(() => setCopied(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copied]);
 
   const handleCopy = useCallback(async () => {
     if (!code) {
@@ -55,21 +31,25 @@ export const CodeBlock = ({
     }
     await navigator.clipboard.writeText(code);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
   }, [code]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-code text-code-foreground">
-      <div className="flex items-center justify-between bg-white/[0.06] px-3 py-2 text-xs">
-        <span>{language ?? "text"}</span>
-        <button
-          className="border-none bg-transparent text-inherit cursor-pointer hover:opacity-70"
-          onClick={handleCopy}
-          type="button"
-        >
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-code text-code-foreground">
+      <button
+        className="absolute top-3 right-2 z-10 inline-flex size-7 items-center justify-center rounded-md bg-code opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+        data-slot="copy-button"
+        onClick={handleCopy}
+        type="button"
+      >
+        <span aria-live="polite" className="sr-only">
           {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
+        </span>
+        {copied ? (
+          <CheckIcon aria-hidden="true" className="size-3.5" />
+        ) : (
+          <ClipboardIcon aria-hidden="true" className="size-3.5" />
+        )}
+      </button>
       <pre
         className={cn(
           "no-scrollbar overflow-x-auto px-4 py-3.5 font-mono",

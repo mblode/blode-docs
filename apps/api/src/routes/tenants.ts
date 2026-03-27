@@ -16,6 +16,21 @@ const tenantResolveQuerySchema = z.object({
 
 const isPresent = <T>(value: T | null): value is T => value !== null;
 
+const buildTenantPathResolution = (
+  tenant: NonNullable<Awaited<ReturnType<typeof buildTenant>>>,
+  strategy: "preview" | "subdomain" | "custom-domain",
+  host: string,
+  pathname: string,
+  basePath: string
+) => {
+  const slugPath = stripPrefix(pathname, basePath || null);
+  const rewrittenPath = slugPath
+    ? `/sites/${tenant.slug}/${slugPath}`
+    : `/sites/${tenant.slug}/`;
+
+  return buildTenantResolution(tenant, strategy, host, basePath, rewrittenPath);
+};
+
 export const tenants = new Hono();
 
 tenants.get("/", async (c) => {
@@ -30,6 +45,7 @@ tenants.get(
   "/resolve",
   validateQuery(tenantResolveQuerySchema),
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor this handler by extracting resolution strategies into separate functions
+  // oxlint-disable-next-line eslint/complexity
   async (c) => {
     const query = c.req.valid("query");
     const host = normalizeHost(query.host);
@@ -43,12 +59,14 @@ tenants.get(
         if (!tenant) {
           return notFound(c);
         }
-        const slugPath = slugifyPath(pathname);
-        const rewrittenPath = slugPath
-          ? `/sites/${tenant.slug}/${slugPath}`
-          : `/sites/${tenant.slug}/`;
         return c.json(
-          buildTenantResolution(tenant, "preview", host, "", rewrittenPath),
+          buildTenantPathResolution(
+            tenant,
+            "preview",
+            host,
+            pathname,
+            tenant.pathPrefix ?? ""
+          ),
           200
         );
       }
@@ -60,17 +78,13 @@ tenants.get(
       if (!tenant) {
         return notFound(c);
       }
-      const slugPath = stripPrefix(pathname, domain.pathPrefix ?? null);
-      const rewrittenPath = slugPath
-        ? `/sites/${tenant.slug}/${slugPath}`
-        : `/sites/${tenant.slug}/`;
       return c.json(
-        buildTenantResolution(
+        buildTenantPathResolution(
           tenant,
           "custom-domain",
           host,
-          domain.pathPrefix ?? "",
-          rewrittenPath
+          pathname,
+          domain.pathPrefix ?? ""
         ),
         200
       );
@@ -89,12 +103,14 @@ tenants.get(
           if (!tenant) {
             return notFound(c);
           }
-          const slugPath = slugifyPath(pathname);
-          const rewrittenPath = slugPath
-            ? `/sites/${tenant.slug}/${slugPath}`
-            : `/sites/${tenant.slug}/`;
           return c.json(
-            buildTenantResolution(tenant, "subdomain", host, "", rewrittenPath),
+            buildTenantPathResolution(
+              tenant,
+              "subdomain",
+              host,
+              pathname,
+              tenant.pathPrefix ?? ""
+            ),
             200
           );
         }
@@ -113,12 +129,14 @@ tenants.get(
           if (!tenant) {
             return notFound(c);
           }
-          const slugPath = slugifyPath(pathname);
-          const rewrittenPath = slugPath
-            ? `/sites/${tenant.slug}/${slugPath}`
-            : `/sites/${tenant.slug}/`;
           return c.json(
-            buildTenantResolution(tenant, "subdomain", host, "", rewrittenPath),
+            buildTenantPathResolution(
+              tenant,
+              "subdomain",
+              host,
+              pathname,
+              tenant.pathPrefix ?? ""
+            ),
             200
           );
         }

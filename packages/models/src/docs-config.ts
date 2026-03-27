@@ -336,6 +336,69 @@ const MintlifySearchSchema = z
   })
   .strict();
 
+export const ContextualBuiltinOptionSchema = z.enum([
+  "add-mcp",
+  "aistudio",
+  "assistant",
+  "chatgpt",
+  "claude",
+  "copy",
+  "cursor",
+  "devin",
+  "devin-mcp",
+  "grok",
+  "mcp",
+  "perplexity",
+  "view",
+  "vscode",
+  "windsurf",
+]);
+
+const ContextualCustomHrefQuerySchema = z
+  .object({
+    key: z.string().min(1),
+    value: z.string().min(1),
+  })
+  .strict();
+
+const ContextualCustomHrefObjectSchema = z
+  .object({
+    base: z.string().min(1),
+    query: z.array(ContextualCustomHrefQuerySchema),
+  })
+  .strict();
+
+export const ContextualCustomOptionSchema = z
+  .object({
+    description: z.string().min(1),
+    href: z.union([z.string().min(1), ContextualCustomHrefObjectSchema]),
+    icon: z.string().min(1),
+    iconType: z.string().optional(),
+    title: z.string().min(1),
+  })
+  .strict();
+
+export const ContextualOptionSchema = z.union([
+  ContextualBuiltinOptionSchema,
+  ContextualCustomOptionSchema,
+]);
+
+export const DocsContextualSchema = z
+  .object({
+    display: z.enum(["header", "toc"]).optional(),
+    options: z.array(ContextualOptionSchema),
+  })
+  .strict();
+
+export type ContextualBuiltinOption = z.infer<
+  typeof ContextualBuiltinOptionSchema
+>;
+export type ContextualCustomOption = z.infer<
+  typeof ContextualCustomOptionSchema
+>;
+export type ContextualOption = z.infer<typeof ContextualOptionSchema>;
+export type DocsContextual = z.infer<typeof DocsContextualSchema>;
+
 export const MintlifyDocsConfigSchema = z
   .object({
     $schema: z.string().optional(),
@@ -348,6 +411,7 @@ export const MintlifyDocsConfigSchema = z
         primary: z.string().min(1),
       })
       .strict(),
+    contextual: DocsContextualSchema.optional(),
     description: z.string().optional(),
     favicon: MintlifyFaviconSchema.optional(),
     fonts: MintlifyFontsSchema.optional(),
@@ -478,6 +542,7 @@ export const SiteConfigSchema = z
   .object({
     collections: z.array(CollectionConfigSchema).min(1),
     colors: DocsColorsSchema.optional(),
+    contextual: DocsContextualSchema.optional(),
     description: z.string().optional(),
     favicon: UrlOrPathSchema.optional(),
     features: DocsFeatureFlagsSchema.optional(),

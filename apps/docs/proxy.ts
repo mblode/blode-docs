@@ -97,7 +97,17 @@ export const proxy = async (request: NextRequest) => {
   requestHeaders.set("x-tenant-base-path", resolution.basePath);
 
   const url = request.nextUrl.clone();
-  url.pathname = resolution.rewrittenPath;
+  const rewritten = resolution.rewrittenPath;
+
+  if (pathname.endsWith(".mdx") && !pathname.includes("/llms.mdx/")) {
+    const stripped = pathname.slice(0, -4);
+    const normalizedPath = stripBasePath(stripped, resolution.basePath);
+    const slug = normalizedPath === "/" ? "" : normalizedPath.slice(1);
+    const tenantPrefix = `/sites/${resolution.tenant.slug}`;
+    url.pathname = `${tenantPrefix}/llms.mdx/${slug}`;
+  } else {
+    url.pathname = rewritten;
+  }
 
   return NextResponse.rewrite(url, {
     request: {

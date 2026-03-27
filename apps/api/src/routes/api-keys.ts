@@ -3,9 +3,9 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { createApiKeyToken } from "../lib/api-key-auth.js";
-import { apiKeyDao, projectDao } from "../lib/db.js";
+import { apiKeyDao } from "../lib/db.js";
 import { authorizeProjectRequest } from "../lib/project-auth.js";
-import { notFound, unauthorized } from "../lib/responses.js";
+import { unauthorized } from "../lib/responses.js";
 import { validateJson, validateParams } from "../lib/validators.js";
 import { mapApiKey } from "../mappers/records.js";
 

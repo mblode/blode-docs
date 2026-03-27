@@ -18,13 +18,19 @@ const nextConfig = {
   },
   rewrites() {
     const assetPrefix = cleanEnv(process.env.PLATFORM_ASSET_PREFIX);
-    if (!assetPrefix) {
-      return [];
-    }
+    const assetRewrite = assetPrefix
+      ? [
+          {
+            destination: "/_next/:path*",
+            source: `${assetPrefix}/_next/:path*`,
+          },
+        ]
+      : [];
     return [
+      ...assetRewrite,
       {
-        destination: "/_next/:path*",
-        source: `${assetPrefix}/_next/:path*`,
+        destination: "/sites/:tenant/llms.mdx/:path*",
+        source: "/sites/:tenant/:path*.mdx",
       },
     ];
   },

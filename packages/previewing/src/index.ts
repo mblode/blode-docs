@@ -143,6 +143,7 @@ const buildGoogleFontsCssUrl = (
   return `https://fonts.googleapis.com/css2?${params.join("&")}&display=swap`;
 };
 
+// oxlint-disable-next-line eslint/complexity
 const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
   const navigation = {
     global:
@@ -202,6 +203,7 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
       },
     ],
     colors: docs.colors,
+    contextual: docs.contextual,
     description: docs.description,
     favicon:
       typeof docs.favicon === "string" ? docs.favicon : docs.favicon?.light,
@@ -213,15 +215,10 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
     },
     fonts,
     logo: docs.logo
-      ? (typeof docs.logo === "string"
-        ? {
-            dark: docs.logo,
-            light: docs.logo,
-          }
-        : {
-            dark: docs.logo.dark,
-            light: docs.logo.light,
-          })
+      ? {
+          dark: typeof docs.logo === "string" ? docs.logo : docs.logo.dark,
+          light: typeof docs.logo === "string" ? docs.logo : docs.logo.light,
+        }
       : undefined,
     name: docs.name,
     navigation,
@@ -286,6 +283,7 @@ const resolveJsonRefs = async (
     }
 
     const nextSeen = new Set(seen);
+    // oxlint-disable-next-line eslint-plugin-unicorn/no-immediate-mutation
     nextSeen.add(resolvedPath);
     const referenced = await readJsonConfig(source, resolvedPath);
     const referencedValue = await resolveJsonRefs(

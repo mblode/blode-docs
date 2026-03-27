@@ -1,9 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
+import { SearchIcon } from "blode-icons-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { toDocHref } from "@/lib/routes";
 
 export interface SearchItem {
@@ -18,54 +27,82 @@ export const Search = ({
   items: SearchItem[];
   basePath: string;
 }) => {
-  const [query, setQuery] = useState("");
-  const clearQuery = useCallback(() => {
-    setQuery("");
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || e.key === "/") {
+        if (
+          (e.target instanceof HTMLElement && e.target.isContentEditable) ||
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement ||
+          e.target instanceof HTMLSelectElement
+        ) {
+          return;
+        }
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
-  const handleQueryChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setQuery(event.target.value);
-    },
-    []
+
+  const runCommand = useCallback((command: () => unknown) => {
+    setOpen(false);
+    command();
+  }, []);
+
+  const handleOpen = useCallback(() => setOpen(true), []);
+
+  const itemHandlers = useMemo(
+    () =>
+      Object.fromEntries(
+        items.map((item) => [
+          item.path,
+          () => runCommand(() => router.push(toDocHref(item.path, basePath))),
+        ])
+      ),
+    [items, runCommand, router, basePath]
   );
-  const results = useMemo(() => {
-    if (!query.trim()) {
-      return [];
-    }
-    const lower = query.toLowerCase();
-    return items
-      .filter(
-        (item) =>
-          item.title.toLowerCase().includes(lower) ||
-          item.path.toLowerCase().includes(lower)
-      )
-      .slice(0, 6);
-  }, [items, query]);
 
   return (
-    <div className="relative">
-      <input
-        aria-label="Search content"
-        className="min-w-44 rounded-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-        onChange={handleQueryChange}
-        placeholder="Search content"
-        value={query}
-      />
-      {results.length ? (
-        <div className="absolute right-0 top-11 z-20 grid min-w-56 gap-2 rounded-xl border border-border bg-popover p-2.5 shadow-popover">
-          {results.map((item) => (
-            <Link
-              className="flex flex-col gap-0.5 rounded-lg px-2.5 py-2 hover:bg-accent"
-              href={toDocHref(item.path, basePath)}
-              key={item.path}
-              onClick={clearQuery}
-            >
-              <span>{item.title}</span>
-              <small className="text-muted-foreground">/{item.path}</small>
-            </Link>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <>
+      <button
+        aria-label="Search documentation"
+        className="inline-flex size-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground md:hidden"
+        onClick={handleOpen}
+        type="button"
+      >
+        <SearchIcon className="size-4.5" />
+      </button>
+      <Button
+        className="relative hidden h-8 w-full justify-start rounded-lg bg-muted/50 pl-3 font-normal text-foreground shadow-none hover:bg-muted/80 sm:pr-12 md:flex md:w-48 lg:w-56 xl:w-64 dark:bg-card"
+        onClick={handleOpen}
+        variant="outline"
+      >
+        <span className="hidden lg:inline-flex">Search documentation...</span>
+        <span className="inline-flex lg:hidden">Search...</span>
+      </Button>
+      <CommandDialog onOpenChange={setOpen} open={open}>
+        <CommandInput placeholder="Type a command or search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Pages">
+            {items.map((item) => (
+              <CommandItem
+                key={item.path}
+                // oxlint-disable-next-line eslint-plugin-react/jsx-handler-names
+                onSelect={itemHandlers[item.path]}
+                value={item.title}
+              >
+                {item.title}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </>
   );
 };

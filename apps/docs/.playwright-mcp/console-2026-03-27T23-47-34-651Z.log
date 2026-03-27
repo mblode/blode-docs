@@ -1,0 +1,338 @@
+[   10880ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   17362ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   26980ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:177:4
+Expected '=>', got '{'
+  175 |   variant?: "sidebar" | "floating" | "inset";
+  176 |   collapsible?: "offcanvas" | "icon" | "none";
+> 177 | }) {
+      |    ^
+  178 |   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  179 |
+  180 |   if (collapsible === "none") {
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   27740ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:177:4
+Expected '=>', got '{'
+  175 |   variant?: "sidebar" | "floating" | "inset";
+  176 |   collapsible?: "offcanvas" | "icon" | "none";
+> 177 | }) {
+      |    ^
+  178 |   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  179 |
+  180 |   if (collapsible === "none") {
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   29756ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:177:4
+Expected '=>', got '{'
+  175 |   variant?: "sidebar" | "floating" | "inset";
+  176 |   collapsible?: "offcanvas" | "icon" | "none";
+> 177 | }) {
+      |    ^
+  178 |   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  179 |
+  180 |   if (collapsible === "none") {
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   32759ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   42666ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   43331ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   43946ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   47791ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   48034ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   48367ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:272:41
+Expected '=>', got '{'
+  270 |   onClick,
+  271 |   ...props
+> 272 | }: React.ComponentProps<typeof Button>) {
+      |                                         ^
+  273 |   const { toggleSidebar } = useSidebar();
+  274 |
+  275 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   51238ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:294:79
+Expected '=>', got '{'
+  292 | };
+  293 |
+> 294 | const SidebarRail = ({ className, ...props }: React.ComponentProps<"button">) {
+      |                                                                               ^
+  295 |   const { toggleSidebar } = useSidebar();
+  296 |
+  297 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   53684ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:294:79
+Expected '=>', got '{'
+  292 | };
+  293 |
+> 294 | const SidebarRail = ({ className, ...props }: React.ComponentProps<"button">) {
+      |                                                                               ^
+  295 |   const { toggleSidebar } = useSidebar();
+  296 |
+  297 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   55624ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:294:79
+Expected '=>', got '{'
+  292 | };
+  293 |
+> 294 | const SidebarRail = ({ className, ...props }: React.ComponentProps<"button">) {
+      |                                                                               ^
+  295 |   const { toggleSidebar } = useSidebar();
+  296 |
+  297 |   return (
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   56367ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   67484ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   67643ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   68670ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   71624ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   75745ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   77227ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272

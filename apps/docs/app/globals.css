@@ -1,13 +1,22 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant fixed (&:is(.layout-fixed *));
 
 @theme inline {
-  --font-sans: var(--font-glide);
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-
+  --breakpoint-3xl: 1600px;
+  --breakpoint-4xl: 2000px;
+  --font-sans: var(--font-glide), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
   --shadow-soft: 0 15px 50px 0 rgba(27, 32, 50, 0.1);
   --shadow-input: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-popover:
@@ -43,7 +52,6 @@
     0 48px 48px -24px rgba(51, 51, 51, 0.04),
     0 96px 96px -32px rgba(51, 51, 51, 0.06),
     inset 0 -1px 1px -0.5px rgba(51, 51, 51, 0.06);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -85,16 +93,17 @@
   --color-selection: var(--selection);
   --color-selection-foreground: var(--selection-foreground);
   --color-overlay: var(--overlay);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 :root {
   --header-height: 4rem;
   --radius: 0.625rem;
+  --field-height: 48px;
+  --field-height-sm: 40px;
+  --field-radius: var(--radius-2xl);
+  --field-padding-x: 1rem;
+  --field-padding-y: 12px;
+  --textarea-min-height: 70px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -212,8 +221,19 @@
   }
 
   body {
-    font-synthesis-weight: none;
-    text-rendering: optimizeLegibility;
+    font-synthesis: none;
+    font-kerning: normal;
+    font-variant-ligatures: common-ligatures;
+  }
+
+  [data-slot="layout"] {
+    @apply overscroll-none;
+  }
+
+  @supports (font: -apple-system-body) and (-webkit-appearance: none) {
+    [data-wrapper] {
+      @apply min-[1800px]:border-t;
+    }
   }
 
   a {
@@ -225,27 +245,44 @@
     max-width: 100%;
   }
 
+  a:active,
+  button:active {
+    @apply opacity-60 md:opacity-100;
+  }
+
   button,
   [role="button"],
   summary {
     cursor: pointer;
   }
+
+  [data-lang="ar"] {
+    font-family: var(--font-ar);
+  }
+
+  [data-lang="he"] {
+    font-family: var(--font-he);
+  }
 }
 
-.theme-maple {
-  --color-primary: #f97316;
-  --color-primary-soft: #ffedd5;
-  --color-primary-dark: #7c2d12;
+@utility border-grid {
+  @apply border-border/50 dark:border-border;
 }
 
-.theme-palm {
-  --color-primary: #14b8a6;
-  --color-primary-soft: #ccfbf1;
-  --color-primary-dark: #0f766e;
+@utility section-soft {
+  @apply from-background to-surface/40 dark:bg-background 3xl:fixed:bg-none bg-gradient-to-b;
+}
+
+@utility theme-container {
+  @apply font-sans;
 }
 
 @utility container-wrapper {
-  @apply mx-auto w-full px-2;
+  @apply 3xl:fixed:max-w-[calc(var(--breakpoint-2xl)+2rem)] mx-auto w-full px-2;
+}
+
+@utility container {
+  @apply 3xl:max-w-screen-2xl mx-auto max-w-[1400px] px-4 lg:px-8;
 }
 
 @utility no-scrollbar {
@@ -257,8 +294,8 @@
   }
 }
 
-@utility border-grid {
-  @apply border-border/50 dark:border-border;
+@utility border-ghost {
+  @apply after:border-border relative after:absolute after:inset-0 after:border after:mix-blend-darken dark:after:mix-blend-lighten;
 }
 
 @utility step {
@@ -267,6 +304,12 @@
   &:before {
     content: counter(step);
     @apply border-background bg-muted mr-2 inline-flex size-6 items-center justify-center rounded-full text-center -indent-px font-mono text-sm font-medium md:absolute md:mt-[-4px] md:ml-[-50px] md:size-9 md:border-4;
+  }
+}
+
+@utility extend-touch-target {
+  @media (pointer: coarse) {
+    @apply relative touch-manipulation after:absolute after:-inset-2;
   }
 }
 
@@ -391,6 +434,12 @@
     font-family: var(--font-mono);
     font-size: 0.8rem;
     border-radius: var(--radius-sm);
+  }
+}
+
+@layer components {
+  .dialog-ring {
+    @apply rounded-xl border-none bg-clip-padding shadow-2xl ring-4 ring-neutral-200/80 dark:bg-neutral-900 dark:ring-neutral-800;
   }
 }
 

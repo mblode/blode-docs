@@ -9,7 +9,7 @@ import {
   rootDomain,
   validConfiguredDomainStatus,
 } from "../lib/config.js";
-import { domainDao, projectDao } from "../lib/db.js";
+import { domainDao } from "../lib/db.js";
 import { logError, logWarn } from "../lib/logger.js";
 import {
   normalizeHostnameInput,

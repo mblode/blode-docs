@@ -1,0 +1,352 @@
+[      45ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://docs.localhost:1355/sites/atlas:0
+[     110ms] Error: ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx
+
+
+    at <unknown> (Error: ./apps/docs/components/ui/sidebar.tsx:330:1)
+    at Object.getCompilationErrors (file:///Users/mblode/Code/mblode/blode-docs/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1189:59)
+    at DevBundlerService.getCompilationError (file:///Users/mblode/Code/mblode/blode-docs/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/mblode/Code/mblode/blode-docs/node_modules/next/dist/server/dev/next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file:///Users/mblode/Code/mblode/blode-docs/node_modules/next/dist/server/dev/next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/mblode/Code/mblode/blode-docs/node_modules/next/dist/server/base-server.js:1745:26)
+[     111ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_13rdevn._.js:2099
+[     169ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:330:1
+Expression expected
+  328 |     />
+  329 |   );
+> 330 | }
+      | ^
+  331 |
+  332 | function SidebarInput({
+  333 |   className,
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_13rdevn._.js:2099
+[    1572ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_13rdevn._.js:1380
+[   28891ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   29235ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   29372ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://docs.localhost:1355/sites/atlas:0
+[   29476ms] ReferenceError: useMemo is not defined
+    at Search (http://docs.localhost:1355/_next/static/chunks/_00xdtz8._.js:2481:26)
+    at Object.react_stack_bottom_frame (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:15037:24)
+    at renderWithHooks (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4620:24)
+    at updateFunctionComponent (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6081:21)
+    at beginWork (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6665:639)
+    at runWithFiberInDEV (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopSync (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9449:40)
+    at renderRootSync (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9433:13)
+    at performWorkOnRoot (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9098:47)
+    at performWorkOnRootViaSchedulerTask (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64)
+[   34408ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   34634ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://docs.localhost:1355/sites/atlas:0
+[   34764ms] ReferenceError: useMemo is not defined
+    at Search (http://docs.localhost:1355/_next/static/chunks/_00xdtz8._.js:2481:26)
+    at Object.react_stack_bottom_frame (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:15037:24)
+    at renderWithHooks (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4620:24)
+    at updateFunctionComponent (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6081:21)
+    at beginWork (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6665:639)
+    at runWithFiberInDEV (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopSync (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9449:40)
+    at renderRootSync (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9433:13)
+    at performWorkOnRoot (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9098:47)
+    at performWorkOnRootViaSchedulerTask (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64)
+[   34917ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   40348ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   46489ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   49802ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   52928ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   58947ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   64535ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   71377ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   74970ms] [ERROR] ./apps/docs/components/ui/sidebar.tsx:465:33
+Expected '=>', got '{'
+  463 |   className,
+  464 |   ...props
+> 465 | }: React.ComponentProps<"div">) {
+      |                                 ^
+  466 |   return (
+  467 |     <div
+  468 |       className={cn("w-full text-sm", className)}
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/sidebar.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[   83536ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   91757ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  103304ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  113936ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  132022ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  145186ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  155397ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  166141ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  208368ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  208859ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  214545ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  258180ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  264739ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  282297ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  354053ms] [ERROR] ./apps/docs/components/ui/search.tsx:96:17
+Expected '</', got 'ident'
+  94 |               {/* oxlint-disable-next-line eslint-plugin-react/jsx-handler-names */}
+  95 |               <CommandItem
+> 96 |                 key={item.path}
+     |                 ^^^
+  97 |                 onSelect={itemHandlers[item.path]}
+  98 |                 value={item.title}
+  99 |               >
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/search.tsx
+    ./apps/docs/components/docs/doc-header.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  395954ms] [ERROR] ./apps/docs/components/ui/search.tsx:96:17
+Expected '</', got 'ident'
+  94 |               {/* oxlint-disable-next-line eslint-plugin-react/jsx-handler-names */}
+  95 |               <CommandItem
+> 96 |                 key={item.path}
+     |                 ^^^
+  97 |                 onSelect={itemHandlers[item.path]}
+  98 |                 value={item.title}
+  99 |               >
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./apps/docs/components/ui/search.tsx
+    ./apps/docs/components/docs/doc-header.tsx
+    ./apps/docs/components/docs/doc-shell.tsx
+    ./apps/docs/app/sites/[tenant]/[[...slug]]/page.tsx @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  446525ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  447825ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  457530ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://docs.localhost:1355/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431

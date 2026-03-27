@@ -22,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={glide.variable} suppressHydrationWarning>
-      <body>{children}</body>
+      <body className="relative flex w-full flex-col justify-center overflow-x-hidden scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*14)]">
+        {children}
+      </body>
     </html>
   );
 }

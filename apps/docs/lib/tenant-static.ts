@@ -1,6 +1,11 @@
 import type { TenantResolution } from "@repo/contracts";
 import type { Tenant } from "@repo/models";
-import { buildContentIndex, loadSiteConfig } from "@repo/previewing";
+import type { ContentEntry } from "@repo/previewing";
+import {
+  buildContentIndex,
+  loadContentSource,
+  loadSiteConfig,
+} from "@repo/previewing";
 
 import {
   getTenantContentSource,
@@ -102,6 +107,8 @@ const loadTenantUrlData = async (tenant: Tenant) => {
 
   return {
     config,
+    contentIndex,
+    contentSource,
     pages: [...new Set([...navPages, ...contentPages])],
   };
 };
@@ -128,31 +135,94 @@ export const buildTenantRobotsTxt = (
   const origin = getCanonicalOrigin(tenant, context);
   return `User-agent: *
 Allow: /
-Sitemap: ${origin}/sitemap.xml`;
+Sitemap: ${origin}/sitemap.xml
+
+# LLM-friendly content
+# ${origin}/llms.txt - Index of all documentation pages
+# ${origin}/llms-full.txt - Full documentation content
+# Append .mdx to any page URL for raw markdown`;
 };
+
+const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
+
+const stripFrontmatter = (source: string) =>
+  source.replace(FRONTMATTER_REGEX, "").trim();
 
 export const buildTenantLlmsTxt = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => {
-  const { config, pages } = await loadTenantUrlData(tenant);
+  const { config, contentIndex } = await loadTenantUrlData(tenant);
   const origin = getCanonicalOrigin(tenant, context);
   const basePath = getCanonicalDocBasePath(tenant, context);
-  const urls = pages
-    .slice(0, 50)
-    .map((page) => `${origin}${toDocHref(page, basePath)}`);
 
-  return [
+  const entries = contentIndex.entries.filter(
+    (entry): entry is Extract<ContentEntry, { kind: "entry" }> =>
+      entry.kind === "entry"
+  );
+
+  const lines = [
     `# ${config.name}`,
     config.description ? `> ${config.description}` : null,
     "",
     `Sitemap: ${origin}/sitemap.xml`,
     "",
-    "## Key URLs",
-    ...urls.map((url) => `- ${url}`),
-  ]
-    .filter(Boolean)
-    .join("\n");
+    "## Docs",
+    ...entries.map((entry) => {
+      const url = `${origin}${toDocHref(entry.slug, basePath)}`;
+      const desc = entry.description ? `: ${entry.description}` : "";
+      return `- [${entry.title}](${url})${desc}`;
+    }),
+  ];
+
+  return lines.filter((line) => line !== null).join("\n");
+};
+
+export const buildTenantLlmsFullTxt = async (
+  tenant: Tenant,
+  context: TenantRequestContext = {}
+) => {
+  const { contentIndex, contentSource } = await loadTenantUrlData(tenant);
+  const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
+
+  const entries = contentIndex.entries.filter(
+    (entry): entry is Extract<ContentEntry, { kind: "entry" }> =>
+      entry.kind === "entry"
+  );
+
+  const parts = await Promise.all(
+    entries.map(async (entry) => {
+      const raw = await loadContentSource(contentSource, entry.relativePath);
+      const body = stripFrontmatter(raw);
+      const url = `${origin}${toDocHref(entry.slug, basePath)}`;
+      return `# ${entry.title} (${url})\n\n${body}`;
+    })
+  );
+
+  return parts.join("\n\n");
+};
+
+export const getLlmPageText = async (tenant: Tenant, slug: string) => {
+  const contentSource = getTenantContentSource(tenant);
+  const configResult = await loadSiteConfig(contentSource);
+  if (!configResult.ok) {
+    return null;
+  }
+
+  const config = await resolveSiteConfigAssets(
+    configResult.config,
+    contentSource
+  );
+  const contentIndex = await buildContentIndex(contentSource, config);
+  const entry = contentIndex.bySlug.get(slug);
+  if (!entry || entry.kind !== "entry") {
+    return null;
+  }
+
+  const raw = await loadContentSource(contentSource, entry.relativePath);
+  const body = stripFrontmatter(raw);
+  return `# ${entry.title}\n\n${body}`;
 };
 
 export const getTenantMetadata = async (tenant: Tenant) => {

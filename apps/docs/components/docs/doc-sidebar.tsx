@@ -18,7 +18,7 @@ import type { NavEntry } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
 
 const MENU_BUTTON_CLASS =
-  "data-[active=true]:bg-accent data-[active=true]:border-accent relative h-[30px] w-fit overflow-visible border border-transparent text-[0.8rem] font-medium after:absolute after:inset-x-0 after:-inset-y-1 after:z-0 after:rounded-md";
+  "data-[active=true]:bg-accent data-[active=true]:border-accent 3xl:fixed:w-full 3xl:fixed:max-w-48 relative h-[30px] w-fit overflow-visible border border-transparent text-[0.8rem] font-medium after:absolute after:inset-x-0 after:-inset-y-1 after:z-0 after:rounded-md";
 
 export const DocSidebar = ({
   entries,
@@ -66,6 +66,7 @@ export const DocSidebar = ({
                             : toDocHref(anchor.href, basePath)
                         }
                       >
+                        <span className="absolute inset-0 flex w-(--sidebar-menu-width) bg-transparent" />
                         {anchor.label}
                       </a>
                     </SidebarMenuButton>
@@ -91,6 +92,7 @@ export const DocSidebar = ({
                         isActive={isActive(entry.path)}
                       >
                         <Link href={toDocHref(entry.path, basePath)}>
+                          <span className="absolute inset-0 flex w-(--sidebar-menu-width) bg-transparent" />
                           {entry.title}
                         </Link>
                       </SidebarMenuButton>
@@ -119,6 +121,7 @@ export const DocSidebar = ({
                         isActive={isActive(item.path)}
                       >
                         <Link href={toDocHref(item.path, basePath)}>
+                          <span className="absolute inset-0 flex w-(--sidebar-menu-width) bg-transparent" />
                           {item.title}
                         </Link>
                       </SidebarMenuButton>

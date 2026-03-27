@@ -7,6 +7,10 @@
     {
       "group": "Customization",
       "pages": ["typography", "theming"]
+    },
+    {
+      "group": "Components",
+      "pages": ["components/breadcrumb"]
     }
   ]
 }

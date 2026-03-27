@@ -55,9 +55,7 @@ const labelFromType = (type: ContentType) => {
     case "site": {
       return "Site";
     }
-    default: {
-      return "Docs";
-    }
+    // no default
   }
 };
 
@@ -153,6 +151,7 @@ const getDocData = async (tenantSlug: string, slugKey: string) => {
       nav,
       pageDescription: openApiEntry.operation.description,
       pageTitle: openApiEntry.operation.summary ?? openApiEntry.identifier,
+      rawContent: openApiEntry.operation.description ?? "",
       searchItems: [...searchItems.values()],
       tenant,
       toc: [],
@@ -218,6 +217,7 @@ const getDocData = async (tenantSlug: string, slugKey: string) => {
     nav: showDocsNav ? nav : [],
     pageDescription,
     pageTitle,
+    rawContent: source,
     searchItems: [...searchItems.values()],
     tenant,
     toc,
@@ -349,6 +349,7 @@ const DocPage = async ({
       nav={data.nav}
       pageDescription={data.pageDescription}
       pageTitle={data.pageTitle}
+      rawContent={data.rawContent}
       searchItems={data.searchItems}
       toc={data.toc}
     />
