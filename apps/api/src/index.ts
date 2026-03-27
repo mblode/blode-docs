@@ -961,7 +961,11 @@ const start = async () => {
   }
 };
 
-if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.VITEST !== "true" &&
+  !process.env.VERCEL
+) {
   start();
 }
 
