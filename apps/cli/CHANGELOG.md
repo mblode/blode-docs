@@ -1,5 +1,11 @@
 # blode-docs
 
+## 0.0.3
+
+### Patch Changes
+
+- Migrate API to Hono and fix Vercel deployment configuration
+
 ## 0.0.2
 
 ### Patch Changes
