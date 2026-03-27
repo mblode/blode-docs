@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install --ignore-scripts",
   "buildCommand": "npx turbo run build --filter=api...",
   "outputDirectory": "apps/api/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
