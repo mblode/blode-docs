@@ -964,3 +964,5 @@ const start = async () => {
 if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
   start();
 }
+
+export default app;
