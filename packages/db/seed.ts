@@ -1,5 +1,5 @@
 /**
- * Seed script for blodemd.
+ * Seed script for Blode.md.
  * Creates a seed user, projects, and generates an API key for each.
  *
  * Usage:
@@ -76,7 +76,7 @@ const userDao = new UserDao();
 const projectDao = new ProjectDao();
 const apiKeyDao = new ApiKeyDao();
 
-console.log("Seeding blodemd...\n");
+console.log("Seeding Blode.md...\n");
 
 const user = await userDao.upsertByAuthId(SEED_USER);
 console.log(`  [user] ${user.email} (id: ${user.id})\n`);
@@ -112,6 +112,6 @@ for (const proj of PROJECTS) {
 }
 
 console.log(
-  "Done. Add each api-key as BLODE_DOCS_API_KEY in the repo's GitHub secrets."
+  "Done. Add each api-key as BLODEMD_API_KEY in the repo's GitHub secrets."
 );
 process.exit(0);

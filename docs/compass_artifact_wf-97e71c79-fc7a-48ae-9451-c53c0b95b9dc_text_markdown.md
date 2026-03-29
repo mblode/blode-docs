@@ -1,10 +1,10 @@
-# Blodemd: architecture for a headless, open-source Mintlify alternative
+# Blode.md: architecture for a headless, open-source Mintlify alternative
 
-**Blodemd can be built as a single Next.js/fumadocs deployment on Vercel that serves every project's docs on its own custom domain, using middleware-based tenant routing, blob-stored MDX pushed via CLI or GitHub App, and on-demand ISR for instant content updates — all without per-project rebuilds.** This architecture mirrors Mintlify's proven approach (one Vercel project serving 2,500+ custom domains) but strips it down to an open-source, headless core. The key enablers are Vercel's Platforms Starter Kit pattern, fumadocs' `multiple()` source API with `@fumadocs/mdx-remote` for runtime compilation, and a SHA-based incremental push flow. What follows is a complete blueprint.
+**Blode.md can be built as a single Next.js/fumadocs deployment on Vercel that serves every project's docs on its own custom domain, using middleware-based tenant routing, blob-stored MDX pushed via CLI or GitHub App, and on-demand ISR for instant content updates — all without per-project rebuilds.** This architecture mirrors Mintlify's proven approach (one Vercel project serving 2,500+ custom domains) but strips it down to an open-source, headless core. The key enablers are Vercel's Platforms Starter Kit pattern, fumadocs' `multiple()` source API with `@fumadocs/mdx-remote` for runtime compilation, and a SHA-based incremental push flow. What follows is a complete blueprint.
 
 ---
 
-## How Mintlify actually works — and where Blodemd diverges
+## How Mintlify actually works — and where Blode.md diverges
 
 Mintlify runs **one Next.js application on a single Vercel project** that serves every customer's documentation site. Co-founder Hahnbee Lee confirmed this directly: "Multi-tenancy and all the custom domains connecting to one Vercel project is so epic." As of mid-2024, that single deployment handled **2,500+ custom domains** with automatic SSL. Content never triggers a full rebuild — Mintlify uses ISR so updates propagate in seconds via on-demand revalidation.
 
@@ -12,7 +12,7 @@ The content pipeline is GitHub-first. There is no `mintlify deploy` command. Use
 
 Mintlify's config file (`docs.json`, formerly `mint.json`) controls everything: **9 theme presets**, custom colors/logos/fonts, recursive navigation structure with tabs and groups, API playground configuration, analytics integrations, SEO settings, redirects, and even AI assistant behavior. The MDX rendering layer is open-source — `@mintlify/mdx` wraps `next-mdx-remote-client` with syntax highlighting, and `@mintlify/components` provides Tailwind-based React components (Accordion, Card, Tabs, CodeBlock, etc.).
 
-**Where Blodemd diverges**: Mintlify's rendering engine and platform are proprietary (Elastic-2.0 license). Blodemd can be fully open-source, built on fumadocs (which is MIT-licensed and more composable), and self-hostable. Mintlify recently added an enterprise "custom frontend" option using Astro — acknowledging that developers want control over their rendering layer. Blodemd is headless from day one.
+**Where Blode.md diverges**: Mintlify's rendering engine and platform are proprietary (Elastic-2.0 license). Blode.md can be fully open-source, built on fumadocs (which is MIT-licensed and more composable), and self-hostable. Mintlify recently added an enterprise "custom frontend" option using Astro — acknowledging that developers want control over their rendering layer. Blode.md is headless from day one.
 
 ---
 
@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
 
 ### Fumadocs integration for multi-project rendering
 
-Fumadocs is well-suited for this because it operates on **virtual file systems**, not the real filesystem. The `Source` interface accepts any array of virtual files, and the `multiple()` API combines sources. For Blodemd, the key is `@fumadocs/mdx-remote` — it compiles MDX at runtime from any source (blob storage, database, API) without a build step:
+Fumadocs is well-suited for this because it operates on **virtual file systems**, not the real filesystem. The `Source` interface accepts any array of virtual files, and the `multiple()` API combines sources. For Blode.md, the key is `@fumadocs/mdx-remote` — it compiles MDX at runtime from any source (blob storage, database, API) without a build step:
 
 ```typescript
 // app/docs/[project]/[[...slug]]/page.tsx
@@ -134,14 +134,14 @@ This gives complete per-project branding isolation — different logos, colors, 
 
 ## Content storage: blob + database hybrid
 
-After evaluating four storage strategies (git-based, blob, database, hybrid), **the hybrid approach wins for Blodemd**: blob storage for MDX content, a database for metadata and config.
+After evaluating four storage strategies (git-based, blob, database, hybrid), **the hybrid approach wins for Blode.md**: blob storage for MDX content, a database for metadata and config.
 
 | Layer               | Storage                            | What lives here                                                                        | Why                                                            |
 | ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | **Raw MDX**         | Cloudflare R2 or Vercel Blob       | `.mdx` files, images, assets                                                           | Cheap ($0/GB for R2 free tier), fast CDN reads, simple PUT/GET |
 | **Compiled cache**  | Same blob, separate prefix         | Pre-compiled MDX output                                                                | Avoids re-compilation on every ISR hit                         |
 | **Metadata**        | Turso (SQLite at edge) or Postgres | Project configs, navigation trees, deployment history, domain mappings, file manifests | Structured queries, version tracking, fast edge reads          |
-| **Source of truth** | User's own Git repo                | Everything                                                                             | Blodemd never becomes the git host                             |
+| **Source of truth** | User's own Git repo                | Everything                                                                             | Blode.md never becomes the git host                             |
 
 **Storage key scheme for blob:**
 
@@ -203,7 +203,7 @@ blodemd status        # Check deployment status
 - **Content-addressed storage** means unchanged files are never re-uploaded, even across deployments
 - **Project linking** via `.blodemd/` directory (stores project ID and API key locally, gitignored)
 - **API keys** use a clear prefix: `nd_live_sk_` for production, `nd_test_sk_` for preview
-- **CI mode**: `BLODE_DOCS_API_KEY` env var + `--ci` flag for non-interactive use
+- **CI mode**: `BLODEMD_API_KEY` env var + `--ci` flag for non-interactive use
 
 ### Authentication flow
 
@@ -222,9 +222,9 @@ For CI/CD, a project-scoped API key replaces the OAuth token.
 
 The GitHub App is the zero-config option. After installation:
 
-1. User installs the Blodemd GitHub App on their repo
+1. User installs the Blode.md GitHub App on their repo
 2. App receives `push` webhook on default branch
-3. Blodemd backend pulls changed files via GitHub API (using installation token)
+3. Blode.md backend pulls changed files via GitHub API (using installation token)
 4. Runs the same pipeline as CLI push: store in blob → update metadata → revalidate ISR
 5. PR pushes create preview deployments; bot comments with preview URL
 
@@ -247,7 +247,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: blodemd/deploy-action@v1
         with:
-          api-key: ${{ secrets.BLODE_DOCS_API_KEY }}
+          api-key: ${{ secrets.BLODEMD_API_KEY }}
           docs-dir: ./docs
 ```
 
@@ -378,7 +378,7 @@ For the default experience, `*.blodemd.app` is configured as a wildcard domain o
 
 ## Build and deploy strategy: ISR with tiered revalidation
 
-The central app is **never fully rebuilt** when a single project's content changes. This is the critical scaling insight from Mintlify's architecture. Instead, Blodemd uses a tiered revalidation strategy:
+The central app is **never fully rebuilt** when a single project's content changes. This is the critical scaling insight from Mintlify's architecture. Instead, Blode.md uses a tiered revalidation strategy:
 
 **Tier 1 — Content-only changes** (MDX files modified): On-demand `revalidateTag` for each changed page. The push pipeline knows exactly which files changed (from the SHA diff), so it revalidates only those paths. Sub-second updates.
 
@@ -415,7 +415,7 @@ revalidateTag(`project:${projectId}`);
            │                      │
            ▼                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│                  Blodemd API Server                    │
+│                  Blode.md API Server                    │
 │                                                          │
 │  POST /deployments/prepare  → SHA diff, return missing   │
 │  PUT  (presigned URLs)      → Direct-to-blob upload      │
@@ -464,15 +464,15 @@ revalidateTag(`project:${projectId}`);
 
 ---
 
-## How Blodemd is simpler and more headless than Mintlify
+## How Blode.md is simpler and more headless than Mintlify
 
-Mintlify is a polished commercial product with a web editor, team management, analytics dashboards, AI assistant, and dozens of integrations. Blodemd deliberately omits all of that to focus on the infrastructure layer.
+Mintlify is a polished commercial product with a web editor, team management, analytics dashboards, AI assistant, and dozens of integrations. Blode.md deliberately omits all of that to focus on the infrastructure layer.
 
-**What Blodemd keeps**: Multi-tenant custom domain routing, ISR-based content delivery, MDX rendering with rich components, per-project branding, CLI push workflow, GitHub integration, config-driven navigation. These are the hard infrastructure problems that every docs platform needs to solve.
+**What Blode.md keeps**: Multi-tenant custom domain routing, ISR-based content delivery, MDX rendering with rich components, per-project branding, CLI push workflow, GitHub integration, config-driven navigation. These are the hard infrastructure problems that every docs platform needs to solve.
 
-**What Blodemd drops**: Web WYSIWYG editor, team/permissions management, built-in analytics dashboards, AI chat assistant, proprietary themes, managed search (users bring their own Algolia/Orama). This keeps the platform lean, self-hostable, and composable.
+**What Blode.md drops**: Web WYSIWYG editor, team/permissions management, built-in analytics dashboards, AI chat assistant, proprietary themes, managed search (users bring their own Algolia/Orama). This keeps the platform lean, self-hostable, and composable.
 
-**Where Blodemd can be better**: Full source access means users can customize every component. Fumadocs' headless `fumadocs-core` layer means the rendering can be completely replaced while keeping the content infrastructure. The CLI-first approach with `blodemd push` gives explicit control that Mintlify's purely Git-triggered model doesn't offer. And being open-source means no vendor lock-in — the entire platform can be forked and self-hosted on any Vercel-compatible infrastructure.
+**Where Blode.md can be better**: Full source access means users can customize every component. Fumadocs' headless `fumadocs-core` layer means the rendering can be completely replaced while keeping the content infrastructure. The CLI-first approach with `blodemd push` gives explicit control that Mintlify's purely Git-triggered model doesn't offer. And being open-source means no vendor lock-in — the entire platform can be forked and self-hosted on any Vercel-compatible infrastructure.
 
 The key technical risk is **fumadocs' remote MDX limitations** — `@fumadocs/mdx-remote` doesn't support imports/exports in MDX files, and search indexing for remote content requires manual setup rather than fumadocs' auto-generated indexes. Both are solvable: custom components are injected at compile time (not imported), and Orama Cloud or Algolia handle search independently of the content source. The single-maintainer risk on fumadocs is real but mitigated by its MIT license and growing adoption (used by Vercel, Unkey, and Orama themselves).
 

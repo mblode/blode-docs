@@ -1,6 +1,8 @@
-# blodemd
+# Blode.md
 
-Multi-tenant documentation platform — serve versioned MDX docs per tenant from a shared Next.js frontend backed by a Hono API.
+Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.
+
+Blode.md is a multi-tenant documentation platform — serve versioned MDX docs per tenant from a shared Next.js frontend backed by a Hono API.
 
 ## Apps
 

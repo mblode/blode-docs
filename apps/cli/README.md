@@ -1,4 +1,4 @@
-<h1 align="center">blodemd</h1>
+<h1 align="center">Blode.md</h1>
 
 <p align="center">Deploy and manage documentation sites from the command line.</p>
 
@@ -6,7 +6,7 @@
   <a href="https://www.npmjs.com/package/blodemd"><img src="https://img.shields.io/npm/v/blodemd.svg" alt="npm version"></a>
 </p>
 
-- **One-command deploy:** Push your entire docs folder to Blode Docs with `blodemd push`.
+- **One-command deploy:** Push your entire docs folder to Blode.md with `blodemd push`.
 - **Scaffold in seconds:** Generate a ready-to-edit docs folder with `blodemd init`.
 - **Config validation:** Catch `docs.json` errors before deploying.
 - **CI-friendly:** Authenticate via environment variables and use the GitHub Action for automated deploys.
@@ -53,11 +53,11 @@ blodemd dev               Show instructions for the local dev server
 ### `push` Options
 
 ```
---project <slug>    Project slug (env: BLODE_DOCS_PROJECT)
---api-url <url>     API URL (env: BLODE_DOCS_API_URL)
---api-key <token>   API key (env: BLODE_DOCS_API_KEY)
---branch <name>     Git branch (env: BLODE_DOCS_BRANCH)
---message <msg>     Deploy message (env: BLODE_DOCS_COMMIT_MESSAGE)
+--project <slug>    Project slug (env: BLODEMD_PROJECT)
+--api-url <url>     API URL (env: BLODEMD_API_URL)
+--api-key <token>   API key (env: BLODEMD_API_KEY)
+--branch <name>     Git branch (env: BLODEMD_BRANCH)
+--message <msg>     Deploy message (env: BLODEMD_COMMIT_MESSAGE)
 ```
 
 The CLI reads the project slug from the `name` field in `docs.json` when `--project` is not set.
@@ -69,7 +69,7 @@ Use the `mblode/blodemd/packages/deploy-action` composite action to deploy on ev
 ```yaml
 - uses: mblode/blodemd/packages/deploy-action@main
   with:
-    api-key: ${{ secrets.BLODE_DOCS_API_KEY }}
+    api-key: ${{ secrets.BLODEMD_API_KEY }}
     directory: docs
 ```
 

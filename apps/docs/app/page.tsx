@@ -201,9 +201,9 @@ export default function HomePage() {
               </div>
               <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm shadow-sm md:p-8">
                 {
-                  "- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODE_DOCS_API_KEY: $"
+                  "- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: $"
                 }
-                {"{{ secrets.BLODE_API_KEY }}"}
+                {"{{ secrets.BLODEMD_API_KEY }}"}
               </pre>
             </div>
           </div>

@@ -1,7 +1,7 @@
 {
   "name": "blodemd",
   "version": "0.0.3",
-  "description": "Blode Docs CLI",
+  "description": "Blode.md CLI",
   "repository": {
     "type": "git",
     "url": "https://github.com/mblode/blodemd"
