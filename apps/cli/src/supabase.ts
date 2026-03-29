@@ -18,8 +18,8 @@ export const buildOAuthUrls = (
   authorizeUrl: string;
   tokenUrl: string;
 } => ({
-  authorizeUrl: `${config.url}/auth/v1/authorize`,
-  tokenUrl: `${config.url}/auth/v1/token`,
+  authorizeUrl: `${config.url}/auth/v1/oauth/authorize`,
+  tokenUrl: `${config.url}/auth/v1/oauth/token`,
 });
 
 export const tokenResponseToStoredSession = (

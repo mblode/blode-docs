@@ -39,7 +39,7 @@ const ConsentForm = () => {
 
         // Redirect back to Supabase authorize endpoint to complete the flow
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-        window.location.href = `${supabaseUrl}/auth/v1/authorize?${consentParams.toString()}`;
+        window.location.href = `${supabaseUrl}/auth/v1/oauth/authorize?${consentParams.toString()}`;
         return null;
       }
 
@@ -82,7 +82,7 @@ const ConsentForm = () => {
       }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-      window.location.href = `${supabaseUrl}/auth/v1/authorize?${consentParams.toString()}`;
+      window.location.href = `${supabaseUrl}/auth/v1/oauth/authorize?${consentParams.toString()}`;
       return null;
     },
     null

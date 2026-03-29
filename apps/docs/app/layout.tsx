@@ -1,3 +1,4 @@
+import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Script from "next/script";
@@ -25,7 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={glide.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${glide.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_SCRIPT}
