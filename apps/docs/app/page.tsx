@@ -1,19 +1,13 @@
 import { Button } from "@/components/ui/button";
 
 /*
- * Visual thesis: Monochrome terminal confidence — quiet authority of a
- * well-crafted CLI manual, generous whitespace, editorial type scale.
+ * Golden Circle narrative: WHY → HOW → WHAT
  *
- * Content plan:
- *   1. Hero — brand-first, full-bleed, install CTA
- *   2. Support — 3-step workflow as a single terminal sequence
- *   3. Detail — features as a text list, CI/CD snippet
- *   4. Final CTA — install + live examples
- *
- * Interaction thesis:
- *   1. Fade-up entrance on hero content (CSS @keyframes)
- *   2. Cursor blink on terminal prompt
- *   3. Hover lift on links
+ * 1. Hero (WHY)   — Documentation should ship as fast as code.
+ * 2. Philosophy (HOW) — Your terminal is the interface.
+ * 3. Capabilities (WHAT) — Everything ships from one project.
+ * 4. CI/CD (WHAT)  — Every merge ships docs.
+ * 5. CTA       — Ship your first doc in under a minute.
  */
 
 export default function HomePage() {
@@ -42,49 +36,61 @@ export default function HomePage() {
         </nav>
       </header>
 
-      {/* Hero — full-bleed, brand dominant */}
       <main id="main">
+        {/* WHY — the belief */}
         <section className="pb-24 pt-20 md:pb-32 md:pt-28 lg:pt-36">
           <div className="container">
             <h1
-              className="text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl"
+              className="max-w-3xl text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl"
               style={{ textWrap: "balance" }}
             >
-              blode.md
+              Documentation should ship as fast as code.
             </h1>
-            <p className="mt-6 max-w-md text-lg text-muted-foreground md:text-xl">
-              Ship beautiful docs from your terminal.
-              <br />
-              Write MDX, deploy with one command.
+            <p
+              className="mt-6 max-w-lg text-lg text-muted-foreground md:text-xl"
+              style={{ textWrap: "balance" }}
+            >
+              Most teams treat docs as an afterthought. A separate system, a
+              manual deploy, content that drifts from the codebase. Every merge
+              ships code. Why not docs?
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <code className="rounded-lg bg-surface px-4 py-2.5 font-mono text-sm">
-                <span className="text-muted-foreground">$</span> npm install -g
-                blodemd
-              </code>
+              <Button size="lg" asChild>
+                <a href="#get-started">Get started</a>
+              </Button>
               <Button variant="outline" size="lg" asChild>
-                <a href="https://atlas.blode.md">See live docs</a>
+                <a href="https://atlas.blode.md">See live example</a>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Workflow — single terminal sequence, no cards */}
+        {/* HOW — the differentiator */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
-            <h2
-              className="text-3xl font-bold tracking-tight md:text-4xl"
-              style={{ textWrap: "balance" }}
-            >
-              Three commands to production
-            </h2>
-            <div className="mt-12 max-w-xl">
+            <div className="grid gap-12 md:grid-cols-2 md:items-start">
+              <div>
+                <h2
+                  className="text-3xl font-bold tracking-tight md:text-4xl"
+                  style={{ textWrap: "balance" }}
+                >
+                  Your terminal is the interface.
+                </h2>
+                <p className="mt-4 max-w-sm text-muted-foreground">
+                  No dashboard. No CMS. No separate deploy pipeline. blode.md
+                  treats documentation as a development primitive — something
+                  you write in your editor, version in git, and ship from the
+                  command line.
+                </p>
+                <p className="mt-4 max-w-sm text-muted-foreground">
+                  The same workflow you use for code works for docs. Login,
+                  init, push. Three verbs. One tool.
+                </p>
+              </div>
               <div className="rounded-xl bg-surface p-6 font-mono text-sm shadow-xs md:p-8">
                 <div className="space-y-6">
                   <div>
-                    <p className="text-muted-foreground">
-                      # Authenticate via browser
-                    </p>
+                    <p className="text-muted-foreground"># authenticate once</p>
                     <p>
                       <span className="text-muted-foreground">$</span> blodemd
                       login
@@ -92,7 +98,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">
-                      # Scaffold a docs folder
+                      # scaffold from your project root
                     </p>
                     <p>
                       <span className="text-muted-foreground">$</span> blodemd
@@ -100,9 +106,7 @@ export default function HomePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">
-                      # Deploy to slug.blode.md
-                    </p>
+                    <p className="text-muted-foreground"># ship it</p>
                     <p>
                       <span className="text-muted-foreground">$</span> blodemd
                       push docs
@@ -117,7 +121,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Features — text list, no cards */}
+        {/* WHAT — evidence the philosophy works */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
             <div className="grid gap-16 md:grid-cols-2">
@@ -126,11 +130,10 @@ export default function HomePage() {
                   className="text-3xl font-bold tracking-tight md:text-4xl"
                   style={{ textWrap: "balance" }}
                 >
-                  Built for developers
+                  Everything ships from one project.
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
-                  Everything you need to publish and maintain documentation at
-                  scale.
+                  Write once, in MDX. blode.md handles the rest.
                 </p>
               </div>
               <ul className="space-y-6 text-base">
@@ -138,44 +141,44 @@ export default function HomePage() {
                   <strong>MDX components</strong>
                   <span className="text-muted-foreground">
                     {" "}
-                    &mdash; Callouts, tabs, code groups, API references, and 30+
-                    components.
+                    — Callouts, tabs, code groups, API references, and 30+
+                    built-in components.
                   </span>
                 </li>
                 <li>
                   <strong>Custom domains</strong>
                   <span className="text-muted-foreground">
                     {" "}
-                    &mdash; Automatic DNS verification and SSL provisioning.
-                  </span>
-                </li>
-                <li>
-                  <strong>CI/CD</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    &mdash; Deploy on every push with GitHub Actions.
-                  </span>
-                </li>
-                <li>
-                  <strong>Content types</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    &mdash; Docs, blogs, changelogs, courses, and more from one
-                    project.
-                  </span>
-                </li>
-                <li>
-                  <strong>API reference</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    &mdash; Interactive docs generated from your OpenAPI spec.
+                    — Automatic DNS verification and SSL provisioning.
                   </span>
                 </li>
                 <li>
                   <strong>Search</strong>
                   <span className="text-muted-foreground">
                     {" "}
-                    &mdash; Full-text search and syntax highlighting included.
+                    — Full-text search across all your content, included by
+                    default.
+                  </span>
+                </li>
+                <li>
+                  <strong>Content types</strong>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — Docs, blogs, changelogs, and courses from one project.
+                  </span>
+                </li>
+                <li>
+                  <strong>API reference</strong>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — Interactive docs generated from your OpenAPI spec.
+                  </span>
+                </li>
+                <li>
+                  <strong>Versioning</strong>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — Pin docs to releases. Readers pick their version.
                   </span>
                 </li>
               </ul>
@@ -183,7 +186,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CI/CD */}
+        {/* WHAT — automation proof */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
             <div className="grid gap-12 md:grid-cols-2 md:items-start">
@@ -192,11 +195,11 @@ export default function HomePage() {
                   className="text-3xl font-bold tracking-tight md:text-4xl"
                   style={{ textWrap: "balance" }}
                 >
-                  Deploy from CI
+                  Every merge ships docs.
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
-                  Add one step to your GitHub Actions workflow. Every merge
-                  ships.
+                  Add one step to your GitHub Actions workflow. Documentation
+                  deploys when code deploys. No drift. No manual step.
                 </p>
               </div>
               <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm shadow-xs md:p-8">
@@ -209,14 +212,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Final CTA */}
+        {/* CTA — conversion */}
         <section className="border-t border-border py-24 md:py-32">
-          <div className="container">
+          <div className="container" id="get-started">
             <h2
               className="text-3xl font-bold tracking-tight md:text-4xl"
               style={{ textWrap: "balance" }}
             >
-              Get started
+              Ship your first doc in under a minute.
             </h2>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <code className="rounded-lg bg-surface px-4 py-2.5 font-mono text-sm">

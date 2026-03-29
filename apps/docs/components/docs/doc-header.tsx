@@ -5,8 +5,9 @@ import Link from "next/link";
 
 import type { SearchItem } from "@/components/ui/search";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import type { NavEntry } from "@/lib/navigation";
+import type { NavEntry, NavTab } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 
 const MobileNav = dynamic(async () => {
   const m = await import("@/components/docs/mobile-nav");
@@ -48,18 +49,68 @@ const Dropdown = ({
   );
 };
 
+const HeaderTabs = ({
+  tabs,
+  activeTabIndex = 0,
+  basePath,
+}: {
+  tabs: NavTab[];
+  activeTabIndex?: number;
+  basePath: string;
+}) => (
+  <nav
+    aria-label="Navigation tabs"
+    className="ml-4 hidden items-center gap-0.5 lg:flex"
+  >
+    {tabs.map((tab, index) => {
+      const isActive = index === activeTabIndex;
+      const href =
+        tab.href ??
+        (tab.slugPrefix ? toDocHref(tab.slugPrefix, basePath) : undefined);
+
+      if (!href) {
+        return null;
+      }
+
+      const isExternal = tab.href?.startsWith("http");
+
+      return (
+        <Link
+          className={cn(
+            "relative px-2.5 py-1.5 text-sm transition-colors",
+            isActive
+              ? "font-medium text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          href={href}
+          key={tab.label}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          target={isExternal ? "_blank" : undefined}
+        >
+          {tab.label}
+          {isActive ? (
+            <span className="absolute inset-x-1 -bottom-3.5 h-0.5 rounded-full bg-primary" />
+          ) : null}
+        </Link>
+      );
+    })}
+  </nav>
+);
+
 // oxlint-disable-next-line eslint/complexity
 export const DocHeader = ({
   config,
   searchItems,
   basePath,
-  label,
+  tabs,
+  activeTabIndex,
   nav = [],
 }: {
   config: SiteConfig;
   searchItems: SearchItem[];
   basePath: string;
-  label?: string;
+  tabs?: NavTab[] | null;
+  activeTabIndex?: number;
   nav?: NavEntry[];
 }) => {
   const globalLinks = config.navigation?.global?.links ?? [];
@@ -75,9 +126,11 @@ export const DocHeader = ({
       <div className="container-wrapper px-6">
         <div className="flex h-(--header-height) items-center">
           <MobileNav
+            activeTabIndex={activeTabIndex}
             basePath={basePath}
             entries={nav}
             globalLinks={globalLinks}
+            tabs={tabs}
           />
           <Link
             className="flex items-center gap-2.5"
@@ -111,10 +164,12 @@ export const DocHeader = ({
               <span className="text-xl font-bold">{config.name}</span>
             )}
           </Link>
-          {label ? (
-            <span className="ml-4 text-xs uppercase tracking-widest text-muted-foreground">
-              {label}
-            </span>
+          {tabs?.length ? (
+            <HeaderTabs
+              activeTabIndex={activeTabIndex}
+              basePath={basePath}
+              tabs={tabs}
+            />
           ) : null}
           <nav
             aria-label="External links"

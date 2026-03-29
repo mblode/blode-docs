@@ -1,5 +1,4 @@
 import { normalizePath } from "@repo/common";
-import type { ContentType } from "@repo/models";
 import {
   buildContentIndex,
   buildPageMetadataMap,
@@ -26,7 +25,9 @@ import {
 import { renderMdx } from "@/lib/mdx";
 import {
   buildNavigation,
+  buildTabbedNavigation,
   enrichNavWithMetadata,
+  findActiveTabIndex,
   findBreadcrumbs,
   flattenNav,
   getVisibleNavigation,
@@ -39,44 +40,6 @@ import {
 } from "@/lib/tenant-static";
 import { getTenantBySlug } from "@/lib/tenants";
 import { extractToc } from "@/lib/toc";
-
-const labelFromType = (type: ContentType): string | undefined => {
-  switch (type) {
-    case "docs": {
-      return "Docs";
-    }
-    case "blog": {
-      return "Blog";
-    }
-    case "courses": {
-      return "Courses";
-    }
-    case "products": {
-      return "Products";
-    }
-    case "notes": {
-      return "Notes";
-    }
-    case "forms": {
-      return "Forms";
-    }
-    case "sheets": {
-      return "Sheets";
-    }
-    case "slides": {
-      return "Slides";
-    }
-    case "todos": {
-      return "Todos";
-    }
-    case "site": {
-      return "Site";
-    }
-    default: {
-      return undefined;
-    }
-  }
-};
 
 // oxlint-disable-next-line eslint/complexity
 const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
@@ -127,17 +90,19 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
     };
   }
   const pageMetadataMap = buildPageMetadataMap(contentIndex);
+  const slugPrefix = docsCollection?.slugPrefix ?? "";
   const rawNav = docsNavigation
-    ? buildNavigation(
-        docsNavigation,
-        registry,
-        docsCollection?.slugPrefix ?? ""
-      )
+    ? buildNavigation(docsNavigation, registry, slugPrefix)
     : [];
   const nav = enrichNavWithMetadata(rawNav, pageMetadataMap);
   const visibleNav = getVisibleNavigation(nav);
   const flatNav = flattenNav(nav);
   const visibleFlatNav = flattenNav(visibleNav);
+  const tabbedNav = buildTabbedNavigation(docsNavigation, registry, slugPrefix);
+  const enrichedTabs = tabbedNav?.map((tab) => ({
+    ...tab,
+    entries: enrichNavWithMetadata(tab.entries, pageMetadataMap),
+  }));
   const anchors = docsNavigation?.global?.anchors ?? [];
   const indexAll = config.seo?.indexing === "all";
   const searchItems = new Map<
@@ -191,13 +156,21 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
   }
 
   const currentPath = normalizePath(slugKey) || "index";
+  const activeTabIndex = enrichedTabs
+    ? findActiveTabIndex(enrichedTabs, currentPath)
+    : 0;
+  const activeTabNav = enrichedTabs
+    ? getVisibleNavigation(enrichedTabs[activeTabIndex]?.entries ?? [])
+    : null;
+  const activeTabFlatNav = activeTabNav ? flattenNav(activeTabNav) : null;
   const openApiEntry = registry.bySlug.get(currentPath);
 
   if (openApiEntry) {
     const isHidden = flatNav.some((p) => p.path === currentPath && p.hidden);
     return {
+      activeTabIndex,
       anchors,
-      breadcrumbs: findBreadcrumbs(visibleNav, currentPath),
+      breadcrumbs: findBreadcrumbs(activeTabNav ?? visibleNav, currentPath),
       config,
       content: (
         <ApiReference
@@ -207,17 +180,17 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
       ),
       currentPath,
       deprecated: false,
-      flatNav: visibleFlatNav,
-      headerLabel: "Docs",
+      flatNav: activeTabFlatNav ?? visibleFlatNav,
       hidden: isHidden,
       hideFooterPagination: false,
       mode: undefined,
-      nav: visibleNav,
+      nav: activeTabNav ?? visibleNav,
       noindex: false,
       pageDescription: openApiEntry.operation.description,
       pageTitle: openApiEntry.operation.summary ?? openApiEntry.identifier,
       rawContent: openApiEntry.operation.description ?? "",
       searchItems: [...searchItems.values()],
+      tabs: enrichedTabs,
       tenant,
       toc: [],
     };
@@ -246,6 +219,7 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
         ) ?? [];
     const showDocsNav = entry.type === "docs";
     return {
+      activeTabIndex,
       anchors: showDocsNav ? anchors : [],
       breadcrumbs: [],
       collectionIndex: {
@@ -255,16 +229,16 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
       content: null,
       currentPath,
       deprecated: false,
-      flatNav: visibleFlatNav,
-      headerLabel: labelFromType(entry.type),
+      flatNav: activeTabFlatNav ?? visibleFlatNav,
       hidden: false,
       hideFooterPagination: false,
       mode: undefined,
-      nav: showDocsNav ? visibleNav : [],
+      nav: showDocsNav ? (activeTabNav ?? visibleNav) : [],
       noindex: false,
       pageDescription: entry.description,
       pageTitle: entry.title,
       searchItems: [...searchItems.values()],
+      tabs: enrichedTabs,
       tenant,
       toc: [],
     };
@@ -279,7 +253,7 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
     (frontmatter?.description as string | undefined) ?? entry.description;
   const showDocsNav = entry.type === "docs";
   const breadcrumbs = showDocsNav
-    ? findBreadcrumbs(visibleNav, currentPath)
+    ? findBreadcrumbs(activeTabNav ?? visibleNav, currentPath)
     : [];
   const isHiddenByFrontmatter = frontmatter?.hidden === true;
   const isHiddenByNav = flatNav.some((p) => p.path === currentPath && p.hidden);
@@ -288,23 +262,24 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
   const pageMeta = pageMetadataMap.get(currentPath);
 
   return {
+    activeTabIndex,
     anchors: showDocsNav ? anchors : [],
     breadcrumbs,
     config,
     content,
     currentPath,
     deprecated: pageMeta?.deprecated ?? false,
-    flatNav: visibleFlatNav,
-    headerLabel: labelFromType(entry.type),
+    flatNav: activeTabFlatNav ?? visibleFlatNav,
     hidden: isHidden,
     hideFooterPagination: pageMeta?.hideFooterPagination ?? false,
     mode: pageMeta?.mode,
-    nav: showDocsNav ? visibleNav : [],
+    nav: showDocsNav ? (activeTabNav ?? visibleNav) : [],
     noindex: pageMeta?.noindex ?? false,
     pageDescription,
     pageTitle,
     rawContent: source,
     searchItems: [...searchItems.values()],
+    tabs: enrichedTabs,
     tenant,
     toc,
   };
@@ -429,6 +404,7 @@ const DocPage = async ({
 
   return (
     <DocShell
+      activeTabIndex={data.activeTabIndex}
       anchors={data.anchors}
       basePath={basePath}
       breadcrumbs={data.breadcrumbs}
@@ -446,7 +422,6 @@ const DocPage = async ({
       currentPath={data.currentPath}
       deprecated={data.deprecated}
       flatNav={data.flatNav}
-      headerLabel={data.headerLabel}
       hideFooterPagination={data.hideFooterPagination}
       mode={data.mode}
       nav={data.nav}
@@ -454,6 +429,7 @@ const DocPage = async ({
       pageTitle={data.pageTitle}
       rawContent={data.rawContent}
       searchItems={data.searchItems}
+      tabs={data.tabs}
       toc={data.toc}
     />
   );

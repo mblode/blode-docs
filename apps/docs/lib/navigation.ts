@@ -206,6 +206,68 @@ export const flattenNav = (entries: NavEntry[]): NavPage[] => {
   return pages;
 };
 
+export interface NavTab {
+  label: string;
+  icon?: string;
+  href?: string;
+  entries: NavEntry[];
+  slugPrefix?: string;
+}
+
+export const buildTabbedNavigation = (
+  navigation: DocsNavigation | undefined,
+  registry: OpenApiRegistry,
+  slugPrefix = ""
+): NavTab[] | null => {
+  if (!navigation?.tabs?.length) {
+    return null;
+  }
+  const { tabs } = navigation;
+
+  return tabs.map((tab) => {
+    if (tab.href) {
+      return {
+        entries: [],
+        href: tab.href,
+        icon: tab.icon,
+        label: tab.label,
+      };
+    }
+
+    const tabNav: DocsNavigation = {
+      groups: tab.groups,
+      hidden: navigation.hidden,
+      pages: tab.pages,
+    };
+    const entries = buildNavigation(tabNav, registry, slugPrefix);
+    const [firstPage] = flattenNav(entries);
+
+    return {
+      entries,
+      icon: tab.icon,
+      label: tab.label,
+      slugPrefix: firstPage?.path,
+    };
+  });
+};
+
+export const findActiveTabIndex = (
+  tabs: NavTab[],
+  currentPath: string
+): number => {
+  const normalized = normalizePath(currentPath);
+  for (const [index, tab] of tabs.entries()) {
+    if (tab.href) {
+      continue;
+    }
+    const pages = flattenNav(tab.entries);
+    if (pages.some((page) => page.path === normalized)) {
+      return index;
+    }
+  }
+  return 0;
+};
+
 export const findBreadcrumbs = (entries: NavEntry[], path: string) => {
   const normalized = normalizePath(path);
   for (const entry of entries) {
