@@ -53,11 +53,11 @@ blodemd dev               Show instructions for the local dev server
 ### `push` Options
 
 ```
---project <slug>    Project slug (env: BLODE_DOCS_PROJECT)
---api-url <url>     API URL (env: BLODE_DOCS_API_URL)
---api-key <token>   API key (env: BLODE_DOCS_API_KEY)
---branch <name>     Git branch (env: BLODE_DOCS_BRANCH)
---message <msg>     Deploy message (env: BLODE_DOCS_COMMIT_MESSAGE)
+--project <slug>    Project slug (env: BLODEMD_PROJECT)
+--api-url <url>     API URL (env: BLODEMD_API_URL)
+--api-key <token>   API key (env: BLODEMD_API_KEY)
+--branch <name>     Git branch (env: BLODEMD_BRANCH)
+--message <msg>     Deploy message (env: BLODEMD_COMMIT_MESSAGE)
 ```
 
 The CLI reads the project slug from the `name` field in `docs.json` when `--project` is not set.
@@ -69,7 +69,7 @@ Use the `mblode/blodemd/packages/deploy-action` composite action to deploy on ev
 ```yaml
 - uses: mblode/blodemd/packages/deploy-action@main
   with:
-    api-key: ${{ secrets.BLODE_DOCS_API_KEY }}
+    api-key: ${{ secrets.BLODEMD_API_KEY }}
     directory: docs
 ```
 

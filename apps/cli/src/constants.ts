@@ -3,11 +3,11 @@ import { join } from "node:path";
 
 export const CLI_NAME = "blodemd";
 
-export const BLODE_TOKEN_ENV = "BLODE_DOCS_API_KEY";
-export const BLODE_API_URL_ENV = "BLODE_DOCS_API_URL";
-export const BLODE_PROJECT_ENV = "BLODE_DOCS_PROJECT";
-export const BLODE_BRANCH_ENV = "BLODE_DOCS_BRANCH";
-export const BLODE_COMMIT_MESSAGE_ENV = "BLODE_DOCS_COMMIT_MESSAGE";
+export const BLODE_TOKEN_ENV = "BLODEMD_API_KEY";
+export const BLODE_API_URL_ENV = "BLODEMD_API_URL";
+export const BLODE_PROJECT_ENV = "BLODEMD_PROJECT";
+export const BLODE_BRANCH_ENV = "BLODEMD_BRANCH";
+export const BLODE_COMMIT_MESSAGE_ENV = "BLODEMD_COMMIT_MESSAGE";
 
 export const DEFAULT_API_URL = "https://api.blode.md";
 export const DEFAULT_SUPABASE_URL = "https://bwnxwgkgyklzzmpbzuoz.supabase.co";

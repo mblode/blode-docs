@@ -59,7 +59,7 @@ jobs:
       - uses: blodemd/publish-action@v1
         with:
           config: blodemd.json
-          publish-token: ${{ secrets.BLODE_DOCS_PUBLISH_TOKEN }}
+          publish-token: ${{ secrets.BLODEMD_PUBLISH_TOKEN }}
 ```
 
 If I were building this, v1 would be one central Vercel app, Blob plus Edge Config, a public publish action, a JSON config, and a strict shared-component MDX model. That gets you most of Mintlify’s useful surface area without rebuilding their dashboard. The GitHub App is v2, not v1.

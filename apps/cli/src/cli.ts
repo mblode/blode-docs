@@ -268,12 +268,12 @@ const resolvePushConfig = async (
 
   if (!project) {
     throw new Error(
-      'Missing project slug. Set "name" in docs.json, pass --project, or set BLODE_DOCS_PROJECT.'
+      'Missing project slug. Set "name" in docs.json, pass --project, or set BLODEMD_PROJECT.'
     );
   }
   if (!authToken) {
     throw new Error(
-      'Missing credentials. Run "blodemd login", pass --api-key, or set BLODE_DOCS_API_KEY.'
+      'Missing credentials. Run "blodemd login", pass --api-key, or set BLODEMD_API_KEY.'
     );
   }
 
@@ -517,7 +517,7 @@ program
       }
 
       if (resolved.source === "environment") {
-        log.info("Authenticated via BLODE_DOCS_API_KEY environment variable");
+        log.info("Authenticated via BLODEMD_API_KEY environment variable");
         return;
       }
 
@@ -625,11 +625,11 @@ program
   .command("push")
   .description("Deploy docs")
   .argument("[dir]", "docs directory")
-  .option("--project <slug>", "project slug (env: BLODE_DOCS_PROJECT)")
-  .option("--api-url <url>", "API URL (env: BLODE_DOCS_API_URL)")
-  .option("--api-key <token>", "API key (env: BLODE_DOCS_API_KEY)")
-  .option("--branch <name>", "git branch (env: BLODE_DOCS_BRANCH)")
-  .option("--message <msg>", "deploy message (env: BLODE_DOCS_COMMIT_MESSAGE)")
+  .option("--project <slug>", "project slug (env: BLODEMD_PROJECT)")
+  .option("--api-url <url>", "API URL (env: BLODEMD_API_URL)")
+  .option("--api-key <token>", "API key (env: BLODEMD_API_KEY)")
+  .option("--branch <name>", "git branch (env: BLODEMD_BRANCH)")
+  .option("--message <msg>", "deploy message (env: BLODEMD_COMMIT_MESSAGE)")
   .action(
     async (
       dir: string | undefined,

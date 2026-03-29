@@ -32,9 +32,9 @@ runs:
     - name: Push docs
       shell: bash
       env:
-        BLODE_DOCS_API_KEY: ${{ inputs.api-key }}
-        BLODE_DOCS_API_URL: ${{ inputs.api-url }}
-        BLODE_DOCS_BRANCH: ${{ inputs.branch }}
-        BLODE_DOCS_COMMIT_MESSAGE: ${{ inputs.commit-message }}
-        BLODE_DOCS_PROJECT: ${{ inputs.project }}
+        BLODEMD_API_KEY: ${{ inputs.api-key }}
+        BLODEMD_API_URL: ${{ inputs.api-url }}
+        BLODEMD_BRANCH: ${{ inputs.branch }}
+        BLODEMD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        BLODEMD_PROJECT: ${{ inputs.project }}
       run: npx --yes blodemd push ${{ inputs.directory }}

@@ -203,7 +203,7 @@ blodemd status        # Check deployment status
 - **Content-addressed storage** means unchanged files are never re-uploaded, even across deployments
 - **Project linking** via `.blodemd/` directory (stores project ID and API key locally, gitignored)
 - **API keys** use a clear prefix: `nd_live_sk_` for production, `nd_test_sk_` for preview
-- **CI mode**: `BLODE_DOCS_API_KEY` env var + `--ci` flag for non-interactive use
+- **CI mode**: `BLODEMD_API_KEY` env var + `--ci` flag for non-interactive use
 
 ### Authentication flow
 
@@ -247,7 +247,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: blodemd/deploy-action@v1
         with:
-          api-key: ${{ secrets.BLODE_DOCS_API_KEY }}
+          api-key: ${{ secrets.BLODEMD_API_KEY }}
           docs-dir: ./docs
 ```
 
