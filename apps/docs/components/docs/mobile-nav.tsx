@@ -10,7 +10,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getNavPageHref, getNavPageTitle } from "@/lib/navigation";
-import type { NavEntry, NavPage } from "@/lib/navigation";
+import type { NavEntry, NavPage, NavTab } from "@/lib/navigation";
+import { toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const MobileLink = ({
@@ -39,10 +40,14 @@ export const MobileNav = ({
   entries,
   globalLinks,
   basePath,
+  tabs,
+  activeTabIndex,
 }: {
   entries: NavEntry[];
   globalLinks: { label: string; href: string }[];
   basePath: string;
+  tabs?: NavTab[] | null;
+  activeTabIndex?: number;
 }) => {
   const [open, setOpen] = useState(false);
   const handleClose = useCallback(() => setOpen(false), []);
@@ -96,6 +101,44 @@ export const MobileNav = ({
         sideOffset={14}
       >
         <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
+          {tabs?.length ? (
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-medium text-muted-foreground">
+                Sections
+              </div>
+              <div className="flex flex-col gap-3">
+                {tabs.map((tab, index) => {
+                  const href =
+                    tab.href ??
+                    (tab.slugPrefix
+                      ? toDocHref(tab.slugPrefix, basePath)
+                      : undefined);
+                  if (!href) {
+                    return null;
+                  }
+                  const isActive = index === activeTabIndex;
+                  return (
+                    <MobileLink
+                      className={isActive ? "text-primary" : ""}
+                      href={href}
+                      key={tab.label}
+                      onClose={handleClose}
+                      rel={
+                        tab.href?.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                      target={
+                        tab.href?.startsWith("http") ? "_blank" : undefined
+                      }
+                    >
+                      {tab.label}
+                    </MobileLink>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           {globalLinks.length > 0 ? (
             <div className="flex flex-col gap-4">
               <div className="text-sm font-medium text-muted-foreground">

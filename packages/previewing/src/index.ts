@@ -253,6 +253,23 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
       url: language.href,
     })),
     pages: docs.navigation.pages,
+    tabs: docs.navigation.tabs?.map((tab) => ({
+      groups: tab.groups?.map((group) => ({
+        expanded: group.expanded,
+        group: group.group,
+        hidden: group.hidden,
+        pages: group.root
+          ? [
+              group.root,
+              ...(group.pages ?? []).filter((page) => page !== group.root),
+            ]
+          : group.pages,
+      })),
+      href: tab.href,
+      icon: tab.icon,
+      label: tab.tab,
+      pages: tab.pages,
+    })),
     versions: docs.navigation.versions?.map((version) => ({
       label: version.version,
       url: version.href,

@@ -80,6 +80,21 @@ export const DocsNavGroupSchema = z
   })
   .strict();
 
+export const DocsNavTabSchema = z
+  .object({
+    groups: z.array(DocsNavGroupSchema).optional(),
+    href: z.string().min(1).optional(),
+    icon: z.string().optional(),
+    label: z.string().min(1),
+    pages: z.array(z.string()).optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      Boolean(value.groups?.length || value.pages?.length || value.href),
+    { message: "tab must define groups, pages, or href", path: [] }
+  );
+
 export const DocsNavigationSchema = z
   .object({
     global: z
@@ -93,6 +108,7 @@ export const DocsNavigationSchema = z
     hidden: z.array(z.string()).optional(),
     languages: z.array(DocsNavLocaleSchema).optional(),
     pages: z.array(z.string()).optional(),
+    tabs: z.array(DocsNavTabSchema).optional(),
     versions: z.array(DocsNavVersionSchema).optional(),
   })
   .strict();
@@ -229,6 +245,17 @@ const MintlifyNavigationGroupSchema = z
   })
   .strict();
 
+const MintlifyNavTabSchema = z
+  .object({
+    groups: z.array(MintlifyNavigationGroupSchema).optional(),
+    hidden: z.boolean().optional(),
+    href: z.string().min(1).optional(),
+    icon: z.string().optional(),
+    pages: z.array(z.string()).optional(),
+    tab: z.string().min(1),
+  })
+  .strict();
+
 const MintlifyNavigationSchema = z
   .object({
     global: MintlifyNavigationGlobalSchema.optional(),
@@ -246,6 +273,7 @@ const MintlifyNavigationSchema = z
       )
       .optional(),
     pages: z.array(z.string()).optional(),
+    tabs: z.array(MintlifyNavTabSchema).optional(),
     versions: z
       .array(
         z
@@ -265,12 +293,13 @@ const MintlifyNavigationSchema = z
       Boolean(
         value.groups?.length ||
         value.pages?.length ||
+        value.tabs?.length ||
         value.languages?.length ||
         value.versions?.length
       ),
     {
       message:
-        "navigation must define at least one of groups, pages, languages, or versions",
+        "navigation must define at least one of groups, pages, tabs, languages, or versions",
       path: [],
     }
   );
@@ -615,4 +644,5 @@ export type SiteConfig = z.infer<typeof SiteConfigSchema>;
 export type CollectionConfig = z.infer<typeof CollectionConfigSchema>;
 export type DocsNavigation = z.infer<typeof DocsNavigationSchema>;
 export type DocsNavGroup = z.infer<typeof DocsNavGroupSchema>;
+export type DocsNavTab = z.infer<typeof DocsNavTabSchema>;
 export type DocsOpenApiSource = z.infer<typeof DocsOpenApiSourceSchema>;

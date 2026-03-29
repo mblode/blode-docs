@@ -14,7 +14,7 @@ const glide = localFont({
 
 export const metadata: Metadata = {
   description:
-    "Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.",
+    "Documentation should ship as fast as code. blode.md is a terminal-native docs platform — write MDX, push from your CLI, deploy on every merge.",
   title: "Blode.md",
 };
 

@@ -7,7 +7,7 @@
  */
 import { createHash, randomBytes } from "node:crypto";
 
-import { ApiKeyDao, ProjectDao, UserDao } from "./src/index.js";
+import { ApiKeyDao, DomainDao, ProjectDao, UserDao } from "./src/index.js";
 
 const API_KEY_PREFIX = "ndk_";
 const API_KEY_PREFIX_LENGTH = 8;
@@ -72,9 +72,15 @@ const PROJECTS = [
   },
 ] as const;
 
+const CUSTOM_DOMAINS: Record<string, { hostname: string; pathPrefix: string }> =
+  {
+    allmd: { hostname: "allmd.blode.co", pathPrefix: "/docs" },
+  };
+
 const userDao = new UserDao();
 const projectDao = new ProjectDao();
 const apiKeyDao = new ApiKeyDao();
+const domainDao = new DomainDao();
 
 console.log("Seeding Blode.md...\n");
 
@@ -104,6 +110,22 @@ for (const proj of PROJECTS) {
     tokenHash,
     userId: user.id,
   });
+
+  const customDomain = CUSTOM_DOMAINS[proj.slug];
+  if (customDomain) {
+    const existingDomain = await domainDao.getByHostname(customDomain.hostname);
+    if (!existingDomain) {
+      await domainDao.create({
+        hostname: customDomain.hostname,
+        pathPrefix: customDomain.pathPrefix,
+        projectId: project.id,
+        status: "valid_configuration",
+      });
+      console.log(
+        `  [ok]   domain: ${customDomain.hostname}${customDomain.pathPrefix}`
+      );
+    }
+  }
 
   console.log(`  [ok]   ${proj.slug}`);
   console.log(`         id:      ${project.id}`);
