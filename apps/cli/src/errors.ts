@@ -33,7 +33,7 @@ export const toCliError = (error: unknown): CliError => {
   if (error instanceof Error) {
     if (error instanceof TypeError && error.message.includes("fetch")) {
       return new CliError(
-        "Cannot connect to Blode Docs API.",
+        "Cannot connect to Blode.md API.",
         EXIT_CODES.NETWORK,
         "Check your internet connection and API URL configuration."
       );

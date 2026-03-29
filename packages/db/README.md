@@ -1,6 +1,6 @@
 # @repo/db
 
-Shared Drizzle ORM schema and DAO layer for blode.
+Shared Drizzle ORM schema and DAO layer for Blode.md.
 
 ## Commands
 

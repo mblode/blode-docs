@@ -109,7 +109,7 @@ const ConsentForm = () => {
             textAlign: "center",
           }}
         >
-          Blode Docs
+          Blode.md
         </h1>
         <p
           style={{
