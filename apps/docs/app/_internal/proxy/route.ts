@@ -1,10 +1,19 @@
+import type { SiteConfig, Tenant } from "@repo/models";
 import { loadSiteConfig } from "@repo/previewing";
 import { NextResponse } from "next/server";
 
 import { getTenantContentSource } from "@/lib/content-source";
+import { getDocsCollectionWithNavigation } from "@/lib/docs-collection";
 import { buildOpenApiRegistry } from "@/lib/openapi";
 import { getRequestHost, resolveTenant } from "@/lib/tenancy";
 import { getTenantBySlug } from "@/lib/tenants";
+
+interface ProxyPayload {
+  url: string;
+  method: string;
+  headers?: Record<string, string>;
+  body?: string;
+}
 
 const getTenantPathFromReferer = (request: Request) => {
   const referer = request.headers.get("referer");
@@ -19,75 +28,81 @@ const getTenantPathFromReferer = (request: Request) => {
   }
 };
 
-export const POST = async (request: Request) => {
-  const payload = (await request.json()) as {
-    url: string;
-    method: string;
-    headers?: Record<string, string>;
-    body?: string;
-  };
+const jsonError = (error: string, status: number) =>
+  NextResponse.json({ error }, { status });
 
-  if (!(payload?.url && payload?.method)) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
-
+const loadResolvedTenant = async (request: Request) => {
   const host = getRequestHost(request.headers);
   const resolution = host
     ? await resolveTenant(host, getTenantPathFromReferer(request))
     : null;
+
   if (!resolution) {
-    return NextResponse.json({ error: "Unknown tenant" }, { status: 400 });
+    return null;
   }
 
-  const tenant = await getTenantBySlug(resolution.tenant.slug);
+  return getTenantBySlug(resolution.tenant.slug);
+};
+
+const resolveAllowedHosts = async (config: SiteConfig, tenant: Tenant) => {
+  const configuredHosts = config.openapiProxy?.allowedHosts ?? [];
+  if (configuredHosts.length || !tenant) {
+    return configuredHosts;
+  }
+
+  const registry = await buildOpenApiRegistry(
+    getDocsCollectionWithNavigation(config),
+    getTenantContentSource(tenant)
+  );
+  const derivedHosts = registry.entries.flatMap((entry) =>
+    (entry.spec.servers ?? []).flatMap((server) => {
+      try {
+        return [new URL(server.url).hostname];
+      } catch {
+        return [];
+      }
+    })
+  );
+
+  return [...new Set(derivedHosts)];
+};
+
+export const POST = async (request: Request) => {
+  const payload = (await request.json()) as ProxyPayload;
+
+  if (!(payload?.url && payload?.method)) {
+    return jsonError("Invalid payload", 400);
+  }
+
+  const tenant = await loadResolvedTenant(request);
   if (!tenant) {
-    return NextResponse.json({ error: "Unknown tenant" }, { status: 400 });
+    return jsonError("Unknown tenant", 400);
   }
 
   const configResult = await loadSiteConfig(getTenantContentSource(tenant));
   if (!configResult.ok) {
-    return NextResponse.json({ error: "Invalid site config" }, { status: 400 });
+    return jsonError("Invalid site config", 400);
   }
 
   const { config } = configResult;
   if (!config.openapiProxy?.enabled) {
-    return NextResponse.json({ error: "Proxy disabled" }, { status: 403 });
+    return jsonError("Proxy disabled", 403);
   }
 
   const url = new URL(payload.url);
   if (!["http:", "https:"].includes(url.protocol)) {
-    return NextResponse.json({ error: "Invalid protocol" }, { status: 400 });
+    return jsonError("Invalid protocol", 400);
   }
 
-  let allowedHosts = config.openapiProxy.allowedHosts ?? [];
+  const allowedHosts = await resolveAllowedHosts(config, tenant);
   if (!allowedHosts.length) {
-    const docsCollection = config.collections.find(
-      (collection) => collection.type === "docs"
-    );
-    const registry = await buildOpenApiRegistry(
-      docsCollection,
-      getTenantContentSource(tenant)
-    );
-    const derivedHosts = registry.entries.flatMap((entry) =>
-      (entry.spec.servers ?? []).flatMap((server) => {
-        try {
-          return [new URL(server.url).hostname];
-        } catch {
-          return [];
-        }
-      })
-    );
-    allowedHosts = [...new Set(derivedHosts)];
-  }
-
-  if (!allowedHosts.length) {
-    return NextResponse.json(
-      { error: "No proxy allowlist is configured for this docs.json." },
-      { status: 403 }
+    return jsonError(
+      "No proxy allowlist is configured for this docs.json.",
+      403
     );
   }
-  if (allowedHosts.length && !allowedHosts.includes(url.hostname)) {
-    return NextResponse.json({ error: "Host not allowed" }, { status: 403 });
+  if (!allowedHosts.includes(url.hostname)) {
+    return jsonError("Host not allowed", 403);
   }
 
   const method = payload.method.toUpperCase();

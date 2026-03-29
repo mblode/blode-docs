@@ -40,7 +40,8 @@ export const isRootRuntimeHost = (host: string) => {
   const normalizedHost = normalizeHost(host);
   return (
     normalizedHost === platformConfig.rootDomain ||
-    LOCAL_ROOT_HOSTS.has(normalizedHost)
+    LOCAL_ROOT_HOSTS.has(normalizedHost) ||
+    normalizedHost.endsWith(".localhost")
   );
 };
 

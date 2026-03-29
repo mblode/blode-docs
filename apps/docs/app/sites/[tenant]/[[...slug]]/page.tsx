@@ -18,6 +18,11 @@ import {
   getTenantContentSource,
   resolveSiteConfigAssets,
 } from "@/lib/content-source";
+import {
+  getDocsCollection,
+  getDocsCollectionWithNavigation,
+  getDocsNavigation,
+} from "@/lib/docs-collection";
 import { renderMdx } from "@/lib/mdx";
 import {
   buildNavigation,
@@ -28,13 +33,14 @@ import {
 } from "@/lib/navigation";
 import { buildOpenApiRegistry } from "@/lib/openapi";
 import {
+  getCanonicalDocBasePath,
   getCanonicalOrigin,
   getTenantRequestContextFromHeaders,
 } from "@/lib/tenant-static";
 import { getTenantBySlug } from "@/lib/tenants";
 import { extractToc } from "@/lib/toc";
 
-function labelFromType(type: ContentType): string | undefined {
+const labelFromType = (type: ContentType): string | undefined => {
   switch (type) {
     case "docs": {
       return "Docs";
@@ -70,7 +76,7 @@ function labelFromType(type: ContentType): string | undefined {
       return undefined;
     }
   }
-}
+};
 
 // oxlint-disable-next-line eslint/complexity
 const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
@@ -102,16 +108,9 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
     };
   }
 
-  const docsCollection = config.collections.find(
-    (collection) => collection.type === "docs"
-  );
-  const docsNavigation = docsCollection?.navigation ?? config.navigation;
-  const docsCollectionWithNavigation =
-    docsCollection &&
-    docsNavigation &&
-    docsCollection.navigation !== docsNavigation
-      ? { ...docsCollection, navigation: docsNavigation }
-      : docsCollection;
+  const docsCollection = getDocsCollection(config);
+  const docsNavigation = getDocsNavigation(config);
+  const docsCollectionWithNavigation = getDocsCollectionWithNavigation(config);
   let registry: Awaited<ReturnType<typeof buildOpenApiRegistry>>;
   try {
     registry = await buildOpenApiRegistry(
@@ -145,6 +144,21 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
     string,
     { href?: string; title: string; path: string }
   >();
+  const shouldAddSearchItem = (
+    entry: (typeof contentIndex.entries)[number]
+  ): boolean => {
+    const pageMeta = pageMetadataMap.get(entry.slug);
+
+    if (pageMeta?.hidden || pageMeta?.noindex) {
+      return false;
+    }
+
+    if (!indexAll && entry.kind === "entry" && entry.hidden) {
+      return false;
+    }
+
+    return true;
+  };
   for (const item of visibleFlatNav) {
     searchItems.set(item.path, {
       href: item.url,
@@ -153,9 +167,10 @@ const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
     });
   }
   for (const entry of contentIndex.entries) {
-    if (!indexAll && entry.kind === "entry" && entry.hidden) {
+    if (!shouldAddSearchItem(entry)) {
       continue;
     }
+
     const pageMeta = pageMetadataMap.get(entry.slug);
     searchItems.set(entry.slug, {
       href: pageMeta?.url,
@@ -329,10 +344,7 @@ export const generateMetadata = async ({
     tenant,
     headerStore
   );
-  const canonicalBasePath =
-    requestContext.strategy === "path"
-      ? ""
-      : requestContext.basePath || tenant.pathPrefix || "";
+  const canonicalBasePath = getCanonicalDocBasePath(tenant, requestContext);
   const canonicalPath = slugKey ? `/${slugKey}` : "/";
   const fullCanonical = `${canonicalBasePath}${canonicalPath}`.replaceAll(
     /\/+/g,

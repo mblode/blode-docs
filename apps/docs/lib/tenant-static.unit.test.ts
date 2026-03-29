@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildTenantLlmsFullTxt,
   buildTenantLlmsTxt,
+  buildTenantRobotsTxt,
+  buildTenantSitemapXml,
   getLlmPageText,
 } from "./tenant-static";
 
@@ -44,5 +46,26 @@ describe("tenant static LLM helpers", () => {
     );
     expect(content).toContain("Method: GET");
     expect(content).toContain("Path: /projects");
+  });
+
+  it("prefixes static helper URLs for path-based tenants", async () => {
+    const context = {
+      requestedHost: "blode.md",
+      strategy: "path" as const,
+    };
+
+    const llms = await buildTenantLlmsTxt(tenant, context);
+    const robots = buildTenantRobotsTxt(tenant, context);
+    const sitemap = await buildTenantSitemapXml(tenant, context);
+
+    expect(llms).toContain("Sitemap: https://blode.md/atlas/sitemap.xml");
+    expect(llms).toContain(
+      "[List projects](https://blode.md/atlas/api/get-projects)"
+    );
+    expect(robots).toContain("Sitemap: https://blode.md/atlas/sitemap.xml");
+    expect(robots).toContain("# https://blode.md/atlas/llms.txt");
+    expect(sitemap).toContain(
+      "<loc>https://blode.md/atlas/api/get-projects</loc>"
+    );
   });
 });

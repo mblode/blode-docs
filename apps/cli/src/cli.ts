@@ -24,7 +24,9 @@ import {
   DEFAULT_OAUTH_CALLBACK_PATH,
   DEFAULT_OAUTH_CALLBACK_PORT,
   DEFAULT_OAUTH_TIMEOUT_SECONDS,
+  OAUTH_CLIENT_ID,
 } from "./constants.js";
+import { CliError, EXIT_CODES, toCliError } from "./errors.js";
 import { waitForOAuthCode } from "./oauth-callback.js";
 import { exchangeAuthorizationCode } from "./oauth-token.js";
 import {
@@ -34,14 +36,12 @@ import {
 } from "./pkce.js";
 import {
   clearStoredCredentials,
-  readStoredApiKey,
-  readStoredAuthSession,
+  readAuthFile,
   writeStoredApiKey,
   writeStoredAuthSession,
 } from "./storage.js";
 import {
   buildOAuthUrls,
-  resolveOAuthClientId,
   resolveSupabaseConfig,
   tokenResponseToStoredSession,
 } from "./supabase.js";
@@ -66,9 +66,9 @@ const TEXT_CONTENT_TYPES: Record<string, string> = {
 
 const ensureFile = async (filePath: string, content: string): Promise<void> => {
   try {
-    await fs.access(filePath);
+    await fs.writeFile(filePath, content, { flag: "wx" });
   } catch {
-    await fs.writeFile(filePath, content);
+    // File already exists
   }
 };
 
@@ -185,6 +185,48 @@ const requestJson = async <T>(
   return data as T;
 };
 
+const parsePositiveInteger = (value: string, label: string): number => {
+  const parsed = Number.parseInt(value, 10);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new CliError(
+      `${label} must be a positive integer.`,
+      EXIT_CODES.VALIDATION
+    );
+  }
+
+  return parsed;
+};
+
+const reportCommandError = (prefix: string, error: unknown): void => {
+  const cliError = toCliError(error);
+
+  log.error(`${prefix}: ${cliError.message}`);
+  if (cliError.hint) {
+    log.info(cliError.hint);
+  }
+  log.info("Failed");
+  process.exitCode = cliError.exitCode;
+};
+
+// --- Auth helpers ---
+
+const fetchUserEmail = async (
+  apiUrl: string,
+  token: string
+): Promise<string | null> => {
+  try {
+    const user = await requestJson<{ email: string }>(
+      `${apiUrl}/auth/me`,
+      { headers: { Authorization: `Bearer ${token}` } },
+      "Failed to fetch user info"
+    );
+    return user.email;
+  } catch {
+    return null;
+  }
+};
+
 // --- Push helpers ---
 
 interface PushConfig {
@@ -243,8 +285,8 @@ const autoCreateProject = async (
   apiUrl: string,
   headers: Record<string, string>
 ): Promise<boolean> => {
-  const session = await readStoredAuthSession();
-  if (!session) {
+  const authData = await readAuthFile();
+  if (!authData?.session) {
     throw new Error(
       `Project "${project}" not found. Create it at blode.md or login with "blodemd login" to auto-create.`
     );
@@ -367,10 +409,10 @@ program
         // OAuth 2.1 authorization code flow with PKCE
         const config = resolveSupabaseConfig();
         const { authorizeUrl, tokenUrl } = buildOAuthUrls(config);
-        const clientId = resolveOAuthClientId();
+        const clientId = OAUTH_CLIENT_ID;
 
-        const port = Number.parseInt(options.port, 10);
-        const timeoutSeconds = Number.parseInt(options.timeout, 10);
+        const port = parsePositiveInteger(options.port, "Port");
+        const timeoutSeconds = parsePositiveInteger(options.timeout, "Timeout");
         const redirectUrl = new URL(
           `http://127.0.0.1:${port}${DEFAULT_OAUTH_CALLBACK_PATH}`
         );
@@ -417,33 +459,22 @@ program
         const storedSession = tokenResponseToStoredSession(tokenResponse);
         await writeStoredAuthSession(storedSession);
 
-        if (storedSession.user?.email) {
-          log.success(`Logged in as ${chalk.cyan(storedSession.user.email)}`);
+        const email =
+          storedSession.user?.email ??
+          (await fetchUserEmail(
+            process.env[BLODE_API_URL_ENV] ?? DEFAULT_API_URL,
+            storedSession.accessToken
+          ));
+
+        if (email) {
+          log.success(`Logged in as ${chalk.cyan(email)}`);
         } else {
-          const apiUrl = process.env[BLODE_API_URL_ENV] ?? DEFAULT_API_URL;
-          try {
-            const user = await requestJson<{ email: string }>(
-              `${apiUrl}/auth/me`,
-              {
-                headers: {
-                  Authorization: `Bearer ${storedSession.accessToken}`,
-                },
-              },
-              "Failed to fetch user info"
-            );
-            log.success(`Logged in as ${chalk.cyan(user.email)}`);
-          } catch {
-            log.success("Logged in successfully.");
-          }
+          log.success("Logged in successfully.");
         }
 
         log.info("Done");
       } catch (error: unknown) {
-        log.error(
-          `Login failed: ${error instanceof Error ? error.message : String(error)}`
-        );
-        log.info("Failed");
-        process.exitCode = 1;
+        reportCommandError("Login failed", error);
       }
     }
   );
@@ -456,16 +487,19 @@ program
   .action(async () => {
     intro(chalk.bold("blodemd logout"));
 
-    const session = await readStoredAuthSession();
-    const apiKey = await readStoredApiKey();
-    await clearStoredCredentials();
+    try {
+      const existing = await readAuthFile();
+      await clearStoredCredentials();
 
-    if (session || apiKey) {
-      log.success("Credentials removed.");
-    } else {
-      log.info("No stored credentials found.");
+      if (existing?.session || existing?.apiKey) {
+        log.success("Credentials removed.");
+      } else {
+        log.info("No stored credentials found.");
+      }
+      log.info("Done");
+    } catch (error: unknown) {
+      reportCommandError("Logout failed", error);
     }
-    log.info("Done");
   });
 
 // whoami
@@ -474,53 +508,55 @@ program
   .command("whoami")
   .description("Show current authentication")
   .action(async () => {
-    const resolved = await resolveAuthToken();
+    try {
+      const resolved = await resolveAuthToken();
 
-    if (!resolved) {
-      log.warn('Not logged in. Run "blodemd login" to authenticate.');
-      return;
-    }
+      if (!resolved) {
+        log.warn('Not logged in. Run "blodemd login" to authenticate.');
+        return;
+      }
 
-    if (resolved.source === "environment") {
-      log.info("Authenticated via BLODE_DOCS_API_KEY environment variable");
-      return;
-    }
+      if (resolved.source === "environment") {
+        log.info("Authenticated via BLODE_DOCS_API_KEY environment variable");
+        return;
+      }
 
-    const apiKey = await readStoredApiKey();
-    if (apiKey) {
-      const prefix = apiKey.apiKey.split(".")[0] ?? apiKey.apiKey.slice(0, 12);
-      log.info(`Logged in with API key ${chalk.cyan(prefix)}`);
-      return;
-    }
+      // API keys have no expiry and no user info from JWT
+      if (!resolved.expiresAt && !resolved.user) {
+        const prefix =
+          resolved.token.split(".")[0] ?? resolved.token.slice(0, 12);
+        log.info(`Logged in with API key ${chalk.cyan(prefix)}`);
+        return;
+      }
 
-    const status = resolveTokenStatus(resolved);
+      const status = resolveTokenStatus(resolved);
 
-    if (resolved.user?.email) {
-      log.info(`Logged in as ${chalk.cyan(resolved.user.email)}`);
-    } else {
-      const apiUrl = process.env[BLODE_API_URL_ENV] ?? DEFAULT_API_URL;
-      try {
-        const user = await requestJson<{ email: string }>(
-          `${apiUrl}/auth/me`,
-          { headers: { Authorization: `Bearer ${resolved.token}` } },
-          "Failed to fetch user info"
-        );
-        log.info(`Logged in as ${chalk.cyan(user.email)}`);
-      } catch {
+      const email =
+        resolved.user?.email ??
+        (await fetchUserEmail(
+          process.env[BLODE_API_URL_ENV] ?? DEFAULT_API_URL,
+          resolved.token
+        ));
+
+      if (email) {
+        log.info(`Logged in as ${chalk.cyan(email)}`);
+      } else {
         log.info("Logged in (could not fetch user details).");
       }
-    }
 
-    if (resolved.expiresAt) {
-      if (status.expired) {
-        log.warn(
-          'Session has expired. Run "blodemd login" to re-authenticate.'
-        );
-      } else if (status.expiresInSeconds !== null) {
-        const hours = Math.floor(status.expiresInSeconds / 3600);
-        const minutes = Math.floor((status.expiresInSeconds % 3600) / 60);
-        log.info(`Session expires in ${hours}h ${minutes}m`);
+      if (resolved.expiresAt) {
+        if (status.expired) {
+          log.warn(
+            'Session has expired. Run "blodemd login" to re-authenticate.'
+          );
+        } else if (status.expiresInSeconds !== null) {
+          const hours = Math.floor(status.expiresInSeconds / 3600);
+          const minutes = Math.floor((status.expiresInSeconds % 3600) / 60);
+          log.info(`Session expires in ${hours}h ${minutes}m`);
+        }
       }
+    } catch (error: unknown) {
+      reportCommandError("Whoami failed", error);
     }
   });
 
@@ -560,11 +596,7 @@ program
       log.info(`Set ${chalk.cyan("name")} in docs.json to your project slug.`);
       log.info("Done");
     } catch (error: unknown) {
-      log.error(
-        `Init failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-      log.info("Failed");
-      process.exitCode = 1;
+      reportCommandError("Init failed", error);
     }
   });
 
@@ -583,11 +615,7 @@ program
       log.success(`${chalk.cyan(CONFIG_FILE)} is valid.`);
       log.info("Done");
     } catch (error: unknown) {
-      log.error(
-        `Validation failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-      log.info("Failed");
-      process.exitCode = 1;
+      reportCommandError("Validation failed", error);
     }
   });
 
@@ -703,9 +731,7 @@ program
         log.info("Done");
       } catch (error: unknown) {
         s.stop("Failed");
-        log.error(error instanceof Error ? error.message : String(error));
-        log.info("Failed");
-        process.exitCode = 1;
+        reportCommandError("Push failed", error);
       }
     }
   );

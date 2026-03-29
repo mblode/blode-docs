@@ -1,46 +1,40 @@
-import { BLODE_TOKEN_ENV } from "./constants.js";
+import { BLODE_TOKEN_ENV, OAUTH_CLIENT_ID } from "./constants.js";
 import { parseJwtClaims } from "./jwt.js";
 import { refreshAccessToken } from "./oauth-token.js";
 import {
   clearStoredCredentials,
-  readStoredApiKey,
-  readStoredAuthSession,
+  readAuthFile,
   writeStoredAuthSession,
 } from "./storage.js";
 import {
   buildOAuthUrls,
-  resolveOAuthClientId,
   resolveSupabaseConfig,
   tokenResponseToStoredSession,
 } from "./supabase.js";
 import type { ResolvedAuthToken, StoredAuthSession } from "./types.js";
 
-const isExpired = (session: StoredAuthSession): boolean => {
+const expiresInMs = (session: StoredAuthSession): number | null => {
   if (!session.expiresAt) {
-    return false;
+    return null;
   }
 
   const expiresAtMs = Date.parse(session.expiresAt);
 
   if (Number.isNaN(expiresAtMs)) {
-    return false;
+    return null;
   }
 
-  return expiresAtMs <= Date.now();
+  return expiresAtMs - Date.now();
+};
+
+const isExpired = (session: StoredAuthSession): boolean => {
+  const ms = expiresInMs(session);
+  return ms !== null && ms <= 0;
 };
 
 const shouldRefresh = (session: StoredAuthSession): boolean => {
-  if (!session.expiresAt) {
-    return false;
-  }
-
-  const expiresAtMs = Date.parse(session.expiresAt);
-
-  if (Number.isNaN(expiresAtMs)) {
-    return false;
-  }
-
-  return expiresAtMs - Date.now() <= 60_000;
+  const ms = expiresInMs(session);
+  return ms !== null && ms <= 60_000;
 };
 
 const tokenFromRaw = (
@@ -65,6 +59,15 @@ const tokenFromRaw = (
   };
 };
 
+const sessionToResolvedToken = (
+  session: StoredAuthSession
+): ResolvedAuthToken => ({
+  expiresAt: session.expiresAt,
+  source: "stored",
+  token: session.accessToken,
+  user: session.user,
+});
+
 export const resolveAuthToken = async (
   optApiKey?: string
 ): Promise<ResolvedAuthToken | null> => {
@@ -74,68 +77,49 @@ export const resolveAuthToken = async (
     return tokenFromRaw(envToken, optApiKey ? "flag" : "environment");
   }
 
-  // Check for stored API key first
-  const apiKey = await readStoredApiKey();
-  if (apiKey) {
+  const data = await readAuthFile();
+  const session = data?.session;
+
+  if (session) {
+    if (!(shouldRefresh(session) || isExpired(session))) {
+      return sessionToResolvedToken(session);
+    }
+
+    if (session.refreshToken) {
+      try {
+        const config = resolveSupabaseConfig();
+        const { tokenUrl } = buildOAuthUrls(config);
+        const tokenResponse = await refreshAccessToken(
+          { clientId: OAUTH_CLIENT_ID, tokenUrl },
+          session.refreshToken
+        );
+        const updatedSession = tokenResponseToStoredSession(tokenResponse);
+        await writeStoredAuthSession(updatedSession);
+
+        return sessionToResolvedToken(updatedSession);
+      } catch {
+        // Refresh failed — fall through to expiry check
+      }
+    }
+
+    if (isExpired(session)) {
+      await clearStoredCredentials();
+      return null;
+    }
+
+    return sessionToResolvedToken(session);
+  }
+
+  if (data?.apiKey) {
     return {
       expiresAt: null,
       source: "stored",
-      token: apiKey.apiKey,
+      token: data.apiKey.apiKey,
       user: null,
     };
   }
 
-  // Check for stored session
-  const session = await readStoredAuthSession();
-
-  if (!session) {
-    return null;
-  }
-
-  if (!(shouldRefresh(session) || isExpired(session))) {
-    return {
-      expiresAt: session.expiresAt,
-      source: "stored",
-      token: session.accessToken,
-      user: session.user,
-    };
-  }
-
-  // Try to refresh
-  if (session.refreshToken) {
-    try {
-      const config = resolveSupabaseConfig();
-      const { tokenUrl } = buildOAuthUrls(config);
-      const clientId = resolveOAuthClientId();
-      const tokenResponse = await refreshAccessToken(
-        { clientId, tokenUrl },
-        session.refreshToken
-      );
-      const updatedSession = tokenResponseToStoredSession(tokenResponse);
-      await writeStoredAuthSession(updatedSession);
-
-      return {
-        expiresAt: updatedSession.expiresAt,
-        source: "stored",
-        token: updatedSession.accessToken,
-        user: updatedSession.user,
-      };
-    } catch {
-      // Refresh failed — fall through to expiry check
-    }
-  }
-
-  if (isExpired(session)) {
-    await clearStoredCredentials();
-    return null;
-  }
-
-  return {
-    expiresAt: session.expiresAt,
-    source: "stored",
-    token: session.accessToken,
-    user: session.user,
-  };
+  return null;
 };
 
 export const resolveTokenStatus = (
@@ -144,16 +128,17 @@ export const resolveTokenStatus = (
   expiresInSeconds: number | null;
   expired: boolean;
 } => {
-  const claims = parseJwtClaims(token.token);
-
-  if (!claims?.exp) {
-    return {
-      expired: false,
-      expiresInSeconds: null,
-    };
+  if (!token.expiresAt) {
+    return { expired: false, expiresInSeconds: null };
   }
 
-  const expiresInSeconds = claims.exp - Math.floor(Date.now() / 1000);
+  const expiresAtMs = Date.parse(token.expiresAt);
+
+  if (Number.isNaN(expiresAtMs)) {
+    return { expired: false, expiresInSeconds: null };
+  }
+
+  const expiresInSeconds = Math.floor((expiresAtMs - Date.now()) / 1000);
 
   return {
     expired: expiresInSeconds <= 0,

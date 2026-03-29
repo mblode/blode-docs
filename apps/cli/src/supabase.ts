@@ -1,4 +1,4 @@
-import { DEFAULT_SUPABASE_URL, OAUTH_CLIENT_ID } from "./constants.js";
+import { DEFAULT_SUPABASE_URL } from "./constants.js";
 import { parseJwtClaims } from "./jwt.js";
 import type { OAuthTokenResponse } from "./oauth-token.js";
 import type { StoredAuthSession, SupabaseConfig } from "./types.js";
@@ -21,8 +21,6 @@ export const buildOAuthUrls = (
   authorizeUrl: `${config.url}/auth/v1/authorize`,
   tokenUrl: `${config.url}/auth/v1/token`,
 });
-
-export const resolveOAuthClientId = (): string => OAUTH_CLIENT_ID;
 
 export const tokenResponseToStoredSession = (
   response: OAuthTokenResponse

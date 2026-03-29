@@ -15,6 +15,20 @@ const tenantResolveQuerySchema = z.object({
 });
 
 const isPresent = <T>(value: T | null): value is T => value !== null;
+const DEFAULT_DOCS_BASE_PATH = "/docs";
+
+const resolveSubdomainBasePath = (pathname: string): string => {
+  const normalizedPath = slugifyPath(pathname);
+
+  if (
+    normalizedPath === "docs" ||
+    normalizedPath.startsWith(`${slugifyPath(DEFAULT_DOCS_BASE_PATH)}/`)
+  ) {
+    return DEFAULT_DOCS_BASE_PATH;
+  }
+
+  return "";
+};
 
 const buildTenantPathResolution = (
   tenant: NonNullable<Awaited<ReturnType<typeof buildTenant>>>,
@@ -32,6 +46,21 @@ const buildTenantPathResolution = (
     : `/sites/${tenant.slug}/`;
 
   return buildTenantResolution(tenant, strategy, host, basePath, rewrittenPath);
+};
+
+const resolveTenantByProjectId = async (
+  projectId: string,
+  strategy: "preview" | "subdomain" | "custom-domain",
+  host: string,
+  pathname: string,
+  basePath: string
+) => {
+  const tenant = await buildTenant(projectId);
+  if (!tenant) {
+    return null;
+  }
+
+  return buildTenantPathResolution(tenant, strategy, host, pathname, basePath);
 };
 
 export const tenants = new Hono();
@@ -56,12 +85,8 @@ tenants.get(
 
     const domain = await domainDao.getByHostname(host);
     if (domain && domain.status === validConfiguredDomainStatus) {
-      const tenant = await buildTenant(domain.projectId);
-      if (!tenant) {
-        return notFound(c);
-      }
-      const resolution = buildTenantPathResolution(
-        tenant,
+      const resolution = await resolveTenantByProjectId(
+        domain.projectId,
         "custom-domain",
         host,
         pathname,
@@ -77,16 +102,12 @@ tenants.get(
     if (previewPrefix) {
       const project = await projectDao.getBySlugUnique(previewPrefix);
       if (project) {
-        const tenant = await buildTenant(project.id);
-        if (!tenant) {
-          return notFound(c);
-        }
-        const resolution = buildTenantPathResolution(
-          tenant,
+        const resolution = await resolveTenantByProjectId(
+          project.id,
           "preview",
           host,
           pathname,
-          tenant.pathPrefix ?? ""
+          resolveSubdomainBasePath(pathname)
         );
         if (!resolution) {
           return notFound(c);
@@ -104,16 +125,12 @@ tenants.get(
       if (subdomain) {
         const project = await projectDao.getBySlugUnique(subdomain);
         if (project) {
-          const tenant = await buildTenant(project.id);
-          if (!tenant) {
-            return notFound(c);
-          }
-          const resolution = buildTenantPathResolution(
-            tenant,
+          const resolution = await resolveTenantByProjectId(
+            project.id,
             "subdomain",
             host,
             pathname,
-            tenant.pathPrefix ?? ""
+            resolveSubdomainBasePath(pathname)
           );
           if (!resolution) {
             return notFound(c);
@@ -131,16 +148,12 @@ tenants.get(
       ) {
         const project = await projectDao.getBySlugUnique(subdomain);
         if (project) {
-          const tenant = await buildTenant(project.id);
-          if (!tenant) {
-            return notFound(c);
-          }
-          const resolution = buildTenantPathResolution(
-            tenant,
+          const resolution = await resolveTenantByProjectId(
+            project.id,
             "subdomain",
             host,
             pathname,
-            tenant.pathPrefix ?? ""
+            resolveSubdomainBasePath(pathname)
           );
           if (!resolution) {
             return notFound(c);

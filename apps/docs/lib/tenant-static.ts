@@ -12,6 +12,11 @@ import {
   resolveSiteConfigAssets,
 } from "@/lib/content-source";
 import {
+  getDocsCollection,
+  getDocsCollectionWithNavigation,
+  getDocsNavigation,
+} from "@/lib/docs-collection";
+import {
   buildNavigation,
   enrichNavWithMetadata,
   flattenNav,
@@ -34,7 +39,7 @@ const getCanonicalHost = (
   requestedHost?: string,
   strategy?: TenantResolution["strategy"] | null
 ) =>
-  strategy === "custom-domain" && requestedHost
+  (strategy === "custom-domain" || strategy === "path") && requestedHost
     ? requestedHost
     : tenant.primaryDomain;
 
@@ -42,7 +47,10 @@ const getCanonicalBasePath = (
   tenant: Tenant,
   basePath?: string,
   strategy?: TenantResolution["strategy"] | null
-) => (strategy === "path" ? "" : basePath || tenant.pathPrefix || "");
+) =>
+  strategy === "path"
+    ? basePath || `/${tenant.slug}`
+    : basePath || tenant.pathPrefix || "";
 
 export const getTenantRequestContextFromHeaders = (
   tenant: Tenant,
@@ -66,7 +74,7 @@ export const getCanonicalOrigin = (
     context.strategy
   )}`;
 
-const getCanonicalDocBasePath = (
+export const getCanonicalDocBasePath = (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => getCanonicalBasePath(tenant, context.basePath, context.strategy);
@@ -87,16 +95,9 @@ const loadTenantUrlData = async (tenant: Tenant) => {
     throw new Error("Invalid content");
   }
 
-  const docsCollection = config.collections.find(
-    (collection) => collection.type === "docs"
-  );
-  const docsNavigation = docsCollection?.navigation ?? config.navigation;
-  const docsCollectionWithNavigation =
-    docsCollection &&
-    docsNavigation &&
-    docsCollection.navigation !== docsNavigation
-      ? { ...docsCollection, navigation: docsNavigation }
-      : docsCollection;
+  const docsCollection = getDocsCollection(config);
+  const docsNavigation = getDocsNavigation(config);
+  const docsCollectionWithNavigation = getDocsCollectionWithNavigation(config);
   const registry = await buildOpenApiRegistry(
     docsCollectionWithNavigation,
     contentSource
@@ -239,13 +240,14 @@ export const buildTenantRobotsTxt = (
   context: TenantRequestContext = {}
 ) => {
   const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
   return `User-agent: *
 Allow: /
-Sitemap: ${origin}/sitemap.xml
+Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 
 # LLM-friendly content
-# ${origin}/llms.txt - Index of all documentation pages
-# ${origin}/llms-full.txt - Full documentation content
+# ${origin}${toDocHref("llms.txt", basePath)} - Index of all documentation pages
+# ${origin}${toDocHref("llms-full.txt", basePath)} - Full documentation content
 # Append .mdx to any page URL for raw markdown`;
 };
 
@@ -268,7 +270,7 @@ export const buildTenantLlmsTxt = async (
     `# ${config.name}`,
     config.description ? `> ${config.description}` : null,
     "",
-    `Sitemap: ${origin}/sitemap.xml`,
+    `Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}`,
     "",
     "## Docs",
     ...pages.map((page) => {

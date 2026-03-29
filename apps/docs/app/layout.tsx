@@ -12,8 +12,9 @@ const glide = localFont({
 });
 
 export const metadata: Metadata = {
-  description: "Tenant-aware documentation rendering service",
-  title: "Atlas Docs Runtime",
+  description:
+    "Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.",
+  title: "Blode Docs",
 };
 
 const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("atlas-theme");if(!t){t=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t;if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`;

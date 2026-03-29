@@ -71,50 +71,23 @@ const parseApiKeyCredentials = (value: unknown): ApiKeyCredentials | null => {
   return { apiKey: value.apiKey, type: "api-key" };
 };
 
-const parseAuthFile = (payload: string): AuthFileData => {
-  const parsed = JSON.parse(payload) as unknown;
-
-  if (!isRecord(parsed) || parsed.version !== 1) {
-    throw new CliError(
-      `Invalid credentials format in ${CREDENTIALS_FILE}`,
-      EXIT_CODES.ERROR
-    );
-  }
-
-  const session = parseStoredAuthSession(parsed.session);
-  const apiKey = parseApiKeyCredentials(parsed.apiKey);
-
-  return {
-    apiKey: apiKey ?? undefined,
-    session: session ?? undefined,
-    version: 1,
-  };
-};
-
-export const readStoredAuthSession =
-  async (): Promise<StoredAuthSession | null> => {
-    try {
-      const raw = await readFile(CREDENTIALS_FILE, "utf8");
-      const parsed = parseAuthFile(raw);
-      return parsed.session ?? null;
-    } catch (error) {
-      if (isRecord(error) && error.code === "ENOENT") {
-        return null;
-      }
-
-      if (error instanceof CliError) {
-        throw error;
-      }
-
-      return null;
-    }
-  };
-
-export const readStoredApiKey = async (): Promise<ApiKeyCredentials | null> => {
+export const readAuthFile = async (): Promise<AuthFileData | null> => {
   try {
     const raw = await readFile(CREDENTIALS_FILE, "utf8");
-    const parsed = parseAuthFile(raw);
-    return parsed.apiKey ?? null;
+    const parsed = JSON.parse(raw) as unknown;
+
+    if (!isRecord(parsed) || parsed.version !== 1) {
+      throw new CliError(
+        `Invalid credentials format in ${CREDENTIALS_FILE}`,
+        EXIT_CODES.ERROR
+      );
+    }
+
+    return {
+      apiKey: parseApiKeyCredentials(parsed.apiKey) ?? undefined,
+      session: parseStoredAuthSession(parsed.session) ?? undefined,
+      version: 1,
+    };
   } catch (error) {
     if (isRecord(error) && error.code === "ENOENT") {
       return null;
@@ -128,37 +101,40 @@ export const readStoredApiKey = async (): Promise<ApiKeyCredentials | null> => {
   }
 };
 
+export const readStoredAuthSession =
+  async (): Promise<StoredAuthSession | null> => {
+    const data = await readAuthFile();
+    return data?.session ?? null;
+  };
+
+export const readStoredApiKey = async (): Promise<ApiKeyCredentials | null> => {
+  const data = await readAuthFile();
+  return data?.apiKey ?? null;
+};
+
+const writeAuthFile = async (data: AuthFileData): Promise<void> => {
+  await mkdir(CONFIG_DIR, { mode: 0o700, recursive: true });
+  await writeFile(CREDENTIALS_FILE, `${JSON.stringify(data, null, 2)}\n`, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+};
+
 export const writeStoredAuthSession = async (
   session: StoredAuthSession
 ): Promise<void> => {
-  const existing = await readStoredApiKey().catch(() => null);
-  const payload: AuthFileData = {
-    apiKey: existing ?? undefined,
+  await writeAuthFile({
     session,
     version: 1,
-  };
-
-  await mkdir(CONFIG_DIR, { mode: 0o700, recursive: true });
-  await writeFile(CREDENTIALS_FILE, `${JSON.stringify(payload, null, 2)}\n`, {
-    encoding: "utf8",
-    mode: 0o600,
   });
 };
 
 export const writeStoredApiKey = async (
   apiKey: ApiKeyCredentials
 ): Promise<void> => {
-  const existing = await readStoredAuthSession().catch(() => null);
-  const payload: AuthFileData = {
+  await writeAuthFile({
     apiKey,
-    session: existing ?? undefined,
     version: 1,
-  };
-
-  await mkdir(CONFIG_DIR, { mode: 0o700, recursive: true });
-  await writeFile(CREDENTIALS_FILE, `${JSON.stringify(payload, null, 2)}\n`, {
-    encoding: "utf8",
-    mode: 0o600,
   });
 };
 
