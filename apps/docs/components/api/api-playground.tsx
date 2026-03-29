@@ -3,16 +3,15 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import type { OpenApiEntry } from "@/lib/openapi";
 
 const extractParams = (entry: OpenApiEntry, location: "path" | "query") =>
   (entry.operation.parameters ?? []).filter(
     (param) => (param as { in?: string }).in === location
   ) as { name?: string; required?: boolean; description?: string }[];
-
-const fieldClass = "grid gap-1.5 text-sm";
-const inputClass =
-  "rounded-lg border border-border bg-background px-2.5 py-2 text-foreground";
 
 export const ApiPlayground = ({
   entry,
@@ -189,10 +188,11 @@ export const ApiPlayground = ({
         </div>
 
         {servers.length ? (
-          <label className={fieldClass}>
-            <span>Server</span>
+          <Field>
+            <FieldLabel htmlFor="api-server">Server</FieldLabel>
             <select
-              className={inputClass}
+              className="flex h-[var(--field-height)] w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground shadow-input transition-colors hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
+              id="api-server"
               onChange={handleServerChange}
               value={serverIndex}
             >
@@ -202,23 +202,25 @@ export const ApiPlayground = ({
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
         ) : null}
 
         {pathParams.length ? (
           <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
             {pathParams.map((param) => (
-              <label className={fieldClass} key={param.name}>
-                <span>{param.name}</span>
-                <input
-                  className={inputClass}
+              <Field key={param.name}>
+                <FieldLabel htmlFor={`path-${param.name}`}>
+                  {param.name}
+                </FieldLabel>
+                <Input
+                  id={`path-${param.name}`}
                   name={param.name ?? ""}
                   onChange={handlePathValueChange}
                   placeholder={param.required ? "Required" : "Optional"}
                   type="text"
                   value={pathValues[param.name ?? ""] ?? ""}
                 />
-              </label>
+              </Field>
             ))}
           </div>
         ) : null}
@@ -226,52 +228,55 @@ export const ApiPlayground = ({
         {queryParams.length ? (
           <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
             {queryParams.map((param) => (
-              <label className={fieldClass} key={param.name}>
-                <span>{param.name}</span>
-                <input
-                  className={inputClass}
+              <Field key={param.name}>
+                <FieldLabel htmlFor={`query-${param.name}`}>
+                  {param.name}
+                </FieldLabel>
+                <Input
+                  id={`query-${param.name}`}
                   name={param.name ?? ""}
                   onChange={handleQueryValueChange}
                   placeholder={param.required ? "Required" : "Optional"}
                   type="text"
                   value={queryValues[param.name ?? ""] ?? ""}
                 />
-              </label>
+              </Field>
             ))}
           </div>
         ) : null}
 
-        <label className={fieldClass}>
-          <span>Auth token</span>
-          <input
-            className={inputClass}
+        <Field>
+          <FieldLabel htmlFor="auth-token">Auth token</FieldLabel>
+          <Input
+            id="auth-token"
             onChange={handleAuthTokenChange}
             placeholder="Bearer token"
             type="password"
             value={authToken}
           />
-        </label>
+        </Field>
 
         {entry.operation.method === "GET" ? null : (
-          <label className={fieldClass}>
-            <span>Request body</span>
+          <Field>
+            <FieldLabel htmlFor="request-body">Request body</FieldLabel>
             <textarea
-              className={inputClass}
+              className="flex w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground shadow-input transition-colors placeholder:text-placeholder-foreground hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
+              id="request-body"
               onChange={handleBodyChange}
               rows={6}
               value={body}
             />
-          </label>
+          </Field>
         )}
 
-        <button
-          className="rounded-xl border-none bg-primary px-3.5 py-2.5 font-semibold text-primary-foreground disabled:opacity-50"
+        <Button
+          className="w-full"
           disabled={isLoading || !canSend}
           onClick={handleSend}
           type="button"
         >
           {isLoading ? "Sending..." : "Send request"}
-        </button>
+        </Button>
         {canSend ? null : (
           <p className="text-sm text-muted-foreground">
             Add a server URL in your OpenAPI spec to enable requests.

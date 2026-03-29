@@ -40,16 +40,10 @@ export default function HomePage() {
         {/* WHY — the belief */}
         <section className="pb-24 pt-20 md:pb-32 md:pt-28 lg:pt-36">
           <div className="container">
-            <h1
-              className="max-w-3xl text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl"
-              style={{ textWrap: "balance" }}
-            >
+            <h1 className="max-w-3xl text-balance text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl">
               Documentation should ship as fast as code.
             </h1>
-            <p
-              className="mt-6 max-w-lg text-lg text-muted-foreground md:text-xl"
-              style={{ textWrap: "balance" }}
-            >
+            <p className="mt-6 max-w-lg text-balance text-lg text-muted-foreground md:text-xl">
               Most teams treat docs as an afterthought. A separate system, a
               manual deploy, content that drifts from the codebase. Every merge
               ships code. Why not docs?
@@ -70,10 +64,7 @@ export default function HomePage() {
           <div className="container">
             <div className="grid gap-12 md:grid-cols-2 md:items-start">
               <div>
-                <h2
-                  className="text-3xl font-bold tracking-tight md:text-4xl"
-                  style={{ textWrap: "balance" }}
-                >
+                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
                   Your terminal is the interface.
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
@@ -126,10 +117,7 @@ export default function HomePage() {
           <div className="container">
             <div className="grid gap-16 md:grid-cols-2">
               <div>
-                <h2
-                  className="text-3xl font-bold tracking-tight md:text-4xl"
-                  style={{ textWrap: "balance" }}
-                >
+                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
                   Everything ships from one project.
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
@@ -191,10 +179,7 @@ export default function HomePage() {
           <div className="container">
             <div className="grid gap-12 md:grid-cols-2 md:items-start">
               <div>
-                <h2
-                  className="text-3xl font-bold tracking-tight md:text-4xl"
-                  style={{ textWrap: "balance" }}
-                >
+                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
                   Every merge ships docs.
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
@@ -215,10 +200,7 @@ export default function HomePage() {
         {/* CTA — conversion */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container" id="get-started">
-            <h2
-              className="text-3xl font-bold tracking-tight md:text-4xl"
-              style={{ textWrap: "balance" }}
-            >
+            <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
               Ship your first doc in under a minute.
             </h2>
             <div className="mt-8 flex flex-wrap items-center gap-4">
