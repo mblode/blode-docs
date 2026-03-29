@@ -4,6 +4,22 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
 import { createSupabaseClient } from "../../../lib/supabase";
 
 const SignUpForm = () => {
@@ -49,154 +65,57 @@ const SignUpForm = () => {
   const signInHref = `/oauth/consent?${searchParams.toString()}`;
 
   return (
-    <div
-      style={{
-        alignItems: "center",
-        display: "flex",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        justifyContent: "center",
-        minHeight: "100vh",
-        padding: "1rem",
-      }}
-    >
-      <div style={{ maxWidth: "400px", width: "100%" }}>
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 600,
-            marginBottom: "0.5rem",
-            textAlign: "center",
-          }}
-        >
-          Blode.md
-        </h1>
-        <p
-          style={{
-            color: "#666",
-            fontSize: "0.875rem",
-            marginBottom: "1.5rem",
-            textAlign: "center",
-          }}
-        >
-          Create an account to authorize the CLI
-        </p>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-[400px]">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Blode.md</CardTitle>
+          <CardDescription>
+            Create an account to authorize the CLI
+          </CardDescription>
+        </CardHeader>
 
-        {error && (
-          <div
-            style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "0.5rem",
-              color: "#dc2626",
-              fontSize: "0.875rem",
-              marginBottom: "1rem",
-              padding: "0.75rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        <CardContent>
+          <form action={submitAction}>
+            <FieldGroup>
+              {error && <FieldError>{error}</FieldError>}
 
-        <form action={submitAction}>
-          <label
-            htmlFor="email"
-            style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              marginBottom: "0.25rem",
-            }}
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "0.5rem",
-              boxSizing: "border-box",
-              display: "block",
-              fontSize: "0.875rem",
-              marginBottom: "1rem",
-              padding: "0.625rem 0.75rem",
-              width: "100%",
-            }}
-          />
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                />
+              </Field>
 
-          <label
-            htmlFor="password"
-            style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              marginBottom: "0.25rem",
-            }}
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="new-password"
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "0.5rem",
-              boxSizing: "border-box",
-              display: "block",
-              fontSize: "0.875rem",
-              marginBottom: "1.5rem",
-              padding: "0.625rem 0.75rem",
-              width: "100%",
-            }}
-          />
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                />
+              </Field>
 
-          <button
-            type="submit"
-            disabled={isPending}
-            style={{
-              background: "#171717",
-              borderRadius: "0.5rem",
-              color: "#fff",
-              cursor: isPending ? "wait" : "pointer",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              marginBottom: "0.5rem",
-              opacity: isPending ? 0.7 : 1,
-              padding: "0.625rem",
-              width: "100%",
-            }}
-          >
-            {isPending ? "Creating account..." : "Create account"}
-          </button>
+              <div className="flex flex-col gap-2">
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? "Creating account..." : "Create account"}
+                </Button>
 
-          <Link
-            href={signInHref}
-            style={{
-              background: "transparent",
-              border: "1px solid #d1d5db",
-              borderRadius: "0.5rem",
-              boxSizing: "border-box",
-              color: "#171717",
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              padding: "0.625rem",
-              textAlign: "center",
-              textDecoration: "none",
-              width: "100%",
-            }}
-          >
-            Already have an account? Sign in
-          </Link>
-        </form>
-      </div>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={signInHref}>
+                    Already have an account? Sign in
+                  </Link>
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
