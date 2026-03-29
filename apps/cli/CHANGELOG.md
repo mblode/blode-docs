@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.4
+
+### Patch Changes
+
+- b04215c: Rename npm package from `blode-docs` to `blodemd`
+
 ## 0.0.3
 
 ### Patch Changes
