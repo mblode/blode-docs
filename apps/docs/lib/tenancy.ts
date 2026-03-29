@@ -9,6 +9,7 @@ const DEFAULT_RESERVED_PATHS = [
   "/.well-known",
   "/favicon.ico",
   "/llms.txt",
+  "/oauth",
   "/robots.txt",
   "/sitemap.xml",
   "/logos",

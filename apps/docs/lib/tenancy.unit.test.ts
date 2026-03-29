@@ -30,6 +30,7 @@ describe("tenancy helpers", () => {
     expect(isReservedPath("/_internal/proxy")).toBe(true);
     expect(isReservedPath("/robots.txt")).toBe(true);
     expect(isReservedPath("/logos/atlas-mark-dark.svg")).toBe(true);
+    expect(isReservedPath("/oauth/consent")).toBe(true);
     expect(isReservedPath("/api/overview")).toBe(false);
     expect(isReservedPath("/atlas/sitemap.xml")).toBe(false);
   });
