@@ -696,15 +696,21 @@ export const buildContentIndex = async (
 
     const collectionEntries: ContentEntry[] = [];
 
-    for (const file of files) {
-      const entry = await buildEntryFromFile({
-        collection,
-        errors,
-        file,
-        root,
-        slugPrefix,
-        source,
-      });
+    const resolvedEntries = await Promise.all(
+      files.map(
+        async (file) =>
+          await buildEntryFromFile({
+            collection,
+            errors,
+            file,
+            root,
+            slugPrefix,
+            source,
+          })
+      )
+    );
+
+    for (const entry of resolvedEntries) {
       if (!entry) {
         continue;
       }

@@ -3,7 +3,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 
-import type { SearchItem } from "@/components/ui/search";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { NavEntry, NavTab } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
@@ -40,6 +39,7 @@ const Dropdown = ({
             className="px-3 py-2 hover:bg-accent"
             href={item.url}
             key={item.label}
+            prefetch={false}
           >
             {item.label}
           </Link>
@@ -86,6 +86,7 @@ const HeaderTabs = ({
           key={tab.label}
           rel={isExternal ? "noopener noreferrer" : undefined}
           target={isExternal ? "_blank" : undefined}
+          prefetch={false}
         >
           {tab.label}
           {isActive ? (
@@ -100,14 +101,12 @@ const HeaderTabs = ({
 // oxlint-disable-next-line eslint/complexity
 export const DocHeader = ({
   config,
-  searchItems,
   basePath,
   tabs,
   activeTabIndex,
   nav = [],
 }: {
   config: SiteConfig;
-  searchItems: SearchItem[];
   basePath: string;
   tabs?: NavTab[] | null;
   activeTabIndex?: number;
@@ -135,6 +134,7 @@ export const DocHeader = ({
           <Link
             className="flex items-center gap-2.5"
             href={toDocHref("index", basePath)}
+            prefetch={false}
           >
             {config.logo?.light ? (
               <Image
@@ -188,9 +188,7 @@ export const DocHeader = ({
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
-            {searchDisabled ? null : (
-              <Search basePath={basePath} items={searchItems} />
-            )}
+            {searchDisabled ? null : <Search basePath={basePath} />}
             {primaryVersion ? (
               <Dropdown items={versions} label={primaryVersion.label} />
             ) : null}

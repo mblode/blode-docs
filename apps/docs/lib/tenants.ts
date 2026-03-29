@@ -3,6 +3,7 @@ import type { Tenant } from "@repo/models";
 
 import { getTenantDocsPath } from "./content-root";
 import { docsApiBase } from "./env";
+import { createTimedPromiseCache } from "./server-cache";
 
 export const getProjectTag = (slug: string) => `project:${slug}`;
 
@@ -23,6 +24,11 @@ const mapTenant = (tenant: {
   docsPath: getTenantDocsPath(tenant.slug),
 });
 
+const tenantCache = createTimedPromiseCache<string, Tenant | null>({
+  maxEntries: 128,
+  ttlMs: 60 * 1000,
+});
+
 const fetchTenant = async (slug: string): Promise<Tenant | null> => {
   const url = new URL(`/tenants/${slug}`, docsApiBase);
   const response = await fetch(url.toString(), {
@@ -39,4 +45,9 @@ const fetchTenant = async (slug: string): Promise<Tenant | null> => {
   return mapTenant(parsed.data);
 };
 
-export const getTenantBySlug = fetchTenant;
+export const clearTenantCache = () => {
+  tenantCache.clear();
+};
+
+export const getTenantBySlug = async (slug: string) =>
+  await tenantCache.getOrCreate(slug, async () => await fetchTenant(slug));

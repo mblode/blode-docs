@@ -17,7 +17,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import type { SearchItem } from "@/components/ui/search";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import type { NavEntry, NavTab } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
@@ -96,7 +95,6 @@ export const DocShell = ({
   breadcrumbs,
   pageTitle,
   pageDescription,
-  searchItems,
   anchors,
   activeTabIndex,
   basePath,
@@ -115,7 +113,6 @@ export const DocShell = ({
   breadcrumbs: { label: string; path: string }[];
   pageTitle: string;
   pageDescription?: string;
-  searchItems: SearchItem[];
   anchors?: { label: string; href: string }[];
   activeTabIndex?: number;
   basePath: string;
@@ -188,7 +185,6 @@ export const DocShell = ({
         basePath={basePath}
         config={config}
         nav={nav}
-        searchItems={searchItems}
         tabs={tabs}
       />
       <div className="container-wrapper flex flex-1 flex-col px-6">

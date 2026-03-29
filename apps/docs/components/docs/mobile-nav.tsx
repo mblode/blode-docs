@@ -31,6 +31,7 @@ const MobileLink = ({
     href={href}
     onClick={onClose}
     {...props}
+    prefetch={false}
   >
     {children}
   </Link>

@@ -2,6 +2,7 @@ import { TenantResolutionSchema } from "@repo/contracts";
 
 import { docsApiBase } from "./env";
 import { platformConfig } from "./platform-config";
+import { createTimedPromiseCache } from "./server-cache";
 
 const DEFAULT_RESERVED_PATHS = [
   "/_internal",
@@ -26,6 +27,14 @@ const LOCAL_ROOT_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 const normalizeHost = (host: string) =>
   host.trim().toLowerCase().replace(/:\d+$/, "");
+
+const tenantResolutionCache = createTimedPromiseCache<
+  string,
+  Awaited<ReturnType<typeof fetchTenantResolution>>
+>({
+  maxEntries: 512,
+  ttlMs: 5 * 1000,
+});
 
 export const getRequestHost = (headerSource: Pick<Headers, "get">) => {
   const forwardedHost = headerSource.get("x-forwarded-host");
@@ -54,7 +63,7 @@ export const isReservedPath = (pathname: string) => {
   return DEFAULT_RESERVED_PATHS.some((prefix) => pathname.startsWith(prefix));
 };
 
-export const resolveTenant = async (host: string, pathname: string) => {
+const fetchTenantResolution = async (host: string, pathname: string) => {
   const url = new URL("/tenants/resolve", docsApiBase);
   url.searchParams.set("host", normalizeHost(host));
   url.searchParams.set("path", pathname);
@@ -73,4 +82,16 @@ export const resolveTenant = async (host: string, pathname: string) => {
     return null;
   }
   return parsed.data;
+};
+
+export const clearTenantResolutionCache = () => {
+  tenantResolutionCache.clear();
+};
+
+export const resolveTenant = async (host: string, pathname: string) => {
+  const cacheKey = `${normalizeHost(host)}:${pathname}`;
+  return await tenantResolutionCache.getOrCreate(
+    cacheKey,
+    async () => await fetchTenantResolution(host, pathname)
+  );
 };

@@ -43,7 +43,7 @@ Copy `.env.example` to `.env.local` before running the API. Required variables i
 
 - **API build may fail** due to ESM/TypeScript module resolution issues with Drizzle and `@repo/contracts`. Run `npx turbo run build --filter=docs` to build only the docs app if the API is blocking deployment.
 - **`@repo/supabase` is deprecated** — do not add new imports or dependencies on it.
-- **Multi-tenant routing** is resolved from the subdomain in `apps/docs/middleware.ts`. Changes to domain/tenant logic require updating both the middleware and the API tenant resolution in `apps/api/src/index.ts`.
+- **Multi-tenant routing** uses Next.js 16's `proxy.ts` convention (`apps/docs/proxy.ts`), not `middleware.ts`. Never create a `middleware.ts` — it conflicts with `proxy.ts` and breaks the build. Platform routes (e.g. `/oauth`) must be added to `DEFAULT_RESERVED_PATHS` in `apps/docs/lib/tenancy.ts` to bypass tenant resolution. Changes to domain/tenant logic require updating both the proxy and the API tenant resolution in `apps/api/src/index.ts`.
 - **Pre-commit hook** runs `ultracite fix` on staged files via Lefthook. If it fails, run `npm run fix` and re-stage.
 
 ## Conventions

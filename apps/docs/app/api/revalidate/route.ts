@@ -1,6 +1,10 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { clearDocsRuntimeCaches } from "@/lib/docs-runtime";
+import { clearTenantResolutionCache } from "@/lib/tenancy";
+import { clearTenantCache } from "@/lib/tenants";
+
 interface RevalidatePayload {
   path?: string;
   paths?: string[];
@@ -32,6 +36,10 @@ const handleRevalidation = (payload: RevalidatePayload) => {
   for (const tag of tags) {
     revalidateTag(tag, "max");
   }
+
+  clearDocsRuntimeCaches();
+  clearTenantCache();
+  clearTenantResolutionCache();
 
   return NextResponse.json({ paths, revalidated: true, tags });
 };
