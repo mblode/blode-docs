@@ -141,9 +141,19 @@ export const proxy = async (request: NextRequest) => {
     url.pathname = rewritten;
   }
 
-  return NextResponse.rewrite(url, {
+  const response = NextResponse.rewrite(url, {
     request: {
       headers: requestHeaders,
     },
   });
+
+  // Cache HTML at Vercel CDN edge for 60s, serve stale for 1hr during revalidation
+  response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=60, stale-while-revalidate=3600"
+  );
+  // Multi-tenant: same path may serve different content per Host
+  response.headers.set("Vary", "Host");
+
+  return response;
 };

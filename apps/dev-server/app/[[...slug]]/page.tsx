@@ -1,13 +1,10 @@
 import { getDocPageContent, getDocShellData } from "@dev/lib/local-runtime";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { ApiReference } from "@/components/api/api-reference";
 import { CollectionIndex } from "@/components/content/collection-index";
 import { DocShell } from "@/components/docs/doc-shell";
-
-export const dynamic = "force-dynamic";
 
 const buildTitle = (pageTitle?: string, baseTitle = "Docs") =>
   pageTitle ? `${pageTitle} · ${baseTitle}` : baseTitle;
@@ -51,16 +48,6 @@ export const generateMetadata = async ({
         }
       : undefined,
   };
-};
-
-const AsyncDocContent = async ({ slugKey }: { slugKey: string }) => {
-  const rendered = await getDocPageContent(slugKey);
-
-  if (!rendered) {
-    return null;
-  }
-
-  return rendered.content;
 };
 
 const PreviewPage = async ({
@@ -121,22 +108,8 @@ const PreviewPage = async ({
   } else {
     ({ rawContent } = shell);
     ({ toc } = shell);
-    content = (
-      <Suspense
-        fallback={
-          <div className="grid animate-pulse gap-4.5">
-            <div className="h-4 w-full rounded bg-muted/40" />
-            <div className="h-4 w-5/6 rounded bg-muted/40" />
-            <div className="h-4 w-4/6 rounded bg-muted/40" />
-            <div className="h-32 w-full rounded bg-muted/40" />
-            <div className="h-4 w-full rounded bg-muted/40" />
-            <div className="h-4 w-3/4 rounded bg-muted/40" />
-          </div>
-        }
-      >
-        <AsyncDocContent slugKey={slugKey} />
-      </Suspense>
-    );
+    const rendered = await getDocPageContent(slugKey);
+    content = rendered?.content ?? null;
   }
 
   return (

@@ -2,7 +2,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import Script from "next/script";
+
+import { Providers } from "@/components/providers";
 
 import "./globals.css";
 
@@ -19,8 +20,6 @@ export const metadata: Metadata = {
   title: "Blode.md",
 };
 
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("atlas-theme");if(!t){t=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t;if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,12 +33,9 @@ export default function RootLayout({
     >
       <head>
         <link rel="preconnect" href="https://public.blob.vercel-storage.com" />
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_SCRIPT}
-        </Script>
       </head>
       <body className="relative flex w-full flex-col justify-center overflow-x-hidden scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*14)]">
-        {children}
+        <Providers>{children}</Providers>
         <SpeedInsights />
       </body>
     </html>

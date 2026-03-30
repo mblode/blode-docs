@@ -8,6 +8,18 @@ const cleanEnv = (value) => {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   assetPrefix: cleanEnv(process.env.PLATFORM_ASSET_PREFIX),
+  cacheLife: {
+    artifacts: {
+      expire: 3600,
+      revalidate: 300,
+      stale: 1800,
+    },
+    hours: {
+      expire: 14_400,
+      revalidate: 900,
+      stale: 3600,
+    },
+  },
   experimental: {
     optimizePackageImports: [
       "blode-icons-react",

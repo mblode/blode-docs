@@ -191,9 +191,6 @@
   --selection: oklch(0.922 0 0);
   --selection-foreground: oklch(0.205 0 0);
   --overlay: rgba(43, 53, 68, 0.7);
-}
-
-[data-theme="dark"] {
   --color-bg: #0b1413;
   --color-surface: #121c1b;
   --color-ink: #e6f2ef;
@@ -218,7 +215,7 @@
     @apply overscroll-y-none scroll-smooth;
   }
 
-  html[data-theme="dark"] {
+  html.dark {
     color-scheme: dark;
   }
 
@@ -341,6 +338,7 @@
 
   [data-rehype-pretty-code-figure] {
     position: relative;
+    margin-top: calc(var(--spacing) * 6);
     overflow: hidden;
     font-size: var(--text-sm);
     color: var(--color-code-foreground);

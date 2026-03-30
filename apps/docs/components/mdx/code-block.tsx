@@ -2,8 +2,9 @@
 
 import { CheckIcon, ClipboardIcon } from "blode-icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { getTextContent } from "./get-text-content";
@@ -11,9 +12,11 @@ import { getTextContent } from "./get-text-content";
 export const CodeBlock = ({
   children,
   className,
-}: {
+  style,
+  tabIndex,
+  ...props
+}: ComponentPropsWithoutRef<"pre"> & {
   children: ReactNode;
-  className?: string;
 }) => {
   const [copied, setCopied] = useState(false);
   const code = useMemo(() => getTextContent(children), [children]);
@@ -33,31 +36,40 @@ export const CodeBlock = ({
     setCopied(true);
   }, [code]);
 
+  const preStyle = style ? { ...style } : undefined;
+  if (preStyle) {
+    delete preStyle.backgroundColor;
+  }
+
   return (
-    <div className="group">
-      <button
-        className="absolute top-3 right-2 z-10 inline-flex size-7 items-center justify-center rounded-md bg-code opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
-        data-slot="copy-button"
-        onClick={handleCopy}
-        type="button"
-      >
-        <span aria-live="polite" className="sr-only">
-          {copied ? "Copied" : "Copy"}
-        </span>
-        {copied ? (
-          <CheckIcon aria-hidden="true" className="size-3.5" />
-        ) : (
-          <ClipboardIcon aria-hidden="true" className="size-3.5" />
-        )}
-      </button>
+    <figure data-rehype-pretty-code-figure="">
       <pre
         className={cn(
-          "no-scrollbar overflow-x-auto px-4 py-3.5 font-mono",
+          "no-scrollbar min-w-0 overflow-x-auto overflow-y-auto overscroll-y-auto overscroll-x-contain px-4 py-3.5 outline-none has-[[data-slot=tabs]]:p-0 has-[[data-highlighted-line]]:px-0 has-[[data-line-numbers]]:px-0",
           className
         )}
+        style={preStyle}
+        tabIndex={tabIndex ?? 0}
+        {...props}
       >
+        <Button
+          className="absolute top-3 right-2 z-10 size-7 bg-code hover:opacity-100 focus-visible:opacity-100"
+          data-copied={copied}
+          data-slot="copy-button"
+          onClick={handleCopy}
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          <span className="sr-only">{copied ? "Copied" : "Copy"}</span>
+          {copied ? (
+            <CheckIcon aria-hidden="true" />
+          ) : (
+            <ClipboardIcon aria-hidden="true" />
+          )}
+        </Button>
         {children}
       </pre>
-    </div>
+    </figure>
   );
 };

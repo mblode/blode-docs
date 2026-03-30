@@ -74,7 +74,7 @@ const waitForServer = async ({
   child: ReturnType<typeof spawn>;
   port: number;
 }) => {
-  const url = `http://127.0.0.1:${port}${DEV_READY_ENDPOINT}`;
+  const url = `http://localhost:${port}${DEV_READY_ENDPOINT}`;
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < DEV_READY_TIMEOUT_MS) {
@@ -129,7 +129,7 @@ export const devCommand = async ({
 
     const cliFilePath = fileURLToPath(import.meta.url);
     const repoRoot = await findMonorepoRoot(path.dirname(cliFilePath));
-    const localUrl = `http://127.0.0.1:${port}`;
+    const localUrl = `http://localhost:${port}`;
 
     log.info(`Docs root: ${chalk.cyan(root)}`);
 

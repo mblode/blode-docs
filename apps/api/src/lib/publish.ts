@@ -1,6 +1,8 @@
 import path from "node:path";
 
 import { normalizePath } from "@repo/common";
+import { compileContent } from "@repo/mdx-compiler";
+import type { CompiledMdx } from "@repo/mdx-compiler";
 import {
   buildContentIndex,
   createBlobSource,
@@ -8,6 +10,7 @@ import {
   PREBUILT_INDEX_PATH,
   serializeContentIndex,
 } from "@repo/previewing";
+import type { ContentSource } from "@repo/previewing";
 import { list, put } from "@vercel/blob";
 
 const DEPLOYMENT_ROOT = "deployments";
@@ -88,6 +91,57 @@ export const uploadDeploymentFile = async (input: {
   };
 };
 
+const COMPILED_MDX_PREFIX = "_compiled/";
+const MDX_FILE_REGEX = /\.(mdx|md)$/;
+const COMPILE_CONCURRENCY = 10;
+
+const compileDeploymentMdx = async (
+  source: ContentSource,
+  files: DeploymentManifestFile[],
+  projectSlug: string,
+  deploymentId: string
+): Promise<DeploymentManifestFile[]> => {
+  const mdxFiles = files.filter((file) => MDX_FILE_REGEX.test(file.path));
+  if (!mdxFiles.length) {
+    return [];
+  }
+
+  const compiledFiles: DeploymentManifestFile[] = [];
+  const filesPrefix = getFilesPrefix(projectSlug, deploymentId);
+
+  // Process in batches to limit concurrency
+  for (let i = 0; i < mdxFiles.length; i += COMPILE_CONCURRENCY) {
+    const batch = mdxFiles.slice(i, i + COMPILE_CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map(async (file) => {
+        const rawContent = await source.readFile(file.path);
+        const compiled: CompiledMdx = await compileContent(rawContent);
+        const compiledPath = `${COMPILED_MDX_PREFIX}${file.path}.json`;
+        const blob = await put(
+          `${filesPrefix}${compiledPath}`,
+          JSON.stringify(compiled),
+          {
+            access: "public",
+            addRandomSuffix: false,
+            allowOverwrite: true,
+            contentType: "application/json; charset=utf-8",
+          }
+        );
+        return { path: compiledPath, url: blob.url };
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        compiledFiles.push(result.value);
+      }
+      // Compilation failures are non-fatal — runtime falls back to on-demand compilation
+    }
+  }
+
+  return compiledFiles;
+};
+
 export const finalizeDeploymentManifest = async (input: {
   projectSlug: string;
   deploymentId: string;
@@ -137,6 +191,19 @@ export const finalizeDeploymentManifest = async (input: {
         }
       );
       files.push({ path: PREBUILT_INDEX_PATH, url: indexBlob.url });
+
+      // Pre-compile MDX files for instant runtime rendering
+      try {
+        const compiledFiles = await compileDeploymentMdx(
+          source,
+          files,
+          input.projectSlug,
+          input.deploymentId
+        );
+        files.push(...compiledFiles);
+      } catch {
+        // MDX compilation is optional — runtime falls back to on-demand compilation
+      }
     }
   } catch {
     // Content index generation is optional — continue without it

@@ -41,6 +41,11 @@ const handleRevalidation = (payload: RevalidatePayload) => {
     revalidateTag(tag, "max");
   }
 
+  // Revalidate tenant-scoped cache tags used by 'use cache' functions
+  if (payload.tenantId) {
+    revalidateTag(`tenant:${payload.tenantId}`, "max");
+  }
+
   after(() => {
     if (payload.tenantId) {
       clearDocsRuntimeCachesForTenant(payload.tenantId);

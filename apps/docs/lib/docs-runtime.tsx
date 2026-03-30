@@ -25,7 +25,7 @@ import {
   getDocsCollectionWithNavigation,
   getDocsNavigation,
 } from "@/lib/docs-collection";
-import { renderMdx } from "@/lib/mdx";
+import { renderFromCompiled, renderMdx } from "@/lib/mdx";
 import {
   buildNavigation,
   buildTabbedNavigation,
@@ -336,11 +336,17 @@ const getRenderedPageData = async ({
       artifacts.contentSource,
       relativePath
     );
-    const { content, frontmatter } = await renderMdx(rawContent);
+
+    // Try pre-compiled content first (fast path: <1ms)
+    const compiled =
+      await artifacts.contentSource.readCompiledMdx?.(relativePath);
+    const rendered = compiled
+      ? await renderFromCompiled(compiled.compiledSource)
+      : await renderMdx(rawContent);
 
     return {
-      content,
-      frontmatter,
+      content: rendered.content,
+      frontmatter: rendered.frontmatter,
       rawContent,
       toc: useToc ? extractToc(rawContent) : [],
     };
@@ -526,8 +532,8 @@ export const getDocShellData = cache(
 );
 
 /**
- * Compiles MDX content for a specific page. This is the slow operation
- * that benefits from being wrapped in a Suspense boundary.
+ * Compiles MDX content for a specific page. Uses pre-compiled content
+ * from deploy when available, otherwise falls back to runtime compilation.
  */
 export const getDocPageContent = cache(
   async (tenantSlug: string, slugKey: string) => {

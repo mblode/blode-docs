@@ -19,6 +19,7 @@
     "@repo/common": "*",
     "@repo/contracts": "*",
     "@repo/db": "*",
+    "@repo/mdx-compiler": "*",
     "@repo/previewing": "^0.0.0",
     "@supabase/supabase-js": "^2.100.1",
     "@vercel/blob": "^2.3.1",

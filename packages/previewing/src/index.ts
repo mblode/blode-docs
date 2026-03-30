@@ -17,7 +17,7 @@ import type { ContentSource } from "./content-source.js";
 
 export { BlobContentSource, createBlobSource } from "./blob-source.js";
 export { createFsSource, FsContentSource } from "./fs-source.js";
-export type { ContentSource } from "./content-source.js";
+export type { CompiledMdxResult, ContentSource } from "./content-source.js";
 
 export const PREBUILT_INDEX_PATH = "_content-index.json";
 

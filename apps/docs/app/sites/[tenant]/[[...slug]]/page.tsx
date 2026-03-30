@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { ApiReference } from "@/components/api/api-reference";
 import { CollectionIndex } from "@/components/content/collection-index";
@@ -13,8 +12,6 @@ import {
   getCanonicalOrigin,
   getTenantRequestContextFromHeaders,
 } from "@/lib/tenant-static";
-
-export const dynamic = "force-dynamic";
 
 // oxlint-disable-next-line eslint/complexity
 export const generateMetadata = async ({
@@ -82,20 +79,6 @@ export const generateMetadata = async ({
         }
       : undefined,
   };
-};
-
-const AsyncDocContent = async ({
-  tenantSlug,
-  slugKey,
-}: {
-  tenantSlug: string;
-  slugKey: string;
-}) => {
-  const rendered = await getDocPageContent(tenantSlug, slugKey);
-  if (!rendered) {
-    return null;
-  }
-  return rendered.content;
 };
 
 // oxlint-disable-next-line eslint/complexity
@@ -171,22 +154,8 @@ const DocPage = async ({
   } else {
     ({ rawContent } = shell);
     ({ toc } = shell);
-    content = (
-      <Suspense
-        fallback={
-          <div className="grid animate-pulse gap-4.5">
-            <div className="h-4 w-full rounded bg-muted/40" />
-            <div className="h-4 w-5/6 rounded bg-muted/40" />
-            <div className="h-4 w-4/6 rounded bg-muted/40" />
-            <div className="h-32 w-full rounded bg-muted/40" />
-            <div className="h-4 w-full rounded bg-muted/40" />
-            <div className="h-4 w-3/4 rounded bg-muted/40" />
-          </div>
-        }
-      >
-        <AsyncDocContent slugKey={slugKey} tenantSlug={tenantSlug} />
-      </Suspense>
-    );
+    const rendered = await getDocPageContent(tenantSlug, slugKey);
+    content = rendered?.content ?? null;
   }
 
   return (

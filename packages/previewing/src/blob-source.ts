@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { normalizePath } from "@repo/common";
 
-import type { ContentSource } from "./content-source.js";
+import type { CompiledMdxResult, ContentSource } from "./content-source.js";
 
 interface BlobManifestFile {
   path: string;
@@ -130,6 +130,32 @@ export class BlobContentSource implements ContentSource {
   async resolveUrl(relativePath: string): Promise<string | null> {
     const manifest = await this.loadManifest();
     return manifest.get(normalizeRelativePath(relativePath)) ?? null;
+  }
+
+  async readCompiledMdx(
+    relativePath: string
+  ): Promise<CompiledMdxResult | null> {
+    const compiledPath = `_compiled/${normalizeRelativePath(relativePath)}.json`;
+    const url = await this.resolveUrl(compiledPath);
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(url, this.getFetchOptions());
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = (await response.json()) as CompiledMdxResult;
+      if (!data.compiledSource || data.version !== 1) {
+        return null;
+      }
+
+      return data;
+    } catch {
+      return null;
+    }
   }
 }
 
