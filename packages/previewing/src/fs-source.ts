@@ -5,6 +5,16 @@ import { normalizePath } from "@repo/common";
 
 import type { ContentSource } from "./content-source.js";
 
+const IGNORED_DIRECTORIES = new Set([
+  "app",
+  "components",
+  "content",
+  "lib",
+  "node_modules",
+  "public",
+]);
+const IGNORED_ROOT_FILES = new Set(["AGENTS.md", "README.md"]);
+
 const isNotFoundError = (error: unknown) =>
   Boolean(
     error &&
@@ -43,11 +53,17 @@ const walkFiles = async (
     const relativePath = prefix ? path.join(prefix, entry.name) : entry.name;
 
     if (entry.isDirectory()) {
+      if (IGNORED_DIRECTORIES.has(entry.name)) {
+        continue;
+      }
       files.push(...(await walkFiles(absolutePath, relativePath)));
       continue;
     }
 
     if (entry.isFile()) {
+      if (!prefix && IGNORED_ROOT_FILES.has(entry.name)) {
+        continue;
+      }
       files.push(normalizePath(relativePath));
     }
   }

@@ -17,7 +17,7 @@ const getTenantDocsPathCandidates = (slug: string): string[] =>
     EXTERNAL_DOCS_ROOTS[slug],
     path.join(process.cwd(), "content", slug),
     path.join(process.cwd(), "apps/docs/content", slug),
-  ].filter((candidate): candidate is string => Boolean(candidate));
+  ].filter(Boolean) as string[];
 
 export const getTenantDocsPath = (slug: string): string => {
   const candidates = getTenantDocsPathCandidates(slug);
@@ -28,5 +28,5 @@ export const getTenantDocsPath = (slug: string): string => {
     }
   }
 
-  return candidates[0];
+  return candidates[0] ?? path.join(process.cwd(), "apps/docs/content", slug);
 };

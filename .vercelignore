@@ -1,0 +1,12 @@
+.git
+.next
+.turbo
+.tmp
+test-results
+node_modules
+**/node_modules
+**/.next
+**/.turbo
+apps/docs/.playwright-mcp
+apps/docs/.vercel
+supabase
