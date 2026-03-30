@@ -35,7 +35,7 @@ const approveOrRedirect = async (authorizationId: string) => {
   // Check if consent was already given — Supabase returns redirect_url directly
   const { data: details } =
     await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
-  if (details?.redirect_url) {
+  if (details && "redirect_url" in details) {
     window.location.assign(details.redirect_url);
     return null;
   }
