@@ -33,6 +33,12 @@ const TRAILING_SLASHES_REGEX = /\/+$/;
 const LEADING_SLASHES_REGEX = /^\/+/;
 const BACKSLASH_TO_SLASH_REGEX = /\\/g;
 const DEFAULT_DOCS_BASE_PATH = "/docs";
+const ROOT_TENANT_UTILITY_PATHS = new Set([
+  "/llms-full.txt",
+  "/llms.txt",
+  "/robots.txt",
+  "/sitemap.xml",
+]);
 
 const normalizeHost = (host: string) =>
   host.trim().toLowerCase().replace(/:\d+$/, "");
@@ -88,8 +94,7 @@ export const isRootRuntimeHost = (host: string) => {
   const normalizedHost = normalizeHost(host);
   return (
     normalizedHost === platformConfig.rootDomain ||
-    LOCAL_ROOT_HOSTS.has(normalizedHost) ||
-    normalizedHost.endsWith(".localhost")
+    LOCAL_ROOT_HOSTS.has(normalizedHost)
   );
 };
 
@@ -121,6 +126,16 @@ const buildTenantPathResolution = (
   pathname: string,
   basePath: string
 ) => {
+  if (ROOT_TENANT_UTILITY_PATHS.has(pathname)) {
+    return {
+      basePath,
+      host,
+      rewrittenPath: `/sites/${tenant.slug}${pathname}`,
+      strategy,
+      tenant,
+    };
+  }
+
   const slugPath = stripPrefix(pathname, basePath || null);
   if (slugPath === null) {
     return null;

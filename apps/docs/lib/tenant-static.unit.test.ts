@@ -131,4 +131,38 @@ describe("tenant static LLM helpers", () => {
       "# Overview\n\nPublished page text"
     );
   });
+
+  it("does not duplicate a matching page heading in runtime LLM output", async () => {
+    const docsPath = await createTempUtilityRoot({
+      "docs.json": JSON.stringify(
+        {
+          $schema: "https://mintlify.com/docs.json",
+          colors: {
+            primary: "#171717",
+          },
+          name: "Example Docs",
+          navigation: {
+            groups: [{ group: "Docs", pages: ["guide"] }],
+          },
+          theme: "mint",
+        },
+        null,
+        2
+      ),
+      "guide.mdx": "---\ntitle: Guide\n---\n# Guide\n\nShip it.\n",
+    });
+    const runtimeTenant = {
+      ...tenant,
+      customDomains: [],
+      docsPath,
+      primaryDomain: "atlas.blode.md",
+    };
+
+    await expect(buildTenantLlmsFullTxt(runtimeTenant)).resolves.toContain(
+      "# Guide (https://atlas.blode.md/guide)\n\nShip it."
+    );
+    await expect(getLlmPageText(runtimeTenant, "guide")).resolves.toBe(
+      "# Guide\n\nShip it."
+    );
+  });
 });

@@ -57,6 +57,28 @@ describe("resolveTenantFromEdgeConfig", () => {
     });
   });
 
+  it("resolves root utility routes for path-prefixed custom domains", async () => {
+    edgeConfigMocks.getTenantEdgeHostRecord.mockResolvedValue({
+      host: "docs.example.com",
+      pathPrefix: "/docs",
+      strategy: "custom-domain",
+      tenant,
+      version: 1,
+    });
+
+    const resolution = await resolveTenantFromEdgeConfig(
+      "docs.example.com",
+      "/robots.txt"
+    );
+
+    expect(resolution).toMatchObject({
+      basePath: "/docs",
+      host: "docs.example.com",
+      rewrittenPath: "/sites/atlas/robots.txt",
+      strategy: "custom-domain",
+    });
+  });
+
   it("resolves a subdomain via the tenant slug record", async () => {
     edgeConfigMocks.getTenantEdgeHostRecord.mockResolvedValue(null);
     edgeConfigMocks.getTenantEdgeSlugRecord.mockResolvedValue({
@@ -78,6 +100,32 @@ describe("resolveTenantFromEdgeConfig", () => {
     expect(resolution).toMatchObject({
       basePath: "/docs",
       host: "atlas.blode.md",
+      rewrittenPath: "/sites/atlas/cli",
+      strategy: "subdomain",
+    });
+  });
+
+  it("resolves a localhost subdomain via the tenant slug record", async () => {
+    edgeConfigMocks.getTenantEdgeHostRecord.mockResolvedValue(null);
+    edgeConfigMocks.getTenantEdgeSlugRecord.mockResolvedValue({
+      slug: "atlas",
+      tenant: {
+        ...tenant,
+        customDomains: [],
+        pathPrefix: undefined,
+        primaryDomain: "atlas.blode.md",
+      },
+      version: 1,
+    });
+
+    const resolution = await resolveTenantFromEdgeConfig(
+      "atlas.localhost",
+      "/docs/cli"
+    );
+
+    expect(resolution).toMatchObject({
+      basePath: "/docs",
+      host: "atlas.localhost",
       rewrittenPath: "/sites/atlas/cli",
       strategy: "subdomain",
     });

@@ -16,6 +16,12 @@ const tenantResolveQuerySchema = z.object({
 
 const isPresent = <T>(value: T | null): value is T => value !== null;
 const DEFAULT_DOCS_BASE_PATH = "/docs";
+const ROOT_TENANT_UTILITY_PATHS = new Set([
+  "/llms-full.txt",
+  "/llms.txt",
+  "/robots.txt",
+  "/sitemap.xml",
+]);
 
 const resolveSubdomainBasePath = (pathname: string): string => {
   const normalizedPath = slugifyPath(pathname);
@@ -37,6 +43,16 @@ const buildTenantPathResolution = (
   pathname: string,
   basePath: string
 ) => {
+  if (ROOT_TENANT_UTILITY_PATHS.has(pathname)) {
+    return buildTenantResolution(
+      tenant,
+      strategy,
+      host,
+      basePath,
+      `/sites/${tenant.slug}${pathname}`
+    );
+  }
+
   const slugPath = stripPrefix(pathname, basePath || null);
   if (slugPath === null) {
     return null;

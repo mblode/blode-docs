@@ -58,6 +58,13 @@ export type PublishDeploymentFileResponse = z.infer<
   typeof PublishDeploymentFileResponseSchema
 >;
 
+export const PublishDeploymentFilesBatchSchema = z.object({
+  files: z.array(PublishDeploymentFileSchema).min(1),
+});
+export type PublishDeploymentFilesBatchInput = z.infer<
+  typeof PublishDeploymentFilesBatchSchema
+>;
+
 export const PublishDeploymentFinalizeSchema = z.object({
   promote: z.boolean().optional(),
 });

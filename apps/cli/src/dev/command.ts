@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -38,6 +39,67 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 };
 
+// --- Dev-server resolution ---
+
+interface StandaloneServer {
+  mode: "standalone";
+  devServerDir: string;
+  packagesDir: string;
+}
+
+interface MonorepoServer {
+  mode: "monorepo";
+  repoRoot: string;
+}
+
+type DevServerResolution = StandaloneServer | MonorepoServer;
+
+/**
+ * Derive the CLI npm package root from the running script path.
+ * The CLI entry point is at `<pkg-root>/dist/cli.mjs`.
+ */
+const resolveCliPackageRoot = (cliFilePath: string): string =>
+  path.dirname(path.dirname(cliFilePath));
+
+/**
+ * Check if a shipped dev-server exists alongside the CLI (npm-installed mode).
+ * Verifies both the dev-server directory AND that `next` is resolvable
+ * (it's a dependency when npm-installed, but not in the monorepo).
+ */
+const findStandaloneDevServer = async (
+  cliPackageRoot: string
+): Promise<StandaloneServer | null> => {
+  const devServerDir = path.join(cliPackageRoot, "dev-server");
+  if (!(await fileExists(path.join(devServerDir, "next.config.js")))) {
+    return null;
+  }
+
+  // Verify `next` is resolvable — this distinguishes npm-installed from
+  // a monorepo checkout that happens to have dev-server/ from prepare-dist.
+  try {
+    createRequire(path.join(cliPackageRoot, "package.json")).resolve(
+      "next/package.json"
+    );
+  } catch {
+    return null;
+  }
+
+  return {
+    devServerDir,
+    mode: "standalone",
+    packagesDir: path.join(cliPackageRoot, "packages"),
+  };
+};
+
+/**
+ * Resolve the `next` CLI binary from the blodemd package's own dependencies.
+ */
+const resolveNextBin = (cliPackageRoot: string): string => {
+  const require = createRequire(path.join(cliPackageRoot, "package.json"));
+  const nextPkgPath = require.resolve("next/package.json");
+  return path.join(path.dirname(nextPkgPath), "dist", "bin", "next");
+};
+
 const findMonorepoRoot = async (start: string): Promise<string> => {
   let current = start;
 
@@ -61,11 +123,67 @@ const findMonorepoRoot = async (start: string): Promise<string> => {
   }
 
   throw new CliError(
-    "Could not locate the blodemd monorepo root.",
+    "Could not locate the blodemd dev server.",
     EXIT_CODES.ERROR,
-    "The monorepo-only dev server must be run from this repository checkout."
+    "Make sure blodemd is installed correctly (npm i blodemd)."
   );
 };
+
+const resolveDevServer = async (
+  cliFilePath: string
+): Promise<DevServerResolution> => {
+  const cliPackageRoot = resolveCliPackageRoot(cliFilePath);
+
+  // Try standalone mode first (npm-installed)
+  const standalone = await findStandaloneDevServer(cliPackageRoot);
+  if (standalone) {
+    return standalone;
+  }
+
+  // Fall back to monorepo mode (development)
+  const repoRoot = await findMonorepoRoot(path.dirname(cliFilePath));
+  return { mode: "monorepo", repoRoot };
+};
+
+const spawnDevServer = (
+  server: DevServerResolution,
+  { root, port }: { root: string; port: number }
+): ReturnType<typeof spawn> => {
+  if (server.mode === "standalone") {
+    // devServerDir is <pkg-root>/dev-server, so parent is the package root
+    const cliPackageRoot = path.dirname(server.devServerDir);
+    const nextBin = resolveNextBin(cliPackageRoot);
+
+    return spawn(process.execPath, [nextBin, "dev"], {
+      cwd: server.devServerDir,
+      env: {
+        ...process.env,
+        BLODEMD_PACKAGES_DIR: server.packagesDir,
+        DOCS_ROOT: root,
+        // NODE_PATH lets require.resolve (used by Next.js transpilePackages)
+        // find @repo/* packages from our shipped packages/ directory.
+        NODE_PATH: [server.packagesDir, process.env.NODE_PATH]
+          .filter(Boolean)
+          .join(path.delimiter),
+        PORT: String(port),
+      },
+      stdio: "inherit",
+    });
+  }
+
+  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  return spawn(npmCommand, ["run", "dev", "--workspace=dev-server"], {
+    cwd: server.repoRoot,
+    env: {
+      ...process.env,
+      DOCS_ROOT: root,
+      PORT: String(port),
+    },
+    stdio: "inherit",
+  });
+};
+
+// --- Server readiness ---
 
 const waitForServer = async ({
   child,
@@ -109,7 +227,7 @@ const waitForServer = async ({
   );
 };
 
-const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+// --- Main command ---
 
 export const devCommand = async ({
   dir,
@@ -128,20 +246,12 @@ export const devCommand = async ({
     await validateDocsRoot(root);
 
     const cliFilePath = fileURLToPath(import.meta.url);
-    const repoRoot = await findMonorepoRoot(path.dirname(cliFilePath));
+    const server = await resolveDevServer(cliFilePath);
     const localUrl = `http://localhost:${port}`;
 
     log.info(`Docs root: ${chalk.cyan(root)}`);
 
-    const child = spawn(npmCommand, ["run", "dev", "--workspace=dev-server"], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        DOCS_ROOT: root,
-        PORT: String(port),
-      },
-      stdio: "inherit",
-    });
+    const child = spawnDevServer(server, { port, root });
 
     let watcher: Awaited<ReturnType<typeof createDevWatcher>> | null = null;
     let shuttingDown = false;

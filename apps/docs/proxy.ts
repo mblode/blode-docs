@@ -33,9 +33,32 @@ const TENANT_UTILITY_SUFFIXES = [
   "/robots.txt",
   "/sitemap.xml",
 ] as const;
+const TENANT_UTILITY_REWRITE_PATHS = {
+  "/llms-full.txt": "/llms-full.txt",
+  "/llms.txt": "/llms.txt",
+  "/robots.txt": "/robots.txt",
+  "/sitemap.xml": "/sitemap",
+} as const;
 
 const isTenantUtilityPath = (pathname: string) =>
   TENANT_UTILITY_SUFFIXES.some((suffix) => pathname.endsWith(suffix));
+
+const getTenantUtilityRewritePath = (
+  pathname: string,
+  basePath: string,
+  tenantSlug: string
+) => {
+  const normalizedPath = stripBasePath(pathname, basePath);
+  const utilityPath =
+    TENANT_UTILITY_REWRITE_PATHS[
+      normalizedPath as keyof typeof TENANT_UTILITY_REWRITE_PATHS
+    ];
+  if (!utilityPath) {
+    return null;
+  }
+
+  return `/sites/${tenantSlug}${utilityPath}`;
+};
 
 // oxlint-disable-next-line eslint/complexity
 export const proxy = async (request: NextRequest) => {
@@ -145,6 +168,11 @@ export const proxy = async (request: NextRequest) => {
 
   const url = request.nextUrl.clone();
   const rewritten = resolution.rewrittenPath;
+  const utilityRewritePath = getTenantUtilityRewritePath(
+    pathname,
+    resolution.basePath,
+    resolution.tenant.slug
+  );
 
   if (pathname.endsWith(".mdx") && !pathname.includes("/llms.mdx/")) {
     const stripped = pathname.slice(0, -4);
@@ -152,11 +180,13 @@ export const proxy = async (request: NextRequest) => {
     const slug = normalizedPath === "/" ? "" : normalizedPath.slice(1);
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
     url.pathname = `${tenantPrefix}/llms.mdx/${slug}`;
+  } else if (utilityRewritePath) {
+    url.pathname = utilityRewritePath;
   } else {
     url.pathname = rewritten;
   }
 
-  if (isTenantUtilityPath(pathname)) {
+  if (utilityRewritePath) {
     applyTenantUtilityContextSearchParams(url, {
       basePath: resolution.basePath,
       protocol: request.nextUrl.protocol.replace(/:$/, ""),

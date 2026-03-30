@@ -267,6 +267,16 @@ describe("buildUtilityIndex", () => {
         (artifact) => artifact.path === PREBUILT_UTILITY_SITEMAP_PATH
       )?.content
     ).toContain(`${UTILITY_DOCS_ROOT_TOKEN}/api/get-projects`);
+    expect(
+      artifacts.find(
+        (artifact) => artifact.path === PREBUILT_UTILITY_LLMS_FULL_PATH
+      )?.content
+    ).toContain("# Guide (__BLODEMD_DOCS_ROOT__/guide)\n\nShip it.");
+    expect(
+      artifacts.find(
+        (artifact) => artifact.path === getPrebuiltUtilityLlmPagePath("guide")
+      )?.content
+    ).toBe("# Guide\n\nShip it.");
 
     await fs.writeFile(
       path.join(root, PREBUILT_UTILITY_INDEX_PATH),

@@ -13,7 +13,7 @@ export const preferredRegion = "home";
 export const revalidate = 3600;
 
 export const GET = async (
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ tenant: string }> }
 ) => {
   const { tenant: tenantSlug } = await params;
@@ -24,7 +24,7 @@ export const GET = async (
 
   const xml = await buildTenantSitemapXml(
     tenant,
-    getTenantRequestContextFromUrl(new URL(_request.url)) ??
+    getTenantRequestContextFromUrl(new URL(request.url)) ??
       getStaticTenantRequestContext(tenant)
   );
 

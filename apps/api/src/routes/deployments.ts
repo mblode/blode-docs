@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import {
   PublishDeploymentCreateSchema,
   PublishDeploymentFileSchema,
+  PublishDeploymentFilesBatchSchema,
   PublishDeploymentFinalizeSchema,
 } from "@repo/contracts";
 import { Hono } from "hono";
@@ -15,6 +16,7 @@ import { authorizeProjectRequest } from "../lib/project-auth";
 import {
   finalizeDeploymentManifest,
   uploadDeploymentFile,
+  uploadDeploymentFiles,
 } from "../lib/publish";
 import { badRequest, notFound, unauthorized } from "../lib/responses";
 import { revalidateProject } from "../lib/revalidate";
@@ -105,6 +107,57 @@ deployments.post(
       status: "building",
     });
     return c.json(mapDeployment(record), 201);
+  }
+);
+
+deployments.post(
+  // Register the static batch path before the single-file route.
+  // Hono will otherwise resolve `/files/batch` against `/files` and return 404.
+  "/slug/:slug/deployments/:deploymentId/files/batch",
+  validateParams(slugDeploymentParamsSchema),
+  validateJson(PublishDeploymentFilesBatchSchema),
+  async (c) => {
+    const { deploymentId, slug } = c.req.valid("param");
+    const body = c.req.valid("json");
+    const project = await projectDao.getBySlugUnique(slug);
+    if (!project) {
+      return notFound(c);
+    }
+
+    if (!(await authorizeProjectRequest(c, project.id))) {
+      return unauthorized(c, "Invalid credentials.");
+    }
+
+    const deployment = await deploymentDao.getByProjectId(
+      project.id,
+      deploymentId
+    );
+    if (!deployment) {
+      return notFound(c);
+    }
+
+    if (!["building", "queued"].includes(deployment.status)) {
+      return badRequest(c, "Deployment is not accepting files.");
+    }
+
+    try {
+      const records = await uploadDeploymentFiles(
+        project.slug,
+        deployment.id,
+        body.files.map((file) => ({
+          content: Buffer.from(file.contentBase64, "base64"),
+          contentType: file.contentType,
+          relativePath: file.path,
+        }))
+      );
+      return c.json(records, 200);
+    } catch (error) {
+      logError("Failed to upload deployment files", error);
+      return badRequest(
+        c,
+        error instanceof Error ? error.message : "Unable to upload files."
+      );
+    }
   }
 );
 
