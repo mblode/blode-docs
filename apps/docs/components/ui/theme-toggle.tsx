@@ -1,35 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-
-const STORAGE_KEY = "atlas-theme";
-
-type ThemeMode = "light" | "dark";
-
-const applyTheme = (mode: ThemeMode) => {
-  document.documentElement.dataset.theme = mode;
-  document.documentElement.classList.toggle("dark", mode === "dark");
-};
+import { useTheme } from "next-themes";
+import { useCallback, useEffect } from "react";
 
 export const ThemeToggle = () => {
-  const [mode, setMode] = useState<ThemeMode>("light");
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const nextMode = stored ?? (prefersDark ? "dark" : "light");
-    setMode(nextMode);
-    applyTheme(nextMode);
-  }, []);
+  const { resolvedTheme, setTheme } = useTheme();
 
   const toggle = useCallback(() => {
-    const next = mode === "dark" ? "light" : "dark";
-    setMode(next);
-    applyTheme(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
-  }, [mode]);
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setTheme]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
