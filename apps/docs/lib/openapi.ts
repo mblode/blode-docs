@@ -87,11 +87,18 @@ export const buildOpenApiRegistry = async (
   const bySource = new Map<string, OpenApiEntry[]>();
   const slugPrefix = normalizePath(collection.slugPrefix ?? "");
 
-  for (const source of collectOpenApiSources(collection)) {
-    const rawSpec = await contentSource.readFile(source.source);
-    const spec = parseOpenApiSpec(rawSpec, source.source);
-    const directory = source.directory ?? "api";
-    const { operations } = extractOpenApiOperations(spec, directory);
+  const sources = collectOpenApiSources(collection);
+  const resolved = await Promise.all(
+    sources.map(async (source) => {
+      const rawSpec = await contentSource.readFile(source.source);
+      const spec = parseOpenApiSpec(rawSpec, source.source);
+      const directory = source.directory ?? "api";
+      const { operations } = extractOpenApiOperations(spec, directory);
+      return { directory, operations, source, spec };
+    })
+  );
+
+  for (const { directory, operations, source, spec } of resolved) {
     const sourceKey = getOpenApiSourceKey(source);
     const includeIdentifiers = source.include?.length
       ? new Set(source.include)

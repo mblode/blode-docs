@@ -1,6 +1,13 @@
 import path from "node:path";
 
 import { normalizePath } from "@repo/common";
+import {
+  buildContentIndex,
+  createBlobSource,
+  loadSiteConfig,
+  PREBUILT_INDEX_PATH,
+  serializeContentIndex,
+} from "@repo/previewing";
 import { list, put } from "@vercel/blob";
 
 const DEPLOYMENT_ROOT = "deployments";
@@ -98,6 +105,41 @@ export const finalizeDeploymentManifest = async (input: {
 
   if (!files.some((file) => file.path === SITE_CONFIG_FILE)) {
     throw new Error(`Deployment is missing ${SITE_CONFIG_FILE}.`);
+  }
+
+  // Build and upload pre-built content index for fast runtime loading
+  const tempManifest: DeploymentManifest = { files, version: 1 };
+  const tempManifestBlob = await put(
+    getManifestPath(input.projectSlug, input.deploymentId),
+    JSON.stringify(tempManifest, null, 2),
+    {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json; charset=utf-8",
+    }
+  );
+
+  try {
+    const source = createBlobSource(tempManifestBlob.url);
+    const configResult = await loadSiteConfig(source);
+    if (configResult.ok) {
+      const contentIndex = await buildContentIndex(source, configResult.config);
+      const indexJson = serializeContentIndex(contentIndex);
+      const indexBlob = await put(
+        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_INDEX_PATH}`,
+        indexJson,
+        {
+          access: "public",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "application/json; charset=utf-8",
+        }
+      );
+      files.push({ path: PREBUILT_INDEX_PATH, url: indexBlob.url });
+    }
+  } catch {
+    // Content index generation is optional — continue without it
   }
 
   const manifest: DeploymentManifest = {

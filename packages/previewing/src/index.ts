@@ -19,6 +19,8 @@ export { BlobContentSource, createBlobSource } from "./blob-source";
 export { createFsSource, FsContentSource } from "./fs-source";
 export type { ContentSource } from "./content-source";
 
+export const PREBUILT_INDEX_PATH = "_content-index.json";
+
 export type SiteConfigResult =
   | { ok: true; config: SiteConfig; warnings: string[] }
   | { ok: false; errors: string[] };
@@ -754,4 +756,51 @@ export const buildContentIndex = async (
   }
 
   return index;
+};
+
+interface SerializedContentIndex {
+  version: 1;
+  entries: ContentEntry[];
+  collections: Record<string, ContentEntry[]>;
+}
+
+export const serializeContentIndex = (index: ContentIndex): string =>
+  JSON.stringify({
+    collections: Object.fromEntries(index.byCollection),
+    entries: index.entries,
+    version: 1,
+  } satisfies SerializedContentIndex);
+
+export const loadPrebuiltContentIndex = async (
+  source: ContentSource
+): Promise<ContentIndex | null> => {
+  try {
+    const raw = await source.readFile(PREBUILT_INDEX_PATH);
+    const data = JSON.parse(raw) as SerializedContentIndex;
+    if (data.version !== 1 || !Array.isArray(data.entries)) {
+      return null;
+    }
+
+    const bySlug = new Map<string, ContentEntry>();
+    const byCollection = new Map<string, ContentEntry[]>();
+
+    for (const entry of data.entries) {
+      bySlug.set(entry.slug, entry);
+    }
+
+    for (const [collectionId, entries] of Object.entries(
+      data.collections ?? {}
+    )) {
+      byCollection.set(collectionId, entries);
+    }
+
+    return {
+      byCollection,
+      bySlug,
+      entries: data.entries,
+      errors: [],
+    };
+  } catch {
+    return null;
+  }
 };

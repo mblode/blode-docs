@@ -1,7 +1,10 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
-import { clearDocsRuntimeCaches } from "@/lib/docs-runtime";
+import {
+  clearDocsRuntimeCaches,
+  clearDocsRuntimeCachesForTenant,
+} from "@/lib/docs-runtime";
 import { clearTenantResolutionCache } from "@/lib/tenancy";
 import { clearTenantCache } from "@/lib/tenants";
 
@@ -11,6 +14,7 @@ interface RevalidatePayload {
   secret?: string;
   tag?: string;
   tags?: string[];
+  tenantId?: string;
 }
 
 const readValues = (value?: string, values?: string[]) =>
@@ -37,9 +41,15 @@ const handleRevalidation = (payload: RevalidatePayload) => {
     revalidateTag(tag, "max");
   }
 
-  clearDocsRuntimeCaches();
-  clearTenantCache();
-  clearTenantResolutionCache();
+  after(() => {
+    if (payload.tenantId) {
+      clearDocsRuntimeCachesForTenant(payload.tenantId);
+    } else {
+      clearDocsRuntimeCaches();
+      clearTenantCache();
+      clearTenantResolutionCache();
+    }
+  });
 
   return NextResponse.json({ paths, revalidated: true, tags });
 };

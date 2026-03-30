@@ -1,13 +1,23 @@
+import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import { compileMDX } from "next-mdx-remote/rsc";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import prettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 
 import { mdxComponents } from "@/components/mdx";
 
-export const renderMdx = async (source: string) =>
-  await compileMDX({
+import { getHighlighter } from "./shiki";
+
+export const renderMdx = async (source: string) => {
+  const highlighter = await getHighlighter();
+  const shikiPlugin = rehypeShikiFromHighlighter(highlighter, {
+    themes: {
+      dark: "github-dark",
+      light: "github-light",
+    },
+  });
+
+  return await compileMDX({
     components: mdxComponents,
     options: {
       mdxOptions: {
@@ -24,16 +34,8 @@ export const renderMdx = async (source: string) =>
               },
             },
           ],
-          [
-            prettyCode,
-            {
-              keepBackground: false,
-              theme: {
-                dark: "github-dark",
-                light: "github-light",
-              },
-            },
-          ],
+          // @ts-expect-error -- rehypeShikiFromHighlighter returns a Transformer, compatible with rehype plugins
+          shikiPlugin,
         ],
         remarkPlugins: [remarkGfm],
       },
@@ -41,3 +43,4 @@ export const renderMdx = async (source: string) =>
     },
     source,
   });
+};

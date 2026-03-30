@@ -11,6 +11,7 @@ interface TimedPromiseCacheOptions {
 export interface TimedPromiseCache<Key, Value> {
   clear(): void;
   delete(key: Key): void;
+  deleteByPrefix(prefix: string): void;
   getOrCreate(key: Key, factory: () => Promise<Value>): Promise<Value>;
 }
 
@@ -41,6 +42,13 @@ export const createTimedPromiseCache = <Key, Value>({
     },
     delete(key) {
       entries.delete(key);
+    },
+    deleteByPrefix(prefix: string) {
+      for (const key of entries.keys()) {
+        if (typeof key === "string" && key.startsWith(prefix)) {
+          entries.delete(key);
+        }
+      }
     },
     getOrCreate(key, factory) {
       const now = Date.now();

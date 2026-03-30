@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
+import { ApiReference } from "@/components/api/api-reference";
 import { CollectionIndex } from "@/components/content/collection-index";
 import { DocShell } from "@/components/docs/doc-shell";
-import { getDocData } from "@/lib/docs-runtime";
+import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
+import { TENANT_HEADERS } from "@/lib/tenant-headers";
 import {
   getCanonicalDocBasePath,
   getCanonicalOrigin,
   getTenantRequestContextFromHeaders,
 } from "@/lib/tenant-static";
+
+export const revalidate = 3600;
+
+export const generateStaticParams = () => [];
 
 // oxlint-disable-next-line eslint/complexity
 export const generateMetadata = async ({
@@ -19,7 +26,7 @@ export const generateMetadata = async ({
 }): Promise<Metadata> => {
   const { slug = [], tenant: tenantSlug } = await params;
   const slugKey = slug.join("/");
-  const data = await getDocData(tenantSlug, slugKey);
+  const data = await getDocShellData(tenantSlug, slugKey);
   if (!data || "configErrors" in data) {
     return {
       description: "Documentation",
@@ -79,6 +86,21 @@ export const generateMetadata = async ({
   };
 };
 
+const AsyncDocContent = async ({
+  tenantSlug,
+  slugKey,
+}: {
+  tenantSlug: string;
+  slugKey: string;
+}) => {
+  const rendered = await getDocPageContent(tenantSlug, slugKey);
+  if (!rendered) {
+    return null;
+  }
+  return rendered.content;
+};
+
+// oxlint-disable-next-line eslint/complexity
 const DocPage = async ({
   params,
 }: {
@@ -87,20 +109,20 @@ const DocPage = async ({
   const { slug = [], tenant: tenantSlug } = await params;
   const slugKey = slug.join("/");
   const headerStore = await headers();
-  const headerTenant = headerStore.get("x-tenant-slug");
-  const basePathHeader = headerStore.get("x-tenant-base-path") ?? "";
+  const headerTenant = headerStore.get(TENANT_HEADERS.SLUG);
+  const basePathHeader = headerStore.get(TENANT_HEADERS.BASE_PATH) ?? "";
   if (headerTenant && headerTenant !== tenantSlug) {
     return notFound();
   }
 
-  const data = await getDocData(tenantSlug, slugKey);
-  if (!data) {
+  const shell = await getDocShellData(tenantSlug, slugKey);
+  if (!shell) {
     return notFound();
   }
 
-  if ("configErrors" in data) {
-    const errors = data.configErrors ?? [];
-    const warnings = data.configWarnings ?? [];
+  if ("configErrors" in shell) {
+    const errors = shell.configErrors ?? [];
+    const warnings = shell.configWarnings ?? [];
     return (
       <div className="p-10">
         <h1>Invalid docs.json</h1>
@@ -126,38 +148,69 @@ const DocPage = async ({
   const basePath =
     basePathHeader ||
     (headerTenant
-      ? data.tenant.pathPrefix || ""
-      : `/sites/${data.tenant.slug}`);
+      ? shell.tenant.pathPrefix || ""
+      : `/sites/${shell.tenant.slug}`);
+
+  let content: React.ReactNode;
+  let rawContent: string | undefined;
+  let toc: { id: string; title: string; level: number }[] = [];
+
+  if (shell.kind === "openapi") {
+    content = (
+      <ApiReference
+        entry={shell.openApiEntry}
+        proxyEnabled={shell.openapiProxyEnabled}
+      />
+    );
+    rawContent = shell.openApiEntry.operation.description ?? "";
+  } else if (shell.kind === "index") {
+    content = (
+      <CollectionIndex
+        basePath={basePath}
+        entries={shell.collectionIndex.entries}
+      />
+    );
+  } else {
+    ({ rawContent } = shell);
+    ({ toc } = shell);
+    content = (
+      <Suspense
+        fallback={
+          <div className="grid animate-pulse gap-4.5">
+            <div className="h-4 w-full rounded bg-muted/40" />
+            <div className="h-4 w-5/6 rounded bg-muted/40" />
+            <div className="h-4 w-4/6 rounded bg-muted/40" />
+            <div className="h-32 w-full rounded bg-muted/40" />
+            <div className="h-4 w-full rounded bg-muted/40" />
+            <div className="h-4 w-3/4 rounded bg-muted/40" />
+          </div>
+        }
+      >
+        <AsyncDocContent slugKey={slugKey} tenantSlug={tenantSlug} />
+      </Suspense>
+    );
+  }
 
   return (
     <DocShell
-      activeTabIndex={data.activeTabIndex}
-      anchors={data.anchors}
+      activeTabIndex={shell.activeTabIndex}
+      anchors={shell.anchors}
       basePath={basePath}
-      breadcrumbs={data.breadcrumbs}
-      config={data.config}
-      content={
-        data.collectionIndex ? (
-          <CollectionIndex
-            basePath={basePath}
-            entries={data.collectionIndex.entries}
-          />
-        ) : (
-          data.content
-        )
-      }
-      currentPath={data.currentPath}
-      deprecated={data.deprecated}
-      hideFooterPagination={data.hideFooterPagination}
-      mode={data.mode}
-      nav={data.nav}
-      nextPage={data.nextPage}
-      pageDescription={data.pageDescription}
-      pageTitle={data.pageTitle}
-      prevPage={data.prevPage}
-      rawContent={data.rawContent}
-      tabs={data.tabs}
-      toc={data.toc}
+      breadcrumbs={shell.breadcrumbs}
+      config={shell.config}
+      content={content}
+      currentPath={shell.currentPath}
+      deprecated={shell.deprecated}
+      hideFooterPagination={shell.hideFooterPagination}
+      mode={shell.mode}
+      nav={shell.nav}
+      nextPage={shell.nextPage}
+      pageDescription={shell.pageDescription}
+      pageTitle={shell.pageTitle}
+      prevPage={shell.prevPage}
+      rawContent={rawContent}
+      tabs={shell.tabs}
+      toc={toc}
     />
   );
 };

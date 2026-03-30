@@ -1,9 +1,10 @@
 import { normalizePath } from "@repo/common";
-import type { Tenant } from "@repo/models";
+import type { PageMode, Tenant } from "@repo/models";
 import {
   buildContentIndex,
   buildPageMetadataMap,
   loadContentSource,
+  loadPrebuiltContentIndex,
   loadSiteConfig,
 } from "@repo/previewing";
 import type {
@@ -11,9 +12,10 @@ import type {
   ContentSource,
   PageMetadata,
 } from "@repo/previewing";
+import { headers } from "next/headers";
 import { cache } from "react";
 
-import { ApiReference } from "@/components/api/api-reference";
+import { getTenantDocsPath } from "@/lib/content-root";
 import {
   getTenantContentSource,
   resolveSiteConfigAssets,
@@ -37,8 +39,39 @@ import type { NavEntry, NavPage, NavTab } from "@/lib/navigation";
 import { buildOpenApiRegistry } from "@/lib/openapi";
 import type { OpenApiRegistry } from "@/lib/openapi";
 import { createTimedPromiseCache } from "@/lib/server-cache";
+import { TENANT_HEADERS } from "@/lib/tenant-headers";
 import { getTenantBySlug } from "@/lib/tenants";
 import { extractToc } from "@/lib/toc";
+
+const getTenantFromHeaders = async (slug: string): Promise<Tenant | null> => {
+  const headerStore = await headers();
+  const id = headerStore.get(TENANT_HEADERS.ID);
+  const name = headerStore.get(TENANT_HEADERS.NAME);
+  const primaryDomain = headerStore.get(TENANT_HEADERS.PRIMARY_DOMAIN);
+  const subdomain = headerStore.get(TENANT_HEADERS.SUBDOMAIN);
+
+  if (!id || !name || !primaryDomain || !subdomain) {
+    return null;
+  }
+
+  return {
+    activeDeploymentId:
+      headerStore.get(TENANT_HEADERS.DEPLOYMENT_ID) ?? undefined,
+    activeDeploymentManifestUrl:
+      headerStore.get(TENANT_HEADERS.MANIFEST_URL) ?? undefined,
+    customDomains:
+      headerStore.get(TENANT_HEADERS.CUSTOM_DOMAINS)?.split(",") ?? [],
+    docsPath: getTenantDocsPath(slug),
+    id,
+    name,
+    pathPrefix: headerStore.get(TENANT_HEADERS.PATH_PREFIX) ?? undefined,
+    primaryDomain,
+    slug,
+    // Proxy only forwards headers for resolved (active) tenants
+    status: "active",
+    subdomain,
+  };
+};
 
 interface SearchItem {
   href?: string;
@@ -173,7 +206,9 @@ const buildSearchItems = ({
 };
 
 const getTenantArtifacts = async (tenantSlug: string) => {
-  const tenant = await getTenantBySlug(tenantSlug);
+  const tenant =
+    (await getTenantFromHeaders(tenantSlug)) ??
+    (await getTenantBySlug(tenantSlug));
   if (!tenant) {
     return null;
   }
@@ -199,7 +234,10 @@ const getTenantArtifacts = async (tenantSlug: string) => {
 
     const [config, contentIndex, registryResult] = await Promise.all([
       resolveSiteConfigAssets(rawConfig, contentSource),
-      buildContentIndex(contentSource, rawConfig),
+      loadPrebuiltContentIndex(contentSource).then(
+        async (prebuilt) =>
+          prebuilt ?? (await buildContentIndex(contentSource, rawConfig))
+      ),
       buildOpenApiRegistry(docsCollectionWithNavigation, contentSource)
         .then((registry) => ({ ok: true as const, registry }))
         .catch((error: unknown) => ({
@@ -314,6 +352,11 @@ export const clearDocsRuntimeCaches = () => {
   renderedPageCache.clear();
 };
 
+export const clearDocsRuntimeCachesForTenant = (tenantId: string) => {
+  artifactsCache.deleteByPrefix(tenantId);
+  renderedPageCache.deleteByPrefix(tenantId);
+};
+
 const computePrevNext = (
   flatNav: NavPage[],
   currentPath: string
@@ -331,154 +374,182 @@ const computePrevNext = (
   };
 };
 
-// oxlint-disable-next-line eslint/complexity
-export const getDocData = cache(async (tenantSlug: string, slugKey: string) => {
-  const artifacts = await getTenantArtifacts(tenantSlug);
-  if (!artifacts || isConfigErrorResult(artifacts)) {
-    return artifacts;
-  }
+/**
+ * Returns shell data (config, nav, title, breadcrumbs) from cached artifacts
+ * without compiling MDX. Used by the page component to render the shell
+ * immediately while streaming content.
+ */
+export const getDocShellData = cache(
+  // oxlint-disable-next-line eslint/complexity
+  async (tenantSlug: string, slugKey: string) => {
+    const artifacts = await getTenantArtifacts(tenantSlug);
+    if (!artifacts || isConfigErrorResult(artifacts)) {
+      return artifacts;
+    }
 
-  const currentPath = normalizePath(slugKey) || "index";
-  const activeTabIndex = artifacts.tabs
-    ? findActiveTabIndex(artifacts.tabs, currentPath)
-    : 0;
-  const activeTabNav = artifacts.tabs
-    ? getVisibleNavigation(artifacts.tabs[activeTabIndex]?.entries ?? [])
-    : null;
-  const activeTabFlatNav = activeTabNav ? flattenNav(activeTabNav) : null;
-  const effectiveFlatNav = activeTabFlatNav ?? artifacts.visibleFlatNav;
-  const openApiEntry = artifacts.registry.bySlug.get(currentPath);
+    const currentPath = normalizePath(slugKey) || "index";
+    const activeTabIndex = artifacts.tabs
+      ? findActiveTabIndex(artifacts.tabs, currentPath)
+      : 0;
+    const activeTabNav = artifacts.tabs
+      ? getVisibleNavigation(artifacts.tabs[activeTabIndex]?.entries ?? [])
+      : null;
+    const activeTabFlatNav = activeTabNav ? flattenNav(activeTabNav) : null;
+    const effectiveFlatNav = activeTabFlatNav ?? artifacts.visibleFlatNav;
 
-  if (openApiEntry) {
-    const isHidden = artifacts.flatNav.some(
+    const openApiEntry = artifacts.registry.bySlug.get(currentPath);
+    if (openApiEntry) {
+      const isHidden = artifacts.flatNav.some(
+        (page) => page.path === currentPath && page.hidden
+      );
+      return {
+        activeTabIndex,
+        anchors: artifacts.anchors,
+        breadcrumbs: findBreadcrumbs(
+          activeTabNav ?? artifacts.visibleNav,
+          currentPath
+        ),
+        config: artifacts.config,
+        currentPath,
+        deprecated: false,
+        hidden: isHidden,
+        hideFooterPagination: false,
+        kind: "openapi" as const,
+        mode: undefined as PageMode | undefined,
+        nav: activeTabNav ?? artifacts.visibleNav,
+        nextPage: computePrevNext(effectiveFlatNav, currentPath).nextPage,
+        noindex: false,
+        openApiEntry,
+        openapiProxyEnabled: artifacts.config.openapiProxy?.enabled ?? false,
+        pageDescription: openApiEntry.operation.description,
+        pageTitle: openApiEntry.operation.summary ?? openApiEntry.identifier,
+        prevPage: computePrevNext(effectiveFlatNav, currentPath).prevPage,
+        tabs: artifacts.tabs,
+        tenant: artifacts.tenant,
+      };
+    }
+
+    const entry = artifacts.contentIndex.bySlug.get(currentPath) ?? null;
+    if (!entry) {
+      return null;
+    }
+
+    if (entry.kind === "index") {
+      const collectionEntries =
+        artifacts.contentIndex.byCollection
+          .get(entry.collectionId)
+          ?.filter(
+            (
+              collectionEntry
+            ): collectionEntry is Extract<
+              (typeof artifacts.contentIndex.entries)[number],
+              { kind: "entry" }
+            > =>
+              collectionEntry.kind === "entry" &&
+              collectionEntry.hidden !== true &&
+              !artifacts.pageMetadataMap.get(collectionEntry.slug)?.hidden &&
+              !artifacts.pageMetadataMap.get(collectionEntry.slug)?.noindex
+          ) ?? [];
+      const showDocsNav = entry.type === "docs";
+      return {
+        activeTabIndex,
+        anchors: showDocsNav ? artifacts.anchors : [],
+        breadcrumbs: [] as { label: string; path: string }[],
+        collectionIndex: { entries: collectionEntries },
+        config: artifacts.config,
+        currentPath,
+        deprecated: false,
+        hidden: false,
+        hideFooterPagination: false,
+        kind: "index" as const,
+        mode: undefined as PageMode | undefined,
+        nav: showDocsNav ? (activeTabNav ?? artifacts.visibleNav) : [],
+        nextPage: computePrevNext(effectiveFlatNav, currentPath).nextPage,
+        noindex: false,
+        pageDescription: entry.description,
+        pageTitle: entry.title,
+        prevPage: computePrevNext(effectiveFlatNav, currentPath).prevPage,
+        tabs: artifacts.tabs,
+        tenant: artifacts.tenant,
+      };
+    }
+
+    const showDocsNav = entry.type === "docs";
+    const breadcrumbs = showDocsNav
+      ? findBreadcrumbs(activeTabNav ?? artifacts.visibleNav, currentPath)
+      : [];
+    const pageMeta = artifacts.pageMetadataMap.get(currentPath);
+    const isHiddenByNav = artifacts.flatNav.some(
       (page) => page.path === currentPath && page.hidden
     );
+    const useToc =
+      entry.type === "docs" && artifacts.config.features?.toc !== false;
 
-    return {
-      activeTabIndex,
-      anchors: artifacts.anchors,
-      breadcrumbs: findBreadcrumbs(
-        activeTabNav ?? artifacts.visibleNav,
-        currentPath
-      ),
-      config: artifacts.config,
-      content: (
-        <ApiReference
-          entry={openApiEntry}
-          proxyEnabled={artifacts.config.openapiProxy?.enabled ?? false}
-        />
-      ),
-      currentPath,
-      deprecated: false,
-      hidden: isHidden,
-      hideFooterPagination: false,
-      mode: undefined,
-      nav: activeTabNav ?? artifacts.visibleNav,
-      nextPage: computePrevNext(effectiveFlatNav, currentPath).nextPage,
-      noindex: false,
-      pageDescription: openApiEntry.operation.description,
-      pageTitle: openApiEntry.operation.summary ?? openApiEntry.identifier,
-      prevPage: computePrevNext(effectiveFlatNav, currentPath).prevPage,
-      rawContent: openApiEntry.operation.description ?? "",
-      tabs: artifacts.tabs,
-      tenant: artifacts.tenant,
-      toc: [],
-    };
-  }
-
-  const entry = artifacts.contentIndex.bySlug.get(currentPath) ?? null;
-  if (!entry) {
-    return null;
-  }
-
-  if (entry.kind === "index") {
-    const collectionEntries =
-      artifacts.contentIndex.byCollection
-        .get(entry.collectionId)
-        ?.filter(
-          (
-            collectionEntry
-          ): collectionEntry is Extract<
-            (typeof artifacts.contentIndex.entries)[number],
-            { kind: "entry" }
-          > =>
-            collectionEntry.kind === "entry" &&
-            collectionEntry.hidden !== true &&
-            !artifacts.pageMetadataMap.get(collectionEntry.slug)?.hidden &&
-            !artifacts.pageMetadataMap.get(collectionEntry.slug)?.noindex
-        ) ?? [];
-    const showDocsNav = entry.type === "docs";
+    // Load raw content for TOC extraction without compiling MDX
+    let rawContent = "";
+    let toc: ReturnType<typeof extractToc> = [];
+    try {
+      rawContent = await loadContentSource(
+        artifacts.contentSource,
+        entry.relativePath
+      );
+      if (useToc) {
+        toc = extractToc(rawContent);
+      }
+    } catch {
+      // Content load failure is handled by the content rendering path
+    }
 
     return {
       activeTabIndex,
       anchors: showDocsNav ? artifacts.anchors : [],
-      breadcrumbs: [],
-      collectionIndex: {
-        entries: collectionEntries,
-      },
+      breadcrumbs,
       config: artifacts.config,
-      content: null,
       currentPath,
-      deprecated: false,
-      hidden: false,
-      hideFooterPagination: false,
-      mode: undefined,
+      deprecated: pageMeta?.deprecated ?? false,
+      hidden: isHiddenByNav || entry.hidden === true,
+      hideFooterPagination: pageMeta?.hideFooterPagination ?? false,
+      kind: "page" as const,
+      mode: pageMeta?.mode,
       nav: showDocsNav ? (activeTabNav ?? artifacts.visibleNav) : [],
       nextPage: computePrevNext(effectiveFlatNav, currentPath).nextPage,
-      noindex: false,
+      noindex: pageMeta?.noindex ?? false,
       pageDescription: entry.description,
       pageTitle: entry.title,
       prevPage: computePrevNext(effectiveFlatNav, currentPath).prevPage,
+      rawContent,
       tabs: artifacts.tabs,
       tenant: artifacts.tenant,
-      toc: [],
+      toc,
     };
   }
+);
 
-  const useToc =
-    entry.type === "docs" && artifacts.config.features?.toc !== false;
-  const renderedPage = await getRenderedPageData({
-    artifacts,
-    currentPath,
-    relativePath: entry.relativePath,
-    useToc,
-  });
-  const pageTitle =
-    (renderedPage.frontmatter?.title as string | undefined) ?? entry.title;
-  const pageDescription =
-    (renderedPage.frontmatter?.description as string | undefined) ??
-    entry.description;
-  const showDocsNav = entry.type === "docs";
-  const breadcrumbs = showDocsNav
-    ? findBreadcrumbs(activeTabNav ?? artifacts.visibleNav, currentPath)
-    : [];
-  const isHiddenByFrontmatter = renderedPage.frontmatter?.hidden === true;
-  const isHiddenByNav = artifacts.flatNav.some(
-    (page) => page.path === currentPath && page.hidden
-  );
-  const isHidden =
-    isHiddenByFrontmatter || isHiddenByNav || entry.hidden === true;
-  const pageMeta = artifacts.pageMetadataMap.get(currentPath);
+/**
+ * Compiles MDX content for a specific page. This is the slow operation
+ * that benefits from being wrapped in a Suspense boundary.
+ */
+export const getDocPageContent = cache(
+  async (tenantSlug: string, slugKey: string) => {
+    const artifacts = await getTenantArtifacts(tenantSlug);
+    if (!artifacts || isConfigErrorResult(artifacts)) {
+      return null;
+    }
 
-  return {
-    activeTabIndex,
-    anchors: showDocsNav ? artifacts.anchors : [],
-    breadcrumbs,
-    config: artifacts.config,
-    content: renderedPage.content,
-    currentPath,
-    deprecated: pageMeta?.deprecated ?? false,
-    ...computePrevNext(effectiveFlatNav, currentPath),
-    hidden: isHidden,
-    hideFooterPagination: pageMeta?.hideFooterPagination ?? false,
-    mode: pageMeta?.mode,
-    nav: showDocsNav ? (activeTabNav ?? artifacts.visibleNav) : [],
-    noindex: pageMeta?.noindex ?? false,
-    pageDescription,
-    pageTitle,
-    rawContent: renderedPage.rawContent,
-    tabs: artifacts.tabs,
-    tenant: artifacts.tenant,
-    toc: renderedPage.toc,
-  };
-});
+    const currentPath = normalizePath(slugKey) || "index";
+    const entry = artifacts.contentIndex.bySlug.get(currentPath) ?? null;
+    if (!entry || entry.kind !== "entry") {
+      return null;
+    }
+
+    const useToc =
+      entry.type === "docs" && artifacts.config.features?.toc !== false;
+
+    return await getRenderedPageData({
+      artifacts,
+      currentPath,
+      relativePath: entry.relativePath,
+      useToc,
+    });
+  }
+);

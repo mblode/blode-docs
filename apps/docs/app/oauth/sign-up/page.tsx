@@ -1,8 +1,9 @@
 "use client";
 
+import { EyeOpenIcon, EyeSlashIcon } from "blode-icons-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState } from "react";
+import { Suspense, useActionState, useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,11 @@ import { createSupabaseClient } from "../../../lib/supabase";
 
 const SignUpForm = () => {
   const searchParams = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
+  const togglePassword = useCallback(
+    () => setShowPassword((prev) => !prev),
+    []
+  );
 
   const [error, submitAction, isPending] = useActionState(
     async (_previousState: string | null, formData: FormData) => {
@@ -55,8 +61,16 @@ const SignUpForm = () => {
         return "Failed to create session.";
       }
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-      window.location.href = `${supabaseUrl}/auth/v1/oauth/authorize?${searchParams.toString()}`;
+      const authorizationId = searchParams.get("authorization_id");
+      if (!authorizationId) {
+        return "Missing authorization_id.";
+      }
+
+      const { error: consentError } =
+        await supabase.auth.oauth.approveAuthorization(authorizationId);
+      if (consentError) {
+        return consentError.message;
+      }
       return null;
     },
     null
@@ -95,9 +109,27 @@ const SignUpForm = () => {
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="new-password"
+                  className="pr-10"
+                  rightControl={
+                    <button
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
+                      onClick={togglePassword}
+                      tabIndex={-1}
+                      type="button"
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeOpenIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  }
                 />
               </Field>
 

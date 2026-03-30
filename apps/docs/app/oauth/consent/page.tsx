@@ -1,8 +1,15 @@
 "use client";
 
+import { EyeOpenIcon, EyeSlashIcon } from "blode-icons-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useEffect, useState } from "react";
+import {
+  Suspense,
+  useActionState,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +31,11 @@ import { createSupabaseClient } from "../../../lib/supabase";
 
 const ConsentForm = () => {
   const searchParams = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
+  const togglePassword = useCallback(
+    () => setShowPassword((prev) => !prev),
+    []
+  );
   const [session, setSession] = useState<{
     checked: boolean;
     email: string | null;
@@ -43,15 +55,23 @@ const ConsentForm = () => {
     checkSession();
   }, []);
 
-  const redirectToAuthorize = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    window.location.href = `${supabaseUrl}/auth/v1/oauth/authorize?${searchParams.toString()}`;
-  };
+  const [approveError, approveAction, isApproving] = useActionState(
+    async () => {
+      const authorizationId = searchParams.get("authorization_id");
+      if (!authorizationId) {
+        return "Missing authorization_id.";
+      }
 
-  const [approveError, approveAction, isApproving] = useActionState(() => {
-    redirectToAuthorize();
-    return null;
-  }, null);
+      const supabase = createSupabaseClient();
+      const { error } =
+        await supabase.auth.oauth.approveAuthorization(authorizationId);
+      if (error) {
+        return error.message;
+      }
+      return null;
+    },
+    null
+  );
 
   const [signInError, signInAction, isSigningIn] = useActionState(
     async (_previousState: string | null, formData: FormData) => {
@@ -72,7 +92,16 @@ const ConsentForm = () => {
         return authError.message;
       }
 
-      redirectToAuthorize();
+      const authorizationId = searchParams.get("authorization_id");
+      if (!authorizationId) {
+        return "Missing authorization_id.";
+      }
+
+      const { error: consentError } =
+        await supabase.auth.oauth.approveAuthorization(authorizationId);
+      if (consentError) {
+        return consentError.message;
+      }
       return null;
     },
     null
@@ -133,9 +162,27 @@ const ConsentForm = () => {
                   <Input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     autoComplete="current-password"
+                    className="pr-10"
+                    rightControl={
+                      <button
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        className="flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
+                        onClick={togglePassword}
+                        tabIndex={-1}
+                        type="button"
+                      >
+                        {showPassword ? (
+                          <EyeSlashIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeOpenIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    }
                   />
                 </Field>
 

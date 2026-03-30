@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -32,12 +33,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://public.blob.vercel-storage.com" />
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_SCRIPT}
         </Script>
       </head>
       <body className="relative flex w-full flex-col justify-center overflow-x-hidden scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*14)]">
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );

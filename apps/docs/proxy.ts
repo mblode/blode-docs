@@ -7,6 +7,7 @@ import {
   isRootRuntimeHost,
   resolveTenant,
 } from "./lib/tenancy";
+import { TENANT_HEADERS } from "./lib/tenant-headers";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
@@ -25,6 +26,7 @@ const stripBasePath = (value: string, basePath: string) => {
   return value;
 };
 
+// oxlint-disable-next-line eslint/complexity
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
 
@@ -90,11 +92,41 @@ export const proxy = async (request: NextRequest) => {
   }
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-tenant-id", resolution.tenant.id);
-  requestHeaders.set("x-tenant-slug", resolution.tenant.slug);
-  requestHeaders.set("x-tenant-domain", resolution.host);
-  requestHeaders.set("x-tenant-strategy", resolution.strategy);
-  requestHeaders.set("x-tenant-base-path", resolution.basePath);
+  requestHeaders.set(TENANT_HEADERS.ID, resolution.tenant.id);
+  requestHeaders.set(TENANT_HEADERS.SLUG, resolution.tenant.slug);
+  requestHeaders.set(TENANT_HEADERS.DOMAIN, resolution.host);
+  requestHeaders.set(TENANT_HEADERS.STRATEGY, resolution.strategy);
+  requestHeaders.set(TENANT_HEADERS.BASE_PATH, resolution.basePath);
+  requestHeaders.set(TENANT_HEADERS.NAME, resolution.tenant.name);
+  requestHeaders.set(
+    TENANT_HEADERS.PRIMARY_DOMAIN,
+    resolution.tenant.primaryDomain
+  );
+  requestHeaders.set(TENANT_HEADERS.SUBDOMAIN, resolution.tenant.subdomain);
+  if (resolution.tenant.activeDeploymentId) {
+    requestHeaders.set(
+      TENANT_HEADERS.DEPLOYMENT_ID,
+      resolution.tenant.activeDeploymentId
+    );
+  }
+  if (resolution.tenant.activeDeploymentManifestUrl) {
+    requestHeaders.set(
+      TENANT_HEADERS.MANIFEST_URL,
+      resolution.tenant.activeDeploymentManifestUrl
+    );
+  }
+  if (resolution.tenant.pathPrefix) {
+    requestHeaders.set(
+      TENANT_HEADERS.PATH_PREFIX,
+      resolution.tenant.pathPrefix
+    );
+  }
+  if (resolution.tenant.customDomains.length > 0) {
+    requestHeaders.set(
+      TENANT_HEADERS.CUSTOM_DOMAINS,
+      resolution.tenant.customDomains.join(",")
+    );
+  }
 
   const url = request.nextUrl.clone();
   const rewritten = resolution.rewrittenPath;
