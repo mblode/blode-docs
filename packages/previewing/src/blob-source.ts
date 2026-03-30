@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { normalizePath } from "@repo/common";
 
-import type { ContentSource } from "./content-source";
+import type { ContentSource } from "./content-source.js";
 
 interface BlobManifestFile {
   path: string;

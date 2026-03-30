@@ -1,5 +1,6 @@
 // oxlint-disable no-use-before-define -- circular reference in callback pattern
 import { createServer } from "node:http";
+import type { Socket } from "node:net";
 
 import { CliError, EXIT_CODES } from "./errors.js";
 
@@ -41,6 +42,7 @@ export const waitForOAuthCode = (
   // oxlint-disable-next-line eslint-plugin-promise/avoid-new -- wrapping callback-based HTTP server
   return new Promise<string>((resolve, reject) => {
     let settled = false;
+    const sockets = new Set<Socket>();
 
     const settle = (ok: boolean, value: string | CliError): void => {
       if (settled) {
@@ -57,6 +59,11 @@ export const waitForOAuthCode = (
           reject(value);
         }
       });
+
+      // Destroy kept-alive connections so httpServer.close() can finish
+      for (const socket of sockets) {
+        socket.destroy();
+      }
     };
 
     const httpServer = createServer((request, response) => {
@@ -129,6 +136,11 @@ export const waitForOAuthCode = (
       response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       response.end(SUCCESS_HTML);
       settle(true, code);
+    });
+
+    httpServer.on("connection", (socket) => {
+      sockets.add(socket);
+      socket.once("close", () => sockets.delete(socket));
     });
 
     httpServer.on("error", (error) => {

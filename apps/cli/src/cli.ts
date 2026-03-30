@@ -544,16 +544,10 @@ program
         log.info("Logged in (could not fetch user details).");
       }
 
-      if (resolved.expiresAt) {
-        if (status.expired) {
-          log.warn(
-            'Session has expired. Run "blodemd login" to re-authenticate.'
-          );
-        } else if (status.expiresInSeconds !== null) {
-          const hours = Math.floor(status.expiresInSeconds / 3600);
-          const minutes = Math.floor((status.expiresInSeconds % 3600) / 60);
-          log.info(`Session expires in ${hours}h ${minutes}m`);
-        }
+      if (resolved.expiresAt && status.expired) {
+        log.warn(
+          'Session has expired. Run "blodemd login" to re-authenticate.'
+        );
       }
     } catch (error: unknown) {
       reportCommandError("Whoami failed", error);
@@ -744,7 +738,7 @@ program
   .action(() => {
     intro(chalk.bold("blodemd dev"));
     log.info(
-      `Run ${chalk.cyan("npm run dev --filter=docs")} from the repo root.`
+      `Run ${chalk.cyan("npx turbo dev --filter=docs")} from the repo root.`
     );
     log.info(
       `Then open ${chalk.cyan("http://localhost:3001")} to view the docs site.`

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { normalizePath } from "@repo/common";
 
-import type { ContentSource } from "./content-source";
+import type { ContentSource } from "./content-source.js";
 
 const isNotFoundError = (error: unknown) =>
   Boolean(
