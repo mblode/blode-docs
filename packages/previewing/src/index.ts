@@ -16,8 +16,8 @@ import {
   openApiIdentifier,
   openApiSlug,
   parseOpenApiSpec,
-} from "@repo/prebuild/openapi";
-import type { OpenApiOperation } from "@repo/prebuild/openapi";
+} from "@repo/prebuild";
+import type { OpenApiOperation } from "@repo/prebuild";
 import { validateDocsConfig, validateFrontmatter } from "@repo/validation";
 import YAML from "yaml";
 
@@ -834,6 +834,7 @@ interface UtilityOpenApiPage extends UtilityPage {
 
 const NEWLINE_REGEX = /\r?\n/;
 const HEADING_REGEX = /^(#{2,4})\s+(.*)$/;
+const LEADING_H1_REGEX = /^#\s+([^\r\n]+)(?:\r?\n(?:\r?\n)?)?/;
 
 export const extractToc = (source: string): TocItem[] => {
   const withoutCode = source.replaceAll(/```[\s\S]*?```/g, "");
@@ -859,6 +860,43 @@ export const extractToc = (source: string): TocItem[] => {
   }
 
   return toc;
+};
+
+const stripMatchingLeadingH1 = (source: string, title: string) => {
+  const trimmed = source.trimStart();
+  const match = LEADING_H1_REGEX.exec(trimmed);
+  if (!match) {
+    return trimmed.trim();
+  }
+
+  const [headingLine = "", headingTitle = ""] = match;
+  if (slugify(headingTitle) !== slugify(title)) {
+    return trimmed.trim();
+  }
+
+  return trimmed.slice(headingLine.length).trim();
+};
+
+export const formatMarkdownPage = (title: string, source: string) => {
+  const content = stripMatchingLeadingH1(source, title);
+  if (!content) {
+    return `# ${title}`;
+  }
+
+  return `# ${title}\n\n${content}`;
+};
+
+export const formatMarkdownPageSection = (
+  title: string,
+  url: string,
+  source: string
+) => {
+  const content = stripMatchingLeadingH1(source, title);
+  if (!content) {
+    return `# ${title} (${url})`;
+  }
+
+  return `# ${title} (${url})\n\n${content}`;
 };
 
 const shouldIncludeSearchEntry = (
@@ -1244,9 +1282,12 @@ ${index.pages
 </urlset>`;
 
   const llmsFull = index.pages
-    .map(
-      (page) =>
-        `# ${page.title} (${toUtilityTemplatedDocUrl(page.slug)})\n\n${page.content}`
+    .map((page) =>
+      formatMarkdownPageSection(
+        page.title,
+        toUtilityTemplatedDocUrl(page.slug),
+        page.content
+      )
     )
     .join("\n\n");
 
@@ -1267,7 +1308,7 @@ ${index.pages
       path: PREBUILT_UTILITY_LLMS_FULL_PATH,
     },
     ...index.pages.map((page) => ({
-      content: `# ${page.title}\n\n${page.content}`,
+      content: formatMarkdownPage(page.title, page.content),
       contentType: "text/markdown; charset=utf-8",
       path: getPrebuiltUtilityLlmPagePath(page.slug),
     })),

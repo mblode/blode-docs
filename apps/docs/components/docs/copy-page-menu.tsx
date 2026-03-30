@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
+import { slugify } from "@repo/common";
 import {
   Checkmark1Icon,
   ChevronDownSmallIcon,
@@ -55,12 +56,30 @@ const ExternalArrow = () => (
   </svg>
 );
 
-const formatMarkdownForCopy = (source: string, title: string) => {
+const LEADING_H1_REGEX = /^#\s+([^\r\n]+)(?:\r?\n(?:\r?\n)?)?/;
+
+const stripMatchingLeadingH1 = (source: string, title: string) => {
   const trimmed = source.trimStart();
-  if (trimmed.startsWith("#")) {
-    return source;
+  const match = LEADING_H1_REGEX.exec(trimmed);
+  if (!match) {
+    return trimmed.trim();
   }
-  return `# ${title}\n\n${source}`;
+
+  const [headingLine = "", headingTitle = ""] = match;
+  if (slugify(headingTitle) !== slugify(title)) {
+    return trimmed.trim();
+  }
+
+  return trimmed.slice(headingLine.length).trim();
+};
+
+const formatMarkdownForCopy = (source: string, title: string) => {
+  const content = stripMatchingLeadingH1(source, title);
+  if (!content) {
+    return `# ${title}`;
+  }
+
+  return `# ${title}\n\n${content}`;
 };
 
 export const CopyPageMenu = ({

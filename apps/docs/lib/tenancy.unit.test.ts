@@ -39,6 +39,7 @@ describe("tenancy helpers", () => {
     expect(isRootRuntimeHost("blode.md")).toBe(true);
     expect(isRootRuntimeHost("localhost")).toBe(true);
     expect(isRootRuntimeHost("atlas.blode.md")).toBe(false);
+    expect(isRootRuntimeHost("atlas.localhost")).toBe(false);
   });
 
   it("builds canonical origin from tenant headers", () => {

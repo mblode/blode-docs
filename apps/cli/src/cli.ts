@@ -319,6 +319,9 @@ const autoCreateProject = async (
   return true;
 };
 
+// 4 MB limit keeps each batch well under Vercel's 4.5 MB serverless body cap
+const MAX_BATCH_BYTES = 4 * 1024 * 1024;
+
 const uploadFiles = async (
   files: string[],
   root: string,
@@ -328,26 +331,52 @@ const uploadFiles = async (
   s: ReturnType<typeof spinner>
 ) => {
   s.start(`Uploading ${files.length} files`);
-  for (const [index, filePath] of files.entries()) {
-    const relativePath = normalizeRelativePath(root, filePath);
-    const content = await fs.readFile(filePath);
 
+  const items = await Promise.all(
+    files.map(async (filePath) => {
+      const content = await fs.readFile(filePath);
+      return {
+        contentBase64: content.toString("base64"),
+        contentType: getContentType(filePath),
+        path: normalizeRelativePath(root, filePath),
+      };
+    })
+  );
+
+  // Split into size-bounded batches
+  const batches: (typeof items)[] = [];
+  let current: typeof items = [];
+  let currentBytes = 0;
+
+  for (const item of items) {
+    const itemBytes = item.contentBase64.length + item.path.length + 64;
+    if (current.length > 0 && currentBytes + itemBytes > MAX_BATCH_BYTES) {
+      batches.push(current);
+      current = [];
+      currentBytes = 0;
+    }
+    current.push(item);
+    currentBytes += itemBytes;
+  }
+  if (current.length > 0) {
+    batches.push(current);
+  }
+
+  let uploaded = 0;
+  for (const batch of batches) {
     await requestJson(
-      apiPath(`/${deploymentId}/files`),
+      apiPath(`/${deploymentId}/files/batch`),
       {
-        body: JSON.stringify({
-          contentBase64: content.toString("base64"),
-          contentType: getContentType(filePath),
-          path: relativePath,
-        }),
+        body: JSON.stringify({ files: batch }),
         headers,
         method: "POST",
       },
-      `Failed to upload ${relativePath}`
+      "Failed to upload files"
     );
-
-    s.message(`Uploading files (${index + 1}/${files.length})`);
+    uploaded += batch.length;
+    s.message(`Uploading files (${uploaded}/${files.length})`);
   }
+
   s.stop(`Uploaded ${chalk.cyan(String(files.length))} files`);
 };
 

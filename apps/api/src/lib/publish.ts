@@ -101,8 +101,31 @@ export const uploadDeploymentFile = async (input: {
   };
 };
 
+const BATCH_UPLOAD_CONCURRENCY = 10;
+
+export const uploadDeploymentFiles = async (
+  projectSlug: string,
+  deploymentId: string,
+  files: { relativePath: string; content: Buffer; contentType?: string }[]
+) => {
+  const results: { path: string; url: string }[] = [];
+
+  for (let i = 0; i < files.length; i += BATCH_UPLOAD_CONCURRENCY) {
+    const batch = files.slice(i, i + BATCH_UPLOAD_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map((file) =>
+        uploadDeploymentFile({ ...file, deploymentId, projectSlug })
+      )
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
+};
+
 const COMPILED_MDX_PREFIX = "_compiled/";
 const MDX_FILE_REGEX = /\.(mdx|md)$/;
+const GENERATED_MDX_PREFIX = "_utility/";
 const COMPILE_CONCURRENCY = 10;
 
 const compileDeploymentMdx = async (
@@ -111,7 +134,11 @@ const compileDeploymentMdx = async (
   projectSlug: string,
   deploymentId: string
 ): Promise<DeploymentManifestFile[]> => {
-  const mdxFiles = files.filter((file) => MDX_FILE_REGEX.test(file.path));
+  const mdxFiles = files.filter(
+    (file) =>
+      MDX_FILE_REGEX.test(file.path) &&
+      !file.path.startsWith(GENERATED_MDX_PREFIX)
+  );
   if (!mdxFiles.length) {
     return [];
   }
@@ -188,94 +215,67 @@ export const finalizeDeploymentManifest = async (input: {
     const source = createBlobSource(tempManifestBlob.url);
     const configResult = await loadSiteConfig(source);
     if (configResult.ok) {
-      const contentIndex = await buildContentIndex(source, configResult.config);
-      const indexJson = serializeContentIndex(contentIndex);
-      const indexBlob = await put(
-        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_INDEX_PATH}`,
-        indexJson,
-        {
+      const filesPrefix = getFilesPrefix(input.projectSlug, input.deploymentId);
+      const putJson = (blobPath: string, content: string) =>
+        put(`${filesPrefix}${blobPath}`, content, {
           access: "public",
           addRandomSuffix: false,
           allowOverwrite: true,
           contentType: "application/json; charset=utf-8",
-        }
+        });
+
+      // Phase 1: content index (required by all subsequent indices)
+      const contentIndex = await buildContentIndex(source, configResult.config);
+      const indexBlob = await putJson(
+        PREBUILT_INDEX_PATH,
+        serializeContentIndex(contentIndex)
       );
       files.push({ path: PREBUILT_INDEX_PATH, url: indexBlob.url });
 
-      const tocIndex = await buildTocIndex(contentIndex, source);
-      const tocIndexBlob = await put(
-        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_TOC_INDEX_PATH}`,
-        serializeTocIndex(tocIndex),
-        {
-          access: "public",
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          contentType: "application/json; charset=utf-8",
-        }
-      );
-      files.push({
-        path: PREBUILT_TOC_INDEX_PATH,
-        url: tocIndexBlob.url,
-      });
+      // Phase 2: toc + utility indices in parallel (both depend only on contentIndex)
+      const [tocIndex, utilityIndex] = await Promise.all([
+        buildTocIndex(contentIndex, source),
+        buildUtilityIndex(contentIndex, source, configResult.config),
+      ]);
 
-      const utilityIndex = await buildUtilityIndex(
-        contentIndex,
-        source,
-        configResult.config
-      );
-      const utilityIndexBlob = await put(
-        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_UTILITY_INDEX_PATH}`,
-        serializeUtilityIndex(utilityIndex),
-        {
-          access: "public",
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          contentType: "application/json; charset=utf-8",
-        }
-      );
+      const [tocIndexBlob, utilityIndexBlob] = await Promise.all([
+        putJson(PREBUILT_TOC_INDEX_PATH, serializeTocIndex(tocIndex)),
+        putJson(
+          PREBUILT_UTILITY_INDEX_PATH,
+          serializeUtilityIndex(utilityIndex)
+        ),
+      ]);
+      files.push({ path: PREBUILT_TOC_INDEX_PATH, url: tocIndexBlob.url });
       files.push({
         path: PREBUILT_UTILITY_INDEX_PATH,
         url: utilityIndexBlob.url,
       });
 
+      // Phase 3: search index + utility artifacts (sync builds, parallel uploads)
       const searchIndex = buildSearchIndex(
         contentIndex,
         configResult.config,
         utilityIndex
       );
-      const searchIndexBlob = await put(
-        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_SEARCH_INDEX_PATH}`,
-        serializeSearchIndex(searchIndex),
-        {
-          access: "public",
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          contentType: "application/json; charset=utf-8",
-        }
-      );
-      files.push({
-        path: PREBUILT_SEARCH_INDEX_PATH,
-        url: searchIndexBlob.url,
-      });
+      const artifacts = buildUtilityArtifacts(utilityIndex);
 
-      for (const artifact of buildUtilityArtifacts(utilityIndex)) {
-        const artifactBlob = await put(
-          `${getFilesPrefix(input.projectSlug, input.deploymentId)}${artifact.path}`,
-          artifact.content,
-          {
+      const uploadResults = await Promise.all([
+        putJson(
+          PREBUILT_SEARCH_INDEX_PATH,
+          serializeSearchIndex(searchIndex)
+        ).then((blob) => ({ path: PREBUILT_SEARCH_INDEX_PATH, url: blob.url })),
+        ...artifacts.map((artifact) =>
+          put(`${filesPrefix}${artifact.path}`, artifact.content, {
             access: "public",
             addRandomSuffix: false,
             allowOverwrite: true,
             contentType: artifact.contentType,
-          }
-        );
-        files.push({
-          path: artifact.path,
-          url: artifactBlob.url,
-        });
-      }
+          }).then((blob) => ({ path: artifact.path, url: blob.url }))
+        ),
+      ]);
+      files.push(...uploadResults);
 
-      // Pre-compile MDX files for instant runtime rendering
+      // Phase 4: pre-compile MDX (already parallelized internally)
       try {
         const compiledFiles = await compileDeploymentMdx(
           source,

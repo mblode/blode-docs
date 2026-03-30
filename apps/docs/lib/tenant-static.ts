@@ -1,3 +1,4 @@
+import { slugify } from "@repo/common";
 import type { TenantResolution } from "@repo/contracts";
 import type { Tenant } from "@repo/models";
 import type { UtilityIndex } from "@repo/previewing";
@@ -249,9 +250,47 @@ const resolveLlmPages = (
     .filter((page) => page !== null);
 
 const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
+const LEADING_H1_REGEX = /^#\s+([^\r\n]+)(?:\r?\n(?:\r?\n)?)?/;
 
 const stripFrontmatter = (source: string) =>
   source.replace(FRONTMATTER_REGEX, "").trim();
+
+const stripMatchingLeadingH1 = (source: string, title: string) => {
+  const trimmed = source.trimStart();
+  const match = LEADING_H1_REGEX.exec(trimmed);
+  if (!match) {
+    return trimmed.trim();
+  }
+
+  const [headingLine = "", headingTitle = ""] = match;
+  if (slugify(headingTitle) !== slugify(title)) {
+    return trimmed.trim();
+  }
+
+  return trimmed.slice(headingLine.length).trim();
+};
+
+const formatMarkdownPage = (title: string, source: string) => {
+  const content = stripMatchingLeadingH1(source, title);
+  if (!content) {
+    return `# ${title}`;
+  }
+
+  return `# ${title}\n\n${content}`;
+};
+
+const formatMarkdownPageSection = (
+  title: string,
+  url: string,
+  source: string
+) => {
+  const content = stripMatchingLeadingH1(source, title);
+  if (!content) {
+    return `# ${title} (${url})`;
+  }
+
+  return `# ${title} (${url})\n\n${content}`;
+};
 
 const buildRuntimeUtilityIndex = async (
   tenant: Tenant
@@ -398,7 +437,7 @@ export const buildTenantLlmsFullTxt = async (
   const basePath = getCanonicalDocBasePath(tenant, context);
   const parts = data.pages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
-    return `# ${page.title} (${url})\n\n${page.content}`;
+    return formatMarkdownPageSection(page.title, url, page.content);
   });
 
   return parts.join("\n\n");
@@ -418,5 +457,5 @@ export const getLlmPageText = async (tenant: Tenant, slug: string) => {
   if (!page) {
     return null;
   }
-  return `# ${page.title}\n\n${page.content}`;
+  return formatMarkdownPage(page.title, page.content);
 };

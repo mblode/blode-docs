@@ -110,20 +110,26 @@ const getTenantArtifactsCacheKey = (tenant: Tenant) =>
 const buildSearchItems = ({
   config,
   contentIndex,
-  flatNav,
   utilityIndex,
-  visibleFlatNav,
 }: {
   config: TenantArtifacts["config"];
   contentIndex: ContentIndex;
-  flatNav: NavPage[];
   utilityIndex?: UtilityIndex | null;
+}) => buildSearchIndex(contentIndex, config, utilityIndex ?? undefined);
+
+const mergeSearchItems = ({
+  baseItems,
+  config,
+  flatNav,
+  visibleFlatNav,
+}: {
+  baseItems: SearchIndexItem[];
+  config: TenantArtifacts["config"];
+  flatNav: NavPage[];
   visibleFlatNav: NavPage[];
 }): SearchIndexItem[] => {
   const items = new Map<string, SearchIndexItem>(
-    buildSearchIndex(contentIndex, config, utilityIndex ?? undefined).map(
-      (item) => [item.path, item]
-    )
+    baseItems.map((item) => [item.path, item])
   );
 
   for (const item of visibleFlatNav) {
@@ -250,15 +256,18 @@ const getTenantArtifacts = async (tenantSlug: string) => {
       flatNav,
       pageMetadataMap,
       registry: registryResult.registry,
-      searchItems:
-        prebuiltSearchIndex ??
-        buildSearchItems({
-          config,
-          contentIndex,
-          flatNav,
-          utilityIndex: utilityIndexForSearch,
-          visibleFlatNav,
-        }),
+      searchItems: mergeSearchItems({
+        baseItems:
+          prebuiltSearchIndex ??
+          buildSearchItems({
+            config,
+            contentIndex,
+            utilityIndex: utilityIndexForSearch,
+          }),
+        config,
+        flatNav,
+        visibleFlatNav,
+      }),
       tabs,
       tenant,
       tocBySlug: prebuiltTocIndex ?? new Map(),
