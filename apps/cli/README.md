@@ -31,6 +31,9 @@ Requires Node.js 18+.
 # Scaffold a new docs folder
 blodemd init
 
+# Preview locally
+blodemd dev
+
 # Authenticate
 blodemd login
 
@@ -47,7 +50,7 @@ blodemd logout            Remove stored credentials
 blodemd whoami            Show current authentication
 blodemd validate [dir]    Validate docs.json
 blodemd push [dir]        Deploy docs
-blodemd dev               Show instructions for the local dev server
+blodemd dev [dir]         Start the local docs preview server
 ```
 
 ### `push` Options
@@ -61,6 +64,14 @@ blodemd dev               Show instructions for the local dev server
 ```
 
 The CLI reads the project slug from the `name` field in `docs.json` when `--project` is not set.
+
+### `dev` Options
+
+```bash
+--dir <dir>       Docs directory
+--port <port>     Local preview port (default: 3030)
+--no-open         Don't open the browser automatically
+```
 
 ## CI / GitHub Actions
 

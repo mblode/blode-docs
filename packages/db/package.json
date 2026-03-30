@@ -23,8 +23,9 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt .",
     "db:pull": "NODE_PATH=./node_modules drizzle-kit pull --config=drizzle.config.ts",
-    "db:push": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts",
-    "db:push:init": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts --init",
+    "db:push": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts && node ./scripts/apply-auth-user-sync.mjs",
+    "db:push:init": "NODE_PATH=./node_modules drizzle-kit push --config=drizzle.config.ts --init && node ./scripts/apply-auth-user-sync.mjs",
+    "db:sync-auth-users": "node ./scripts/apply-auth-user-sync.mjs",
     "db:local:push": "node ./scripts/local-db.mjs push --force",
     "db:local:push:init": "node ./scripts/local-db.mjs push --init --force",
     "db:local:url": "node ./scripts/local-db.mjs print-url"

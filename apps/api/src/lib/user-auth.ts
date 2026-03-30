@@ -1,7 +1,7 @@
 import type { UserRecord } from "@repo/db";
 
-import { userDao } from "./db.js";
-import { getSupabaseClient } from "./supabase.js";
+import { userDao } from "./db";
+import { getSupabaseClient } from "./supabase";
 
 const getTokenFromHeaders = (headers: Record<string, unknown>) => {
   const { authorization } = headers;

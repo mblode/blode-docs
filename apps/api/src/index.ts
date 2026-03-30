@@ -3,14 +3,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
-import { logError } from "./lib/logger.js";
-import { notFound } from "./lib/responses.js";
-import { apiKeys } from "./routes/api-keys.js";
-import { auth } from "./routes/auth.js";
-import { deployments } from "./routes/deployments.js";
-import { domains } from "./routes/domains.js";
-import { projects } from "./routes/projects.js";
-import { tenants } from "./routes/tenants.js";
+import { logError } from "./lib/logger";
+import { notFound } from "./lib/responses";
+import { apiKeys } from "./routes/api-keys";
+import { auth } from "./routes/auth";
+import { deployments } from "./routes/deployments";
+import { domains } from "./routes/domains";
+import { projects } from "./routes/projects";
+import { tenants } from "./routes/tenants";
 
 const app = new Hono();
 

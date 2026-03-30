@@ -1,4 +1,4 @@
-import { readTrimmedEnv } from "./env.js";
+import { readTrimmedEnv } from "./env";
 
 const docsAppUrl = readTrimmedEnv("DOCS_APP_URL");
 const revalidateSecret = readTrimmedEnv("REVALIDATE_SECRET");

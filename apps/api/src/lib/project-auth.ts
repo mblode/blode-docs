@@ -1,12 +1,12 @@
 import type { UserRecord } from "@repo/db";
 import type { Context } from "hono";
 
-import { authenticateApiKey } from "./api-key-auth.js";
-import { adminApiToken } from "./config.js";
-import { apiKeyDao, projectDao } from "./db.js";
-import { authenticateUser } from "./user-auth.js";
+import { authenticateApiKey } from "./api-key-auth";
+import { adminApiToken } from "./config";
+import { apiKeyDao, projectDao } from "./db";
+import { authenticateUser } from "./user-auth";
 
-export const getHeadersRecord = (c: Context): Record<string, string> =>
+const getHeadersRecord = (c: Context): Record<string, string> =>
   Object.fromEntries(c.req.raw.headers.entries());
 
 const hasAdminAccess = (headers: Record<string, unknown>) => {

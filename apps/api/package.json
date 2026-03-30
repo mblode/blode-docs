@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "portless run sh -c 'set -a && . .env && set +a && tsx watch src/index.ts'",
-    "build": "rm -rf dist && tsc -p tsconfig.json",
-    "start": "node dist/index.js",
+    "build": "tsdown",
+    "start": "node dist/index.mjs",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt --write .",

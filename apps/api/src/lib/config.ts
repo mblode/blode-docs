@@ -1,6 +1,6 @@
 import { mapDomainStatusFromContract } from "@repo/db";
 
-import { readTrimmedEnv } from "./env.js";
+import { readTrimmedEnv } from "./env";
 
 export const rootDomain = readTrimmedEnv("PLATFORM_ROOT_DOMAIN") ?? "blode.md";
 export const autoWwwRedirect = process.env.VERCEL_AUTO_WWW_REDIRECT === "true";

@@ -26,6 +26,7 @@ import {
   DEFAULT_OAUTH_TIMEOUT_SECONDS,
   OAUTH_CLIENT_ID,
 } from "./constants.js";
+import { devCommand } from "./dev/command.js";
 import { CliError, EXIT_CODES, toCliError } from "./errors.js";
 import { waitForOAuthCode } from "./oauth-callback.js";
 import { exchangeAuthorizationCode } from "./oauth-token.js";
@@ -734,16 +735,17 @@ program
 
 program
   .command("dev")
-  .description("Start the docs dev server")
-  .action(() => {
-    intro(chalk.bold("blodemd dev"));
-    log.info(
-      `Run ${chalk.cyan("npx turbo dev --filter=docs")} from the repo root.`
-    );
-    log.info(
-      `Then open ${chalk.cyan("http://localhost:3001")} to view the docs site.`
-    );
-    log.info("Done");
-  });
+  .description("Start the local docs dev server")
+  .option("-p, --port <port>", "Port number", "3030")
+  .option("-d, --dir <dir>", "Docs directory")
+  .option("--no-open", "Don't open browser")
+  .action(
+    async (options: { dir?: string; open?: boolean; port: string }) =>
+      await devCommand({
+        dir: options.dir,
+        openBrowser: options.open ?? true,
+        port: options.port,
+      })
+  );
 
 program.parse();

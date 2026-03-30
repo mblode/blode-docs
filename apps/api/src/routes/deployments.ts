@@ -8,21 +8,17 @@ import {
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { authenticateApiKey } from "../lib/api-key-auth.js";
-import { apiKeyDao, deploymentDao, projectDao } from "../lib/db.js";
-import { logError, logWarn } from "../lib/logger.js";
-import {
-  authorizeProjectRequest,
-  getHeadersRecord,
-} from "../lib/project-auth.js";
+import { deploymentDao, projectDao } from "../lib/db";
+import { logError, logWarn } from "../lib/logger";
+import { authorizeProjectRequest } from "../lib/project-auth";
 import {
   finalizeDeploymentManifest,
   uploadDeploymentFile,
-} from "../lib/publish.js";
-import { badRequest, notFound, unauthorized } from "../lib/responses.js";
-import { revalidateProject } from "../lib/revalidate.js";
-import { validateJson, validateParams } from "../lib/validators.js";
-import { mapDeployment } from "../mappers/records.js";
+} from "../lib/publish";
+import { badRequest, notFound, unauthorized } from "../lib/responses";
+import { revalidateProject } from "../lib/revalidate";
+import { validateJson, validateParams } from "../lib/validators";
+import { mapDeployment } from "../mappers/records";
 
 const projectIdParamsSchema = z.object({ projectId: z.string().uuid() });
 const deploymentParamsSchema = projectIdParamsSchema.extend({
@@ -78,14 +74,13 @@ deployments.post(
   async (c) => {
     const { slug } = c.req.valid("param");
     const body = c.req.valid("json");
-    const apiKey = await authenticateApiKey(getHeadersRecord(c), apiKeyDao);
-    if (!apiKey) {
-      return unauthorized(c, "Invalid API key.");
+    const project = await projectDao.getBySlugUnique(slug);
+    if (!project) {
+      return notFound(c);
     }
 
-    const project = await projectDao.getBySlugUnique(slug);
-    if (!project || project.id !== apiKey.projectId) {
-      return notFound(c);
+    if (!(await authorizeProjectRequest(c, project.id))) {
+      return unauthorized(c, "Invalid credentials.");
     }
 
     if (body.environment === "preview") {
@@ -111,14 +106,13 @@ deployments.post(
   async (c) => {
     const { deploymentId, slug } = c.req.valid("param");
     const body = c.req.valid("json");
-    const apiKey = await authenticateApiKey(getHeadersRecord(c), apiKeyDao);
-    if (!apiKey) {
-      return unauthorized(c, "Invalid API key.");
+    const project = await projectDao.getBySlugUnique(slug);
+    if (!project) {
+      return notFound(c);
     }
 
-    const project = await projectDao.getBySlugUnique(slug);
-    if (!project || project.id !== apiKey.projectId) {
-      return notFound(c);
+    if (!(await authorizeProjectRequest(c, project.id))) {
+      return unauthorized(c, "Invalid credentials.");
     }
 
     const deployment = await deploymentDao.getByProjectId(
@@ -160,14 +154,13 @@ deployments.post(
   async (c) => {
     const { deploymentId, slug } = c.req.valid("param");
     const body = c.req.valid("json");
-    const apiKey = await authenticateApiKey(getHeadersRecord(c), apiKeyDao);
-    if (!apiKey) {
-      return unauthorized(c, "Invalid API key.");
+    const project = await projectDao.getBySlugUnique(slug);
+    if (!project) {
+      return notFound(c);
     }
 
-    const project = await projectDao.getBySlugUnique(slug);
-    if (!project || project.id !== apiKey.projectId) {
-      return notFound(c);
+    if (!(await authorizeProjectRequest(c, project.id))) {
+      return unauthorized(c, "Invalid credentials.");
     }
 
     const deployment = await deploymentDao.getByProjectId(

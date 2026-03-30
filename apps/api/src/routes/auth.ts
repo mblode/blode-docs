@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 
-import { getAuthenticatedUser } from "../lib/project-auth.js";
-import { unauthorized } from "../lib/responses.js";
-import { mapUser } from "../mappers/records.js";
+import { getAuthenticatedUser } from "../lib/project-auth";
+import { unauthorized } from "../lib/responses";
+import { mapUser } from "../mappers/records";
 
 export const auth = new Hono();
 

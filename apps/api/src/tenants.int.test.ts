@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type * as RepoDb from "@repo/db";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { cleanupProjectFixture, createProjectFixture } from "./test-helpers.js";
+import { cleanupProjectFixture, createProjectFixture } from "./test-helpers";
 
 type DbModule = typeof RepoDb;
 

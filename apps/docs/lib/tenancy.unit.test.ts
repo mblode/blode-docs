@@ -27,7 +27,7 @@ describe("tenancy helpers", () => {
   });
 
   it("treats internal and root static paths as reserved without blocking docs api routes", () => {
-    expect(isReservedPath("/_internal/proxy")).toBe(true);
+    expect(isReservedPath("/blodemd-internal/proxy")).toBe(true);
     expect(isReservedPath("/robots.txt")).toBe(true);
     expect(isReservedPath("/logos/atlas-mark-dark.svg")).toBe(true);
     expect(isReservedPath("/oauth/consent")).toBe(true);

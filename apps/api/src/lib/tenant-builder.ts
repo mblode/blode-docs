@@ -4,8 +4,8 @@ import {
   preferCustomDomain,
   rootDomain,
   validConfiguredDomainStatus,
-} from "./config.js";
-import { deploymentDao, domainDao, projectDao } from "./db.js";
+} from "./config";
+import { deploymentDao, domainDao, projectDao } from "./db";
 
 export const buildTenant = async (
   projectId: string

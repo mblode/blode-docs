@@ -31,6 +31,26 @@ const runDrizzle = (args) => {
   }
 };
 
+const runScript = (scriptPath) => {
+  const result = spawnSync(
+    process.execPath,
+    [resolve(packageRoot, scriptPath)],
+    {
+      cwd: packageRoot,
+      env: {
+        ...process.env,
+        DATABASE_URL: getLocalDatabaseUrl(),
+        NODE_PATH: "./node_modules",
+      },
+      stdio: "inherit",
+    }
+  );
+
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+};
+
 const [command, ...restArgs] = process.argv.slice(2);
 
 if (command === "print-url") {
@@ -40,6 +60,7 @@ if (command === "print-url") {
 
 if (command === "push") {
   runDrizzle(["push", "--config=drizzle.config.ts", ...restArgs]);
+  runScript("./scripts/apply-auth-user-sync.mjs");
   process.exit(0);
 }
 

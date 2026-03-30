@@ -8,36 +8,45 @@ Shared Drizzle ORM schema and DAO layer for Blode.md.
 npm run db:pull --workspace=packages/db
 npm run db:push:init --workspace=packages/db
 npm run db:push --workspace=packages/db
+npm run db:sync-auth-users --workspace=packages/db
 npm run db:local:push:init --workspace=packages/db
 npm run db:local:push --workspace=packages/db
 ```
 
+`db:push` and `db:local:push` now install an idempotent Supabase auth trigger that
+keeps `public.users` in sync with `auth.users` when the `auth` schema exists.
+
 ## Seed data
 
+For the current schema, use the TypeScript seed:
+
 ```bash
-psql "$DATABASE_URL" -f packages/db/seed.sql
+DATABASE_URL=... tsx packages/db/seed.ts
 ```
 
-## Local Docker workflow
+The repo also contains `packages/db/seed.sql`, but it targets older tables and
+does not create rows in the current `public.users` table.
 
-Docker runs a standard Postgres 16 instance locally (matching Neon's version in
-production). Drizzle Kit pushes the schema directly from
-[`src/schema.ts`](./src/schema.ts).
+## Local Supabase workflow
+
+Local development uses Supabase's local Postgres and auth stack. Drizzle Kit
+pushes the application schema from [`src/schema.ts`](./src/schema.ts), then the
+auth sync installer adds the `auth.users` -> `public.users` trigger.
 
 ```bash
 # from repo root
 
-# start postgres
-npm run db:up
+# start Supabase locally
+npm run db:start
 
-# defaults to postgresql://postgres:postgres@127.0.0.1:5432/blode_docs
+# defaults to postgresql://postgres:postgres@127.0.0.1:54322/postgres
 npm run db:push
 
-# optional: seed data
-psql "$DATABASE_URL" -f packages/db/seed.sql
+# optional: create a seed user and sample projects
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres tsx packages/db/seed.ts
 
-# stop postgres
-npm run db:down
+# stop Supabase
+npm run db:stop
 ```
 
 For integration tests, set `DATABASE_URL` to a separate database:

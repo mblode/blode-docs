@@ -129,7 +129,7 @@ export const ApiPlayground = ({
         url,
       };
 
-      const requestUrl = useProxy ? "/_internal/proxy" : url;
+      const requestUrl = useProxy ? "/blodemd-internal/proxy" : url;
       const requestMethod = useProxy ? "POST" : method;
       const requestHeadersToSend = useProxy
         ? {

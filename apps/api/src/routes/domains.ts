@@ -8,22 +8,19 @@ import {
   autoWwwRedirect,
   rootDomain,
   validConfiguredDomainStatus,
-} from "../lib/config.js";
-import { domainDao } from "../lib/db.js";
-import { logError, logWarn } from "../lib/logger.js";
-import {
-  normalizeHostnameInput,
-  normalizePathPrefix,
-} from "../lib/normalize.js";
-import { authorizeProjectRequest } from "../lib/project-auth.js";
+} from "../lib/config";
+import { domainDao } from "../lib/db";
+import { logError, logWarn } from "../lib/logger";
+import { normalizeHostnameInput, normalizePathPrefix } from "../lib/normalize";
+import { authorizeProjectRequest } from "../lib/project-auth";
 import {
   badGateway,
   badRequest,
   noContent,
   notFound,
   unauthorized,
-} from "../lib/responses.js";
-import { validateJson, validateParams } from "../lib/validators.js";
+} from "../lib/responses";
+import { validateJson, validateParams } from "../lib/validators";
 import {
   addProjectDomain,
   deleteDomain,
@@ -31,9 +28,9 @@ import {
   isVercelEnabled,
   removeProjectDomain,
   verifyProjectDomain,
-} from "../lib/vercel.js";
-import type { VercelProjectDomain } from "../lib/vercel.js";
-import { mapDomain } from "../mappers/records.js";
+} from "../lib/vercel";
+import type { VercelProjectDomain } from "../lib/vercel";
+import { mapDomain } from "../mappers/records";
 
 const projectIdParamsSchema = z.object({ projectId: z.string().uuid() });
 const domainParamsSchema = projectIdParamsSchema.extend({

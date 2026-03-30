@@ -40,6 +40,7 @@ const CardInner = ({
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           src={img}
+          unoptimized
         />
       </div>
     ) : null}

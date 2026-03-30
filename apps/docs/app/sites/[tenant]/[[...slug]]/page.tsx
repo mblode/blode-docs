@@ -14,9 +14,7 @@ import {
   getTenantRequestContextFromHeaders,
 } from "@/lib/tenant-static";
 
-export const revalidate = 3600;
-
-export const generateStaticParams = () => [];
+export const dynamic = "force-dynamic";
 
 // oxlint-disable-next-line eslint/complexity
 export const generateMetadata = async ({

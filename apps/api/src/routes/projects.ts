@@ -2,15 +2,15 @@ import { ProjectUpdateSchema } from "@repo/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { createApiKeyToken } from "../lib/api-key-auth.js";
-import { apiKeyDao, projectDao } from "../lib/db.js";
+import { createApiKeyToken } from "../lib/api-key-auth";
+import { apiKeyDao, projectDao } from "../lib/db";
 import {
   authorizeProjectRequest,
   getAuthenticatedUser,
-} from "../lib/project-auth.js";
-import { badRequest, notFound, unauthorized } from "../lib/responses.js";
-import { validateJson, validateParams } from "../lib/validators.js";
-import { mapApiKey, mapProject } from "../mappers/records.js";
+} from "../lib/project-auth";
+import { badRequest, notFound, unauthorized } from "../lib/responses";
+import { validateJson, validateParams } from "../lib/validators";
+import { mapApiKey, mapProject } from "../mappers/records";
 
 const projectIdParamsSchema = z.object({ projectId: z.string().uuid() });
 

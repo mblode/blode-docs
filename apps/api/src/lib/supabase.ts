@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-import { readTrimmedEnv } from "./env.js";
+import { readTrimmedEnv } from "./env";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 

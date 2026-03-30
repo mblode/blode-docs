@@ -5,7 +5,7 @@ import { platformConfig } from "./platform-config";
 import { createTimedPromiseCache } from "./server-cache";
 
 const DEFAULT_RESERVED_PATHS = [
-  "/_internal",
+  "/blodemd-internal",
   "/_next",
   "/.well-known",
   "/favicon.ico",

@@ -2,12 +2,12 @@ import { ApiKeyCreateSchema } from "@repo/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { createApiKeyToken } from "../lib/api-key-auth.js";
-import { apiKeyDao } from "../lib/db.js";
-import { authorizeProjectRequest } from "../lib/project-auth.js";
-import { unauthorized } from "../lib/responses.js";
-import { validateJson, validateParams } from "../lib/validators.js";
-import { mapApiKey } from "../mappers/records.js";
+import { createApiKeyToken } from "../lib/api-key-auth";
+import { apiKeyDao } from "../lib/db";
+import { authorizeProjectRequest } from "../lib/project-auth";
+import { unauthorized } from "../lib/responses";
+import { validateJson, validateParams } from "../lib/validators";
+import { mapApiKey } from "../mappers/records";
 
 const projectIdParamsSchema = z.object({ projectId: z.string().uuid() });
 const apiKeyCreateBodySchema = ApiKeyCreateSchema.omit({ projectId: true });

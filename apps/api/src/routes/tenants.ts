@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { rootDomain, validConfiguredDomainStatus } from "../lib/config.js";
-import { domainDao, projectDao } from "../lib/db.js";
-import { normalizeHost, slugifyPath, stripPrefix } from "../lib/normalize.js";
-import { notFound } from "../lib/responses.js";
-import { buildTenant, buildTenantResolution } from "../lib/tenant-builder.js";
-import { validateParams, validateQuery } from "../lib/validators.js";
+import { rootDomain, validConfiguredDomainStatus } from "../lib/config";
+import { domainDao, projectDao } from "../lib/db";
+import { normalizeHost, slugifyPath, stripPrefix } from "../lib/normalize";
+import { notFound } from "../lib/responses";
+import { buildTenant, buildTenantResolution } from "../lib/tenant-builder";
+import { validateParams, validateQuery } from "../lib/validators";
 
 const slugParamsSchema = z.object({ slug: z.string().min(1) });
 const tenantResolveQuerySchema = z.object({
