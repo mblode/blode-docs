@@ -4,6 +4,7 @@ import {
   buildTenantLlmsTxt,
   getStaticTenantRequestContext,
 } from "@/lib/tenant-static";
+import { getTenantRequestContextFromUrl } from "@/lib/tenant-utility-context";
 import { getTenantBySlug } from "@/lib/tenants";
 
 export const dynamic = "force-static";
@@ -11,7 +12,7 @@ export const preferredRegion = "home";
 export const revalidate = 3600;
 
 export const GET = async (
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenant: string }> }
 ) => {
   const { tenant: tenantSlug } = await params;
@@ -22,12 +23,14 @@ export const GET = async (
 
   const content = await buildTenantLlmsTxt(
     tenant,
-    getStaticTenantRequestContext(tenant)
+    getTenantRequestContextFromUrl(new URL(request.url)) ??
+      getStaticTenantRequestContext(tenant)
   );
 
   return new NextResponse(content, {
     headers: {
-      "CDN-Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "CDN-Cache-Control":
+        "public, s-maxage=3600, stale-while-revalidate=86400",
       "Cache-Control": "public, max-age=3600",
       "Content-Type": "text/plain",
       "Vercel-CDN-Cache-Control":

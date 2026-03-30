@@ -5,6 +5,7 @@ import { ApiReference } from "@/components/api/api-reference";
 import { CollectionIndex } from "@/components/content/collection-index";
 import { DocShell } from "@/components/docs/doc-shell";
 import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
+import { toDocHref } from "@/lib/routes";
 
 export const dynamic = "force-static";
 export const preferredRegion = "home";
@@ -118,6 +119,15 @@ const DocPage = async ({
   let content: React.ReactNode;
   let rawContent: string | undefined;
   let toc: { id: string; title: string; level: number }[] = [];
+  const markdownHref =
+    shell.kind === "page"
+      ? toDocHref(
+          shell.currentPath === "index"
+            ? "index.mdx"
+            : `${shell.currentPath}.mdx`,
+          basePath
+        )
+      : undefined;
 
   if (shell.kind === "openapi") {
     content = (
@@ -158,6 +168,7 @@ const DocPage = async ({
       pageDescription={shell.pageDescription}
       pageTitle={shell.pageTitle}
       prevPage={shell.prevPage}
+      markdownHref={markdownHref}
       rawContent={rawContent}
       tabs={shell.tabs}
       toc={toc}

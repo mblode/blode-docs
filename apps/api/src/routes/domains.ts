@@ -261,7 +261,10 @@ domains.post(
         try {
           await syncProjectTenantEdgeConfig(projectId);
         } catch (error) {
-          logWarn("Failed to sync tenant Edge Config after domain verify", error);
+          logWarn(
+            "Failed to sync tenant Edge Config after domain verify",
+            error
+          );
         }
       }
       return c.json(verification, 200);

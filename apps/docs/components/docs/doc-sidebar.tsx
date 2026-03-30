@@ -74,14 +74,23 @@ const NavPageLink = ({
 
   if (item.url) {
     return (
-      <a className={className} href={item.url} rel="noopener noreferrer" target="_blank">
+      <a
+        className={className}
+        href={item.url}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
         {linkContent}
       </a>
     );
   }
 
   return (
-    <Link className={className} href={getNavPageHref(item, basePath)} prefetch={false}>
+    <Link
+      className={className}
+      href={getNavPageHref(item, basePath)}
+      prefetch={false}
+    >
       {linkContent}
     </Link>
   );
@@ -96,7 +105,12 @@ const Section = ({
   children: React.ReactNode;
   paddedTop?: boolean;
 }) => (
-  <section className={cn("relative flex w-full min-w-0 flex-col p-2", paddedTop && "pt-6")}>
+  <section
+    className={cn(
+      "relative flex w-full min-w-0 flex-col p-2",
+      paddedTop && "pt-6"
+    )}
+  >
     {title ? (
       <div className="mb-2 px-2 font-medium text-muted-foreground text-xs">
         {title}

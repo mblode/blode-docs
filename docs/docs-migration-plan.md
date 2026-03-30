@@ -41,14 +41,14 @@ Move each docs set into `apps/docs/content/<slug>` with:
 
 ## Source Audit Summary
 
-| Source | Actual Source Path | Content Shape | Volume | Main Migration Issues | Risk |
-| --- | --- | --- | --- | --- | --- |
-| allmd | `/Users/mblode/Code/mblode/allmd/apps/docs` | Mintlify-style content-only | 18 MDX, 3 meta | Baseline only | Low |
-| donebear product docs | `/Users/mblode/Code/donebear/donebear/apps/docs-frontend/content/docs` | Fumadocs content tree | 13 MDX, 3 meta | Source path correction, new `docs.json`, root-relative screenshots | Low |
-| donebear package docs | `/Users/mblode/Code/donebear/donebear/docs/packages` | Fumadocs content tree | 41 MDX, 13 meta | Source path correction, new `docs.json`, many `/docs/...` links, Mermaid blocks, separate scope decision | High |
-| stratasync | `/Users/mblode/Code/donebear/stratasync/apps/docs/content/docs` | Fumadocs content tree | 39 MDX, 9 meta | New `docs.json`, many `/docs/...` links, Mermaid blocks, `<UseCases />` landing component | High |
-| dnd-grid | `/Users/mblode/Code/mblode/dnd-grid/apps/docs` | Mintlify-style content-only | 35 MDX, 1 docs.json, 18 snippets | Asset path rewrites, root-relative internal links, decide whether snippets should be copied | Medium |
-| shareful | `/Users/mblode/Code/shareful-ai/shareful-ai/apps/docs/content/docs` | Fumadocs content tree | 9 MDX, 1 meta | Source path correction, new `docs.json`, `/docs/...` links, unsupported `Cards`, unsupported callout variants | Medium |
+| Source                | Actual Source Path                                                     | Content Shape               | Volume                           | Main Migration Issues                                                                                         | Risk   |
+| --------------------- | ---------------------------------------------------------------------- | --------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------ |
+| allmd                 | `/Users/mblode/Code/mblode/allmd/apps/docs`                            | Mintlify-style content-only | 18 MDX, 3 meta                   | Baseline only                                                                                                 | Low    |
+| donebear product docs | `/Users/mblode/Code/donebear/donebear/apps/docs-frontend/content/docs` | Fumadocs content tree       | 13 MDX, 3 meta                   | Source path correction, new `docs.json`, root-relative screenshots                                            | Low    |
+| donebear package docs | `/Users/mblode/Code/donebear/donebear/docs/packages`                   | Fumadocs content tree       | 41 MDX, 13 meta                  | Source path correction, new `docs.json`, many `/docs/...` links, Mermaid blocks, separate scope decision      | High   |
+| stratasync            | `/Users/mblode/Code/donebear/stratasync/apps/docs/content/docs`        | Fumadocs content tree       | 39 MDX, 9 meta                   | New `docs.json`, many `/docs/...` links, Mermaid blocks, `<UseCases />` landing component                     | High   |
+| dnd-grid              | `/Users/mblode/Code/mblode/dnd-grid/apps/docs`                         | Mintlify-style content-only | 35 MDX, 1 docs.json, 18 snippets | Asset path rewrites, root-relative internal links, decide whether snippets should be copied                   | Medium |
+| shareful              | `/Users/mblode/Code/shareful-ai/shareful-ai/apps/docs/content/docs`    | Fumadocs content tree       | 9 MDX, 1 meta                    | Source path correction, new `docs.json`, `/docs/...` links, unsupported `Cards`, unsupported callout variants | Medium |
 
 ## Migration Invariants
 

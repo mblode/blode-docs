@@ -1,16 +1,24 @@
 import { normalizePath } from "@repo/common";
 import type { PageMode, Tenant } from "@repo/models";
 import {
+  buildUtilityIndex,
+  buildSearchIndex,
   buildContentIndex,
   buildPageMetadataMap,
   loadContentSource,
   loadPrebuiltContentIndex,
+  loadPrebuiltSearchIndex,
+  loadPrebuiltTocIndex,
+  loadPrebuiltUtilityIndex,
   loadSiteConfig,
 } from "@repo/previewing";
 import type {
   ContentIndex,
   ContentSource,
   PageMetadata,
+  SearchIndexItem,
+  TocItem,
+  UtilityIndex,
 } from "@repo/previewing";
 import { cache } from "react";
 
@@ -40,12 +48,6 @@ import { createTimedPromiseCache } from "@/lib/server-cache";
 import { getTenantBySlug } from "@/lib/tenants";
 import { extractToc } from "@/lib/toc";
 
-interface SearchItem {
-  href?: string;
-  title: string;
-  path: string;
-}
-
 interface ConfigErrorResult {
   configErrors: string[];
   configWarnings: string[];
@@ -67,9 +69,10 @@ interface TenantArtifacts {
   flatNav: NavPage[];
   pageMetadataMap: Map<string, PageMetadata>;
   registry: OpenApiRegistry;
-  searchItems: SearchItem[];
+  searchItems: SearchIndexItem[];
   tabs: NavTab[] | null;
   tenant: Tenant;
+  tocBySlug: Map<string, TocItem[]>;
   visibleFlatNav: NavPage[];
   visibleNav: NavEntry[];
 }
@@ -105,62 +108,36 @@ const getTenantArtifactsCacheKey = (tenant: Tenant) =>
   ].join(":");
 
 const buildSearchItems = ({
+  config,
   contentIndex,
   flatNav,
-  pageMetadataMap,
+  utilityIndex,
   visibleFlatNav,
-  config,
 }: {
   config: TenantArtifacts["config"];
   contentIndex: ContentIndex;
   flatNav: NavPage[];
-  pageMetadataMap: Map<string, PageMetadata>;
+  utilityIndex?: UtilityIndex | null;
   visibleFlatNav: NavPage[];
-}): SearchItem[] => {
-  const indexAll = config.seo?.indexing === "all";
-  const searchItems = new Map<string, SearchItem>();
-
-  const shouldAddSearchItem = (
-    entry: (typeof contentIndex.entries)[number]
-  ): boolean => {
-    const pageMeta = pageMetadataMap.get(entry.slug);
-
-    if (pageMeta?.hidden || pageMeta?.noindex) {
-      return false;
-    }
-
-    if (!indexAll && entry.kind === "entry" && entry.hidden) {
-      return false;
-    }
-
-    return true;
-  };
+}): SearchIndexItem[] => {
+  const items = new Map<string, SearchIndexItem>(
+    buildSearchIndex(contentIndex, config, utilityIndex ?? undefined).map(
+      (item) => [item.path, item]
+    )
+  );
 
   for (const item of visibleFlatNav) {
-    searchItems.set(item.path, {
+    items.set(item.path, {
       href: item.url,
       path: item.path,
       title: item.sidebarTitle ?? item.title,
     });
   }
 
-  for (const entry of contentIndex.entries) {
-    if (!shouldAddSearchItem(entry)) {
-      continue;
-    }
-
-    const pageMeta = pageMetadataMap.get(entry.slug);
-    searchItems.set(entry.slug, {
-      href: pageMeta?.url,
-      path: entry.slug,
-      title: pageMeta?.sidebarTitle ?? entry.title,
-    });
-  }
-
-  if (indexAll) {
+  if (config.seo?.indexing === "all") {
     for (const item of flatNav) {
-      if (!searchItems.has(item.path)) {
-        searchItems.set(item.path, {
+      if (!items.has(item.path)) {
+        items.set(item.path, {
           href: item.url,
           path: item.path,
           title: item.sidebarTitle ?? item.title,
@@ -169,7 +146,7 @@ const buildSearchItems = ({
     }
   }
 
-  return [...searchItems.values()];
+  return [...items.values()];
 };
 
 const getTenantArtifacts = async (tenantSlug: string) => {
@@ -197,7 +174,14 @@ const getTenantArtifacts = async (tenantSlug: string) => {
     const docsCollectionWithNavigation =
       getDocsCollectionWithNavigation(rawConfig);
 
-    const [config, contentIndex, registryResult] = await Promise.all([
+    const [
+      config,
+      contentIndex,
+      registryResult,
+      prebuiltSearchIndex,
+      prebuiltTocIndex,
+      prebuiltUtilityIndex,
+    ] = await Promise.all([
       resolveSiteConfigAssets(rawConfig, contentSource),
       loadPrebuiltContentIndex(contentSource).then(
         async (prebuilt) =>
@@ -209,6 +193,9 @@ const getTenantArtifacts = async (tenantSlug: string) => {
           error,
           ok: false as const,
         })),
+      loadPrebuiltSearchIndex(contentSource),
+      loadPrebuiltTocIndex(contentSource),
+      loadPrebuiltUtilityIndex(contentSource),
     ]);
 
     if (contentIndex.errors.length) {
@@ -250,6 +237,10 @@ const getTenantArtifacts = async (tenantSlug: string) => {
         ...tab,
         entries: enrichNavWithMetadata(tab.entries, pageMetadataMap),
       })) ?? null;
+    const utilityIndexForSearch =
+      prebuiltSearchIndex || prebuiltUtilityIndex
+        ? prebuiltUtilityIndex
+        : await buildUtilityIndex(contentIndex, contentSource, rawConfig);
 
     return {
       anchors: docsNavigation?.global?.anchors ?? [],
@@ -259,15 +250,18 @@ const getTenantArtifacts = async (tenantSlug: string) => {
       flatNav,
       pageMetadataMap,
       registry: registryResult.registry,
-      searchItems: buildSearchItems({
-        config,
-        contentIndex,
-        flatNav,
-        pageMetadataMap,
-        visibleFlatNav,
-      }),
+      searchItems:
+        prebuiltSearchIndex ??
+        buildSearchItems({
+          config,
+          contentIndex,
+          flatNav,
+          utilityIndex: utilityIndexForSearch,
+          visibleFlatNav,
+        }),
       tabs,
       tenant,
+      tocBySlug: prebuiltTocIndex ?? new Map(),
       visibleFlatNav,
       visibleNav,
     };
@@ -457,19 +451,23 @@ export const getDocShellData = cache(
     const useToc =
       entry.type === "docs" && artifacts.config.features?.toc !== false;
 
-    // Load raw content for TOC extraction without compiling MDX
-    let rawContent = "";
-    let toc: ReturnType<typeof extractToc> = [];
-    try {
-      rawContent = await loadContentSource(
-        artifacts.contentSource,
-        entry.relativePath
-      );
-      if (useToc) {
-        toc = extractToc(rawContent);
+    const prebuiltToc = artifacts.tocBySlug.get(currentPath) ?? null;
+    const needsRawContent = Boolean(artifacts.config.contextual);
+
+    let rawContent: string | undefined;
+    let toc: ReturnType<typeof extractToc> = prebuiltToc ?? [];
+    if ((!prebuiltToc && useToc) || needsRawContent) {
+      try {
+        rawContent = await loadContentSource(
+          artifacts.contentSource,
+          entry.relativePath
+        );
+        if (!prebuiltToc && useToc) {
+          toc = extractToc(rawContent);
+        }
+      } catch {
+        // Content load failure is handled by the content rendering path
       }
-    } catch {
-      // Content load failure is handled by the content rendering path
     }
 
     return {

@@ -19,6 +19,7 @@ export interface ProjectUpdateInput {
   name?: string;
   deploymentName?: string;
   description?: string | null;
+  userId?: string | null;
 }
 
 export class ProjectDao {

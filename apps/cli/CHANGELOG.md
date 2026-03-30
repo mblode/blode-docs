@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.5
+
+### Patch Changes
+
+- Support external content roots and improve multi-tenant doc rendering
+
 ## 0.0.4
 
 ### Patch Changes

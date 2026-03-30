@@ -32,19 +32,21 @@ const edgeConfigClient = edgeConfigConnectionString
   ? createClient(edgeConfigConnectionString)
   : null;
 
-const hostRecordCache = createTimedPromiseCache<string, TenantEdgeHostRecord | null>(
-  {
-    maxEntries: 512,
-    ttlMs: EDGE_CONFIG_CACHE_TTL_MS,
-  }
-);
+const hostRecordCache = createTimedPromiseCache<
+  string,
+  TenantEdgeHostRecord | null
+>({
+  maxEntries: 512,
+  ttlMs: EDGE_CONFIG_CACHE_TTL_MS,
+});
 
-const slugRecordCache = createTimedPromiseCache<string, TenantEdgeSlugRecord | null>(
-  {
-    maxEntries: 512,
-    ttlMs: EDGE_CONFIG_CACHE_TTL_MS,
-  }
-);
+const slugRecordCache = createTimedPromiseCache<
+  string,
+  TenantEdgeSlugRecord | null
+>({
+  maxEntries: 512,
+  ttlMs: EDGE_CONFIG_CACHE_TTL_MS,
+});
 
 const getEdgeConfigValue = async (key: string) => {
   if (!edgeConfigClient) {

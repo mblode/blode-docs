@@ -4,11 +4,21 @@ import { normalizePath } from "@repo/common";
 import { compileContent } from "@repo/mdx-compiler";
 import type { CompiledMdx } from "@repo/mdx-compiler";
 import {
+  buildUtilityArtifacts,
+  buildSearchIndex,
   buildContentIndex,
+  buildTocIndex,
+  buildUtilityIndex,
   createBlobSource,
   loadSiteConfig,
   PREBUILT_INDEX_PATH,
+  PREBUILT_SEARCH_INDEX_PATH,
+  PREBUILT_TOC_INDEX_PATH,
+  PREBUILT_UTILITY_INDEX_PATH,
+  serializeSearchIndex,
+  serializeTocIndex,
   serializeContentIndex,
+  serializeUtilityIndex,
 } from "@repo/previewing";
 import type { ContentSource } from "@repo/previewing";
 import { list, put } from "@vercel/blob";
@@ -191,6 +201,79 @@ export const finalizeDeploymentManifest = async (input: {
         }
       );
       files.push({ path: PREBUILT_INDEX_PATH, url: indexBlob.url });
+
+      const tocIndex = await buildTocIndex(contentIndex, source);
+      const tocIndexBlob = await put(
+        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_TOC_INDEX_PATH}`,
+        serializeTocIndex(tocIndex),
+        {
+          access: "public",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "application/json; charset=utf-8",
+        }
+      );
+      files.push({
+        path: PREBUILT_TOC_INDEX_PATH,
+        url: tocIndexBlob.url,
+      });
+
+      const utilityIndex = await buildUtilityIndex(
+        contentIndex,
+        source,
+        configResult.config
+      );
+      const utilityIndexBlob = await put(
+        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_UTILITY_INDEX_PATH}`,
+        serializeUtilityIndex(utilityIndex),
+        {
+          access: "public",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "application/json; charset=utf-8",
+        }
+      );
+      files.push({
+        path: PREBUILT_UTILITY_INDEX_PATH,
+        url: utilityIndexBlob.url,
+      });
+
+      const searchIndex = buildSearchIndex(
+        contentIndex,
+        configResult.config,
+        utilityIndex
+      );
+      const searchIndexBlob = await put(
+        `${getFilesPrefix(input.projectSlug, input.deploymentId)}${PREBUILT_SEARCH_INDEX_PATH}`,
+        serializeSearchIndex(searchIndex),
+        {
+          access: "public",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "application/json; charset=utf-8",
+        }
+      );
+      files.push({
+        path: PREBUILT_SEARCH_INDEX_PATH,
+        url: searchIndexBlob.url,
+      });
+
+      for (const artifact of buildUtilityArtifacts(utilityIndex)) {
+        const artifactBlob = await put(
+          `${getFilesPrefix(input.projectSlug, input.deploymentId)}${artifact.path}`,
+          artifact.content,
+          {
+            access: "public",
+            addRandomSuffix: false,
+            allowOverwrite: true,
+            contentType: artifact.contentType,
+          }
+        );
+        files.push({
+          path: artifact.path,
+          url: artifactBlob.url,
+        });
+      }
 
       // Pre-compile MDX files for instant runtime rendering
       try {

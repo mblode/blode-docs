@@ -101,6 +101,7 @@ export const DocShell = ({
   anchors,
   activeTabIndex,
   basePath,
+  markdownHref,
   rawContent,
   tabs,
   mode,
@@ -120,6 +121,7 @@ export const DocShell = ({
   anchors?: { label: string; href: string }[];
   activeTabIndex?: number;
   basePath: string;
+  markdownHref?: string;
   rawContent?: string;
   tabs?: NavTab[] | null;
   mode?: PageMode;
@@ -195,8 +197,13 @@ export const DocShell = ({
                     ) : null}
                   </h1>
                   {headerContextualMenu ??
-                    (rawContent === undefined ? null : (
-                      <CopyPageMenu content={rawContent} title={pageTitle} />
+                    (rawContent === undefined &&
+                    markdownHref === undefined ? null : (
+                      <CopyPageMenu
+                        content={rawContent}
+                        contentUrl={markdownHref}
+                        title={pageTitle}
+                      />
                     ))}
                 </div>
                 {pageDescription ? (

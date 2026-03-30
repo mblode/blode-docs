@@ -67,7 +67,10 @@ deployments.patch(
     try {
       await syncProjectTenantEdgeConfig(projectId);
     } catch (error) {
-      logWarn("Failed to sync tenant Edge Config after deployment promote", error);
+      logWarn(
+        "Failed to sync tenant Edge Config after deployment promote",
+        error
+      );
     }
     return c.json(mapDeployment(record), 200);
   }

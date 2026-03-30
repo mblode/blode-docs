@@ -12,7 +12,8 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 
 interface CopyPageMenuProps {
-  content: string;
+  content?: string;
+  contentUrl?: string;
   title: string;
 }
 
@@ -54,20 +55,63 @@ const ExternalArrow = () => (
   </svg>
 );
 
-export const CopyPageMenu = ({ content, title }: CopyPageMenuProps) => {
+const formatMarkdownForCopy = (source: string, title: string) => {
+  const trimmed = source.trimStart();
+  if (trimmed.startsWith("#")) {
+    return source;
+  }
+  return `# ${title}\n\n${source}`;
+};
+
+export const CopyPageMenu = ({
+  content,
+  contentUrl,
+  title,
+}: CopyPageMenuProps) => {
   const [copied, setCopied] = useState(false);
   const [pageUrl, setPageUrl] = useState("");
+  const [resolvedContent, setResolvedContent] = useState(content ?? "");
 
   useEffect(() => {
     setPageUrl(window.location.href);
   }, []);
 
+  useEffect(() => {
+    if (content !== undefined) {
+      setResolvedContent(content);
+    }
+  }, [content]);
+
+  const getContent = useCallback(async () => {
+    if (resolvedContent) {
+      return resolvedContent;
+    }
+
+    if (!contentUrl) {
+      return "";
+    }
+
+    const response = await fetch(contentUrl, {
+      headers: {
+        accept: "text/markdown,text/plain;q=0.9,*/*;q=0.8",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to load page markdown: ${response.status}`);
+    }
+
+    const nextContent = await response.text();
+    setResolvedContent(nextContent);
+    return nextContent;
+  }, [contentUrl, resolvedContent]);
+
   const handleCopy = useCallback(async () => {
-    const markdown = `# ${title}\n\n${content}`;
+    const nextContent = await getContent();
+    const markdown = formatMarkdownForCopy(nextContent, title);
     await navigator.clipboard.writeText(markdown);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [content, title]);
+  }, [getContent, title]);
 
   const chatgptUrl = pageUrl
     ? `https://chatgpt.com/?hints=search&q=${encodeURIComponent(`Read from ${pageUrl} so I can ask questions about it.`)}`

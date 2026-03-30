@@ -1,6 +1,8 @@
+import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   buildTenantLlmsFullTxt,
@@ -9,6 +11,25 @@ import {
   buildTenantSitemapXml,
   getLlmPageText,
 } from "./tenant-static";
+
+const tempRoots: string[] = [];
+
+const createTempUtilityRoot = async (
+  files: Record<string, string>
+): Promise<string> => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "tenant-static-"));
+  tempRoots.push(root);
+
+  await Promise.all(
+    Object.entries(files).map(async ([relativePath, content]) => {
+      const absolutePath = path.join(root, relativePath);
+      await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+      await fs.writeFile(absolutePath, content);
+    })
+  );
+
+  return root;
+};
 
 const tenant = {
   customDomains: ["docs.example.com"],
@@ -20,6 +41,14 @@ const tenant = {
   status: "active" as const,
   subdomain: "atlas",
 };
+
+afterEach(async () => {
+  await Promise.all(
+    tempRoots.splice(0).map(async (root) => {
+      await fs.rm(root, { force: true, recursive: true });
+    })
+  );
+});
 
 describe("tenant static LLM helpers", () => {
   it("includes visible OpenAPI pages in llms outputs", async () => {
@@ -66,6 +95,40 @@ describe("tenant static LLM helpers", () => {
     expect(robots).toContain("# https://blode.md/atlas/llms.txt");
     expect(sitemap).toContain(
       "<loc>https://blode.md/atlas/api/get-projects</loc>"
+    );
+  });
+
+  it("prefers published utility artifacts when they exist", async () => {
+    const docsPath = await createTempUtilityRoot({
+      "_utility/llms-full.txt":
+        "# Overview (__BLODEMD_DOCS_ROOT__/)\n\nPublished full text",
+      "_utility/llms-pages/index.mdx": "# Overview\n\nPublished page text",
+      "_utility/llms.txt":
+        "# Prebuilt Docs\n\nSitemap: __BLODEMD_DOCS_ROOT__/sitemap.xml",
+      "_utility/sitemap.xml":
+        "<urlset><url><loc>__BLODEMD_DOCS_ROOT__/</loc></url></urlset>",
+    });
+    const prebuiltTenant = {
+      ...tenant,
+      customDomains: [],
+      docsPath,
+    };
+    const context = {
+      requestedHost: "blode.md",
+      strategy: "path" as const,
+    };
+
+    await expect(
+      buildTenantLlmsTxt(prebuiltTenant, context)
+    ).resolves.toContain("Sitemap: https://blode.md/atlas/sitemap.xml");
+    await expect(
+      buildTenantLlmsFullTxt(prebuiltTenant, context)
+    ).resolves.toContain("# Overview (https://blode.md/atlas/)");
+    await expect(
+      buildTenantSitemapXml(prebuiltTenant, context)
+    ).resolves.toContain("<loc>https://blode.md/atlas/</loc>");
+    await expect(getLlmPageText(prebuiltTenant, "index")).resolves.toBe(
+      "# Overview\n\nPublished page text"
     );
   });
 });

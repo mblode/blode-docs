@@ -26,6 +26,7 @@
   "dependencies": {
     "@repo/common": "*",
     "@repo/models": "*",
+    "@repo/prebuild": "*",
     "@repo/validation": "*",
     "yaml": "^2.8.3"
   },

@@ -25,7 +25,8 @@ export const GET = async (
 
   return new NextResponse(content, {
     headers: {
-      "CDN-Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "CDN-Cache-Control":
+        "public, s-maxage=3600, stale-while-revalidate=86400",
       "Cache-Control": "public, max-age=3600",
       "Content-Type": "text/markdown",
       "Vercel-CDN-Cache-Control":

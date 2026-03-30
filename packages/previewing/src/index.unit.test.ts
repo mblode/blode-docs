@@ -4,7 +4,22 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createFsSource, loadSiteConfig } from "./index";
+import {
+  buildUtilityArtifacts,
+  buildSearchIndex,
+  buildContentIndex,
+  buildUtilityIndex,
+  createFsSource,
+  getPrebuiltUtilityLlmPagePath,
+  loadPrebuiltUtilityIndex,
+  loadSiteConfig,
+  PREBUILT_UTILITY_LLMS_FULL_PATH,
+  PREBUILT_UTILITY_LLMS_PATH,
+  PREBUILT_UTILITY_INDEX_PATH,
+  PREBUILT_UTILITY_SITEMAP_PATH,
+  UTILITY_DOCS_ROOT_TOKEN,
+  serializeUtilityIndex,
+} from "./index";
 
 const tempRoots: string[] = [];
 
@@ -144,5 +159,122 @@ describe("loadSiteConfig", () => {
       },
     ]);
     expect(blodeResult.config.navigation?.groups).toHaveLength(3);
+  });
+});
+
+describe("buildUtilityIndex", () => {
+  it("prebuilds content and OpenAPI utility pages", async () => {
+    const root = await createTempContentRoot({
+      "docs.json": JSON.stringify(
+        {
+          $schema: "https://mintlify.com/docs.json",
+          api: {
+            openapi: "openapi.yaml",
+          },
+          appearance: {
+            strict: true,
+          },
+          colors: {
+            primary: "#171717",
+          },
+          fonts: {
+            family: "Inter",
+          },
+          name: "Example Docs",
+          navbar: {
+            links: [{ href: "https://example.com", label: "Website" }],
+          },
+          navigation: {
+            groups: [{ group: "Docs", pages: ["index", "guide"] }],
+          },
+          theme: "mint",
+        },
+        null,
+        2
+      ),
+      "guide.mdx": "---\ntitle: Guide\n---\n# Guide\n\nShip it.\n",
+      "hidden.mdx": "---\ntitle: Hidden\nhidden: true\n---\n# Hidden\n",
+      "index.mdx": "---\ntitle: Welcome\n---\n# Welcome\n\nHello there.\n",
+      "openapi.yaml": [
+        "openapi: 3.0.0",
+        "paths:",
+        "  /projects:",
+        "    get:",
+        "      summary: List projects",
+        "      description: Return every project.",
+        "      tags:",
+        "        - Projects",
+        "      responses:",
+        "        '200':",
+        "          description: OK",
+      ].join("\n"),
+    });
+    const source = createFsSource(root);
+    const configResult = await loadSiteConfig(source);
+
+    expect(configResult.ok).toBe(true);
+    if (!configResult.ok) {
+      return;
+    }
+
+    const contentIndex = await buildContentIndex(source, configResult.config);
+    const utilityIndex = await buildUtilityIndex(
+      contentIndex,
+      source,
+      configResult.config
+    );
+
+    expect(utilityIndex.name).toBe("Example Docs");
+    expect(utilityIndex.pages.map((page) => page.slug)).toEqual([
+      "api/get-projects",
+      "guide",
+      "index",
+    ]);
+    expect(utilityIndex.pages.find((page) => page.slug === "hidden")).toBe(
+      undefined
+    );
+    expect(
+      utilityIndex.pages.find((page) => page.slug === "api/get-projects")
+        ?.content
+    ).toContain("Method: GET");
+
+    expect(
+      buildSearchIndex(contentIndex, configResult.config, utilityIndex)
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "api/get-projects",
+          title: "List projects",
+        }),
+      ])
+    );
+
+    const artifacts = buildUtilityArtifacts(utilityIndex);
+    expect(artifacts.map((artifact) => artifact.path)).toContain(
+      PREBUILT_UTILITY_SITEMAP_PATH
+    );
+    expect(artifacts.map((artifact) => artifact.path)).toContain(
+      PREBUILT_UTILITY_LLMS_PATH
+    );
+    expect(artifacts.map((artifact) => artifact.path)).toContain(
+      PREBUILT_UTILITY_LLMS_FULL_PATH
+    );
+    expect(artifacts.map((artifact) => artifact.path)).toContain(
+      getPrebuiltUtilityLlmPagePath("guide")
+    );
+    expect(
+      artifacts.find(
+        (artifact) => artifact.path === PREBUILT_UTILITY_SITEMAP_PATH
+      )?.content
+    ).toContain(`${UTILITY_DOCS_ROOT_TOKEN}/api/get-projects`);
+
+    await fs.writeFile(
+      path.join(root, PREBUILT_UTILITY_INDEX_PATH),
+      serializeUtilityIndex(utilityIndex)
+    );
+
+    await expect(loadPrebuiltUtilityIndex(source)).resolves.toEqual(
+      utilityIndex
+    );
   });
 });

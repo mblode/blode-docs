@@ -99,7 +99,8 @@ export const getTenantEdgeHostKey = (host: string) =>
 export const getTenantEdgeSlugKey = (slug: string) =>
   `tenant:slug:${slug.trim().toLowerCase()}`;
 
-export const isTenantEdgeConfigSyncEnabled = () => Boolean(getVercelEdgeConfig());
+export const isTenantEdgeConfigSyncEnabled = () =>
+  Boolean(getVercelEdgeConfig());
 
 export const buildTenantEdgeConfigItems = (input: {
   domains: {
@@ -110,28 +111,27 @@ export const buildTenantEdgeConfigItems = (input: {
   removedHosts?: string[];
   tenant: Tenant;
 }) => {
-  const items: EdgeConfigItemOperation[] = [];
-
-  items.push({
-    key: getTenantEdgeSlugKey(input.tenant.slug),
-    operation: "upsert",
-    value: TenantEdgeSlugRecordSchema.parse({
-      slug: input.tenant.slug,
-      tenant: input.tenant,
-      version: 1,
-    }),
-  });
-
-  items.push({
-    key: getTenantEdgeHostKey(`${input.tenant.subdomain}.${rootDomain}`),
-    operation: "upsert",
-    value: TenantEdgeHostRecordSchema.parse({
-      host: `${input.tenant.subdomain}.${rootDomain}`,
-      strategy: "subdomain",
-      tenant: input.tenant,
-      version: 1,
-    }),
-  });
+  const items: EdgeConfigItemOperation[] = [
+    {
+      key: getTenantEdgeSlugKey(input.tenant.slug),
+      operation: "upsert",
+      value: TenantEdgeSlugRecordSchema.parse({
+        slug: input.tenant.slug,
+        tenant: input.tenant,
+        version: 1,
+      }),
+    },
+    {
+      key: getTenantEdgeHostKey(`${input.tenant.subdomain}.${rootDomain}`),
+      operation: "upsert",
+      value: TenantEdgeHostRecordSchema.parse({
+        host: `${input.tenant.subdomain}.${rootDomain}`,
+        strategy: "subdomain",
+        tenant: input.tenant,
+        version: 1,
+      }),
+    },
+  ];
 
   for (const domain of input.domains) {
     const key = getTenantEdgeHostKey(domain.hostname);

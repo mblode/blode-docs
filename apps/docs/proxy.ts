@@ -8,6 +8,7 @@ import {
   resolveTenant,
 } from "./lib/tenancy";
 import { TENANT_HEADERS } from "./lib/tenant-headers";
+import { applyTenantUtilityContextSearchParams } from "./lib/tenant-utility-context";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
@@ -26,11 +27,15 @@ const stripBasePath = (value: string, basePath: string) => {
   return value;
 };
 
+const TENANT_UTILITY_SUFFIXES = [
+  "/llms-full.txt",
+  "/llms.txt",
+  "/robots.txt",
+  "/sitemap.xml",
+] as const;
+
 const isTenantUtilityPath = (pathname: string) =>
-  pathname === "/llms-full.txt" ||
-  pathname === "/llms.txt" ||
-  pathname === "/robots.txt" ||
-  pathname === "/sitemap.xml";
+  TENANT_UTILITY_SUFFIXES.some((suffix) => pathname.endsWith(suffix));
 
 // oxlint-disable-next-line eslint/complexity
 export const proxy = async (request: NextRequest) => {
@@ -149,6 +154,15 @@ export const proxy = async (request: NextRequest) => {
     url.pathname = `${tenantPrefix}/llms.mdx/${slug}`;
   } else {
     url.pathname = rewritten;
+  }
+
+  if (isTenantUtilityPath(pathname)) {
+    applyTenantUtilityContextSearchParams(url, {
+      basePath: resolution.basePath,
+      protocol: request.nextUrl.protocol.replace(/:$/, ""),
+      requestedHost: resolution.host,
+      strategy: resolution.strategy,
+    });
   }
 
   const response = NextResponse.rewrite(url, {

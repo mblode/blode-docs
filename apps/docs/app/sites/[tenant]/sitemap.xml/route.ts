@@ -5,6 +5,7 @@ import {
   buildTenantSitemapXml,
   getStaticTenantRequestContext,
 } from "@/lib/tenant-static";
+import { getTenantRequestContextFromUrl } from "@/lib/tenant-utility-context";
 import { getTenantBySlug } from "@/lib/tenants";
 
 export const dynamic = "force-static";
@@ -23,12 +24,14 @@ export const GET = async (
 
   const xml = await buildTenantSitemapXml(
     tenant,
-    getStaticTenantRequestContext(tenant)
+    getTenantRequestContextFromUrl(new URL(_request.url)) ??
+      getStaticTenantRequestContext(tenant)
   );
 
   return new NextResponse(xml, {
     headers: {
-      "CDN-Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "CDN-Cache-Control":
+        "public, s-maxage=3600, stale-while-revalidate=86400",
       "Vercel-CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",
       "content-type": "application/xml",

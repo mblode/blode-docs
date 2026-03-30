@@ -194,7 +194,7 @@ export const resolveTenantFromEdgeConfig = async (
     const basePath =
       hostRecord.strategy === "subdomain"
         ? resolveSubdomainBasePath(pathname)
-        : hostRecord.pathPrefix ?? "";
+        : (hostRecord.pathPrefix ?? "");
 
     return buildTenantPathResolution(
       hostRecord.tenant,
@@ -246,7 +246,10 @@ export const resolveTenantFromEdgeConfig = async (
       0,
       -1 * (platformConfig.rootDomain.length + 1)
     );
-    if (subdomain && !["www", "app", "admin", "dashboard"].includes(subdomain)) {
+    if (
+      subdomain &&
+      !["www", "app", "admin", "dashboard"].includes(subdomain)
+    ) {
       const subdomainRecord = await getTenantEdgeSlugRecord(subdomain);
       if (subdomainRecord) {
         return buildTenantPathResolution(
@@ -262,7 +265,7 @@ export const resolveTenantFromEdgeConfig = async (
 
   if (isRootRuntimeHost(normalizedHost)) {
     const normalizedPath = slugifyPath(pathname);
-    const projectSlug = normalizedPath.split("/")[0];
+    const [projectSlug] = normalizedPath.split("/");
     if (projectSlug) {
       const pathRecord = await getTenantEdgeSlugRecord(projectSlug);
       if (pathRecord) {

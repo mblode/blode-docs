@@ -1,10 +1,17 @@
 import type { TenantResolution } from "@repo/contracts";
 import type { Tenant } from "@repo/models";
+import type { UtilityIndex } from "@repo/previewing";
 import {
   buildContentIndex,
   buildPageMetadataMap,
+  getPrebuiltUtilityLlmPagePath,
   loadContentSource,
+  loadPrebuiltUtilityIndex,
   loadSiteConfig,
+  PREBUILT_UTILITY_LLMS_FULL_PATH,
+  PREBUILT_UTILITY_LLMS_PATH,
+  PREBUILT_UTILITY_SITEMAP_PATH,
+  UTILITY_DOCS_ROOT_TOKEN,
 } from "@repo/previewing";
 
 import {
@@ -26,13 +33,7 @@ import type { OpenApiEntry } from "@/lib/openapi";
 import { buildOpenApiRegistry } from "@/lib/openapi";
 import { toDocHref } from "@/lib/routes";
 import { getRequestProtocol } from "@/lib/tenancy";
-
-interface TenantRequestContext {
-  basePath?: string;
-  protocol?: string;
-  requestedHost?: string;
-  strategy?: TenantResolution["strategy"] | null;
-}
+import type { TenantRequestContext } from "@/lib/tenant-utility-context";
 
 const getCanonicalHost = (
   tenant: Tenant,
@@ -92,6 +93,19 @@ export const getCanonicalDocBasePath = (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => getCanonicalBasePath(tenant, context.basePath, context.strategy);
+
+const renderUtilityTemplate = (
+  source: string,
+  tenant: Tenant,
+  context: TenantRequestContext = {}
+) =>
+  source.replaceAll(
+    UTILITY_DOCS_ROOT_TOKEN,
+    `${getCanonicalOrigin(tenant, context)}${getCanonicalDocBasePath(
+      tenant,
+      context
+    )}`
+  );
 
 const loadTenantUrlData = async (tenant: Tenant) => {
   const contentSource = getTenantContentSource(tenant);
@@ -234,14 +248,83 @@ const resolveLlmPages = (
     })
     .filter((page) => page !== null);
 
+const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
+
+const stripFrontmatter = (source: string) =>
+  source.replace(FRONTMATTER_REGEX, "").trim();
+
+const buildRuntimeUtilityIndex = async (
+  tenant: Tenant
+): Promise<UtilityIndex> => {
+  const data = await loadTenantUrlData(tenant);
+  const pages = await Promise.all(
+    resolveLlmPages(data).map(async (page) => {
+      if (page.kind === "openapi") {
+        return {
+          content: formatOpenApiPageText(page.entry),
+          description: page.description,
+          slug: page.slug,
+          title: page.title,
+        };
+      }
+
+      const raw = await loadContentSource(
+        data.contentSource,
+        page.relativePath
+      );
+      return {
+        content: stripFrontmatter(raw),
+        description: page.description,
+        slug: page.slug,
+        title: page.title,
+      };
+    })
+  );
+
+  return {
+    description: data.config.description,
+    name: data.config.name,
+    pages,
+  };
+};
+
+const loadTenantUtilityIndex = async (tenant: Tenant) => {
+  const prebuilt = await loadPrebuiltUtilityIndex(
+    getTenantContentSource(tenant)
+  );
+  if (prebuilt) {
+    return prebuilt;
+  }
+
+  return await buildRuntimeUtilityIndex(tenant);
+};
+
+const loadTenantUtilityTemplate = async (tenant: Tenant, path: string) => {
+  const contentSource = getTenantContentSource(tenant);
+  if (!(await contentSource.exists(path))) {
+    return null;
+  }
+  return await contentSource.readFile(path);
+};
+
 export const buildTenantSitemapXml = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => {
-  const { pages } = await loadTenantUrlData(tenant);
+  const prebuilt = await loadTenantUtilityTemplate(
+    tenant,
+    PREBUILT_UTILITY_SITEMAP_PATH
+  );
+  if (prebuilt) {
+    return renderUtilityTemplate(prebuilt, tenant, context);
+  }
+
+  const { pages } = await loadTenantUtilityIndex(tenant);
   const origin = getCanonicalOrigin(tenant, context);
   const basePath = getCanonicalDocBasePath(tenant, context);
-  const urls = pages.map((page) => `${origin}${toDocHref(page, basePath)}`);
+  const urls = pages.map(
+    (page) => `${origin}${toDocHref(page.slug, basePath)}`
+  );
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -265,29 +348,30 @@ Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 # Append .mdx to any page URL for raw markdown`;
 };
 
-const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
-
-const stripFrontmatter = (source: string) =>
-  source.replace(FRONTMATTER_REGEX, "").trim();
-
 export const buildTenantLlmsTxt = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => {
-  const data = await loadTenantUrlData(tenant);
-  const { config } = data;
+  const prebuilt = await loadTenantUtilityTemplate(
+    tenant,
+    PREBUILT_UTILITY_LLMS_PATH
+  );
+  if (prebuilt) {
+    return renderUtilityTemplate(prebuilt, tenant, context);
+  }
+
+  const data = await loadTenantUtilityIndex(tenant);
   const origin = getCanonicalOrigin(tenant, context);
   const basePath = getCanonicalDocBasePath(tenant, context);
-  const pages = resolveLlmPages(data);
 
   const lines = [
-    `# ${config.name}`,
-    config.description ? `> ${config.description}` : null,
+    `# ${data.name}`,
+    data.description ? `> ${data.description}` : null,
     "",
     `Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}`,
     "",
     "## Docs",
-    ...pages.map((page) => {
+    ...data.pages.map((page) => {
       const url = `${origin}${toDocHref(page.slug, basePath)}`;
       const desc = page.description ? `: ${page.description}` : "";
       return `- [${page.title}](${url})${desc}`;
@@ -301,41 +385,38 @@ export const buildTenantLlmsFullTxt = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => {
-  const data = await loadTenantUrlData(tenant);
+  const prebuilt = await loadTenantUtilityTemplate(
+    tenant,
+    PREBUILT_UTILITY_LLMS_FULL_PATH
+  );
+  if (prebuilt) {
+    return renderUtilityTemplate(prebuilt, tenant, context);
+  }
+
+  const data = await loadTenantUtilityIndex(tenant);
   const origin = getCanonicalOrigin(tenant, context);
   const basePath = getCanonicalDocBasePath(tenant, context);
-  const pages = resolveLlmPages(data);
-
-  const parts = await Promise.all(
-    pages.map(async (page) => {
-      const url = `${origin}${toDocHref(page.slug, basePath)}`;
-      if (page.kind === "openapi") {
-        return `# ${page.title} (${url})\n\n${formatOpenApiPageText(page.entry)}`;
-      }
-
-      const raw = await loadContentSource(
-        data.contentSource,
-        page.relativePath
-      );
-      const body = stripFrontmatter(raw);
-      return `# ${page.title} (${url})\n\n${body}`;
-    })
-  );
+  const parts = data.pages.map((page) => {
+    const url = `${origin}${toDocHref(page.slug, basePath)}`;
+    return `# ${page.title} (${url})\n\n${page.content}`;
+  });
 
   return parts.join("\n\n");
 };
 
 export const getLlmPageText = async (tenant: Tenant, slug: string) => {
-  const data = await loadTenantUrlData(tenant);
-  const page = resolveLlmPages(data).find((item) => item.slug === slug);
+  const prebuilt = await loadTenantUtilityTemplate(
+    tenant,
+    getPrebuiltUtilityLlmPagePath(slug)
+  );
+  if (prebuilt) {
+    return prebuilt;
+  }
+
+  const data = await loadTenantUtilityIndex(tenant);
+  const page = data.pages.find((item) => item.slug === slug);
   if (!page) {
     return null;
   }
-  if (page.kind === "openapi") {
-    return `# ${page.title}\n\n${formatOpenApiPageText(page.entry)}`;
-  }
-
-  const raw = await loadContentSource(data.contentSource, page.relativePath);
-  const body = stripFrontmatter(raw);
-  return `# ${page.title}\n\n${body}`;
+  return `# ${page.title}\n\n${page.content}`;
 };

@@ -1,15 +1,23 @@
 import path from "node:path";
 
-import { normalizePath } from "@repo/common";
+import { ensureArray, normalizePath, slugify } from "@repo/common";
 import type {
   CollectionConfig,
   ContentType,
+  DocsOpenApiSource,
   FrontmatterByType,
   MintlifyDocsConfig,
   PageMode,
   SiteConfig,
 } from "@repo/models";
 import { PageModeSchema } from "@repo/models";
+import {
+  extractOpenApiOperations,
+  openApiIdentifier,
+  openApiSlug,
+  parseOpenApiSpec,
+} from "@repo/prebuild/openapi";
+import type { OpenApiOperation } from "@repo/prebuild/openapi";
 import { validateDocsConfig, validateFrontmatter } from "@repo/validation";
 import YAML from "yaml";
 
@@ -20,6 +28,13 @@ export { createFsSource, FsContentSource } from "./fs-source.js";
 export type { CompiledMdxResult, ContentSource } from "./content-source.js";
 
 export const PREBUILT_INDEX_PATH = "_content-index.json";
+export const PREBUILT_SEARCH_INDEX_PATH = "_search-index.json";
+export const PREBUILT_TOC_INDEX_PATH = "_toc-index.json";
+export const PREBUILT_UTILITY_INDEX_PATH = "_utility-index.json";
+export const PREBUILT_UTILITY_SITEMAP_PATH = "_utility/sitemap.xml";
+export const PREBUILT_UTILITY_LLMS_PATH = "_utility/llms.txt";
+export const PREBUILT_UTILITY_LLMS_FULL_PATH = "_utility/llms-full.txt";
+export const UTILITY_DOCS_ROOT_TOKEN = "__BLODEMD_DOCS_ROOT__";
 
 export type SiteConfigResult =
   | { ok: true; config: SiteConfig; warnings: string[] }
@@ -68,6 +83,37 @@ export interface PageMetadata {
   hideFooterPagination?: boolean;
   hideApiMarker?: boolean;
   keywords?: string[];
+}
+
+export interface SearchIndexItem {
+  href?: string;
+  title: string;
+  path: string;
+}
+
+export interface TocItem {
+  id: string;
+  level: number;
+  title: string;
+}
+
+export interface UtilityPage {
+  content: string;
+  description?: string;
+  slug: string;
+  title: string;
+}
+
+export interface UtilityIndex {
+  description?: string;
+  name: string;
+  pages: UtilityPage[];
+}
+
+export interface UtilityArtifact {
+  content: string;
+  contentType: string;
+  path: string;
 }
 
 const validModes = new Set<string>(PageModeSchema.options);
@@ -764,6 +810,488 @@ interface SerializedContentIndex {
   collections: Record<string, ContentEntry[]>;
 }
 
+interface SerializedSearchIndex {
+  items: SearchIndexItem[];
+  version: 1;
+}
+
+interface SerializedTocIndex {
+  itemsBySlug: Record<string, TocItem[]>;
+  version: 1;
+}
+
+interface SerializedUtilityIndex {
+  description?: string;
+  name: string;
+  pages: UtilityPage[];
+  version: 1;
+}
+
+interface UtilityOpenApiPage extends UtilityPage {
+  identifier: string;
+  sourceKey: string;
+}
+
+const NEWLINE_REGEX = /\r?\n/;
+const HEADING_REGEX = /^(#{2,4})\s+(.*)$/;
+
+export const extractToc = (source: string): TocItem[] => {
+  const withoutCode = source.replaceAll(/```[\s\S]*?```/g, "");
+  const lines = withoutCode.split(NEWLINE_REGEX);
+  const toc: TocItem[] = [];
+
+  for (const line of lines) {
+    const match = HEADING_REGEX.exec(line.trim());
+    if (!match) {
+      continue;
+    }
+
+    const [, hashes = "", heading = ""] = match;
+    if (!(hashes && heading)) {
+      continue;
+    }
+
+    toc.push({
+      id: slugify(heading.trim()),
+      level: hashes.length,
+      title: heading.trim(),
+    });
+  }
+
+  return toc;
+};
+
+const shouldIncludeSearchEntry = (
+  entry: ContentEntry,
+  pageMetadataMap: Map<string, PageMetadata>,
+  config: SiteConfig
+) => {
+  const pageMeta = pageMetadataMap.get(entry.slug);
+
+  if (pageMeta?.hidden || pageMeta?.noindex) {
+    return false;
+  }
+
+  if (
+    config.seo?.indexing !== "all" &&
+    entry.kind === "entry" &&
+    entry.hidden === true
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+const stripFrontmatter = (source: string) =>
+  parseFrontmatter(source).body.trim();
+
+const getDocsCollection = (config: SiteConfig) =>
+  config.collections.find((collection) => collection.type === "docs");
+
+const getDocsNavigation = (config: SiteConfig) =>
+  getDocsCollection(config)?.navigation ?? config.navigation;
+
+const getDocsCollectionWithNavigation = (
+  config: SiteConfig
+): SiteConfig["collections"][number] | undefined => {
+  const docsCollection = getDocsCollection(config);
+  const docsNavigation = getDocsNavigation(config);
+
+  return docsCollection &&
+    docsNavigation &&
+    docsCollection.navigation !== docsNavigation
+    ? { ...docsCollection, navigation: docsNavigation }
+    : docsCollection;
+};
+
+const getOpenApiSourceKey = (source: DocsOpenApiSource): string =>
+  `${source.source}::${source.directory ?? ""}::${(source.include ?? []).join(
+    "|"
+  )}`;
+
+const toOpenApiSourceObject = (
+  value: string | DocsOpenApiSource
+): DocsOpenApiSource => {
+  if (typeof value === "string") {
+    return { source: value };
+  }
+  return value;
+};
+
+const collectOpenApiSources = (collection?: CollectionConfig) => {
+  const sources: DocsOpenApiSource[] = [];
+
+  for (const item of ensureArray(collection?.openapi)) {
+    if (!item) {
+      continue;
+    }
+    sources.push(toOpenApiSourceObject(item));
+  }
+
+  const groups = collection?.navigation?.groups ?? [];
+  for (const group of groups) {
+    if (!group.openapi) {
+      continue;
+    }
+    sources.push(toOpenApiSourceObject(group.openapi));
+  }
+
+  const seen = new Set<string>();
+  return sources.filter((source) => {
+    const key = getOpenApiSourceKey(source);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
+const formatOpenApiPageContent = (operation: OpenApiOperation): string => {
+  const parts = [`Method: ${operation.method}`, `Path: ${operation.path}`];
+
+  if (operation.description) {
+    parts.push(operation.description);
+  }
+  if (operation.tags.length) {
+    parts.push(`Tags: ${operation.tags.join(", ")}`);
+  }
+  if (operation.parameters.length) {
+    parts.push(`Parameters:\n${JSON.stringify(operation.parameters, null, 2)}`);
+  }
+  if (operation.requestBody) {
+    parts.push(
+      `Request Body:\n${JSON.stringify(operation.requestBody, null, 2)}`
+    );
+  }
+  if (operation.responses) {
+    parts.push(`Responses:\n${JSON.stringify(operation.responses, null, 2)}`);
+  }
+
+  return parts.join("\n\n");
+};
+
+const getGroupedOpenApiSourceKey = (
+  source: string | DocsOpenApiSource
+): string => getOpenApiSourceKey(toOpenApiSourceObject(source));
+
+const collectUtilityOpenApiPages = (
+  pagesByIdentifier: Map<string, UtilityOpenApiPage>,
+  pagesBySource: Map<string, UtilityOpenApiPage[]>,
+  operations: OpenApiOperation[],
+  directory: string,
+  openApiSource: DocsOpenApiSource,
+  slugPrefix: string
+) => {
+  const sourceKey = getOpenApiSourceKey(openApiSource);
+  const includeIdentifiers = openApiSource.include?.length
+    ? new Set(openApiSource.include)
+    : null;
+
+  for (const operation of operations) {
+    const identifier = openApiIdentifier(operation.method, operation.path);
+    if (includeIdentifiers && !includeIdentifiers.has(identifier)) {
+      continue;
+    }
+
+    const baseSlug = normalizePath(
+      openApiSlug(operation.method, operation.path, directory)
+    );
+    const slug = slugPrefix
+      ? normalizePath(`${slugPrefix}/${baseSlug}`)
+      : baseSlug;
+    const page = {
+      content: formatOpenApiPageContent(operation),
+      description: operation.description,
+      identifier,
+      slug,
+      sourceKey,
+      title: operation.summary ?? identifier,
+    } satisfies UtilityOpenApiPage;
+
+    pagesByIdentifier.set(identifier, page);
+    if (!pagesBySource.has(sourceKey)) {
+      pagesBySource.set(sourceKey, []);
+    }
+    pagesBySource.get(sourceKey)?.push(page);
+  }
+};
+
+const addUtilityPagesFromSourceKey = (
+  pages: Map<string, UtilityPage>,
+  pagesBySource: Map<string, UtilityOpenApiPage[]>,
+  sourceKey: string
+) => {
+  for (const page of pagesBySource.get(sourceKey) ?? []) {
+    pages.set(page.slug, page);
+  }
+};
+
+const addReferencedUtilityPages = (
+  pages: Map<string, UtilityPage>,
+  pagesByIdentifier: Map<string, UtilityOpenApiPage>,
+  pageReferences: string[] | undefined,
+  hiddenPages: Set<string>,
+  groupHidden = false
+) => {
+  for (const pageReference of pageReferences ?? []) {
+    if (groupHidden || hiddenPages.has(pageReference)) {
+      continue;
+    }
+
+    const page = pagesByIdentifier.get(pageReference);
+    if (page) {
+      pages.set(page.slug, page);
+    }
+  }
+};
+
+const buildUtilityOpenApiPages = async (
+  config: SiteConfig,
+  collection: CollectionConfig | undefined,
+  source: ContentSource
+) => {
+  if (!collection || collection.type !== "docs") {
+    return [] satisfies UtilityPage[];
+  }
+
+  const docsNavigation = getDocsNavigation(config);
+  const hiddenPages = new Set(docsNavigation?.hidden);
+  const slugPrefix = normalizePath(collection.slugPrefix ?? "");
+  const byIdentifier = new Map<string, UtilityOpenApiPage>();
+  const bySource = new Map<string, UtilityOpenApiPage[]>();
+  const pages = new Map<string, UtilityPage>();
+  const sources = collectOpenApiSources(collection);
+
+  const resolved = await Promise.all(
+    sources.map(async (item) => {
+      const rawSpec = await source.readFile(item.source);
+      const spec = parseOpenApiSpec(rawSpec, item.source);
+      const directory = item.directory ?? "api";
+      const { operations } = extractOpenApiOperations(spec, directory);
+      return { directory, operations, source: item };
+    })
+  );
+
+  for (const { directory, operations, source: openApiSource } of resolved) {
+    collectUtilityOpenApiPages(
+      byIdentifier,
+      bySource,
+      operations,
+      directory,
+      openApiSource,
+      slugPrefix
+    );
+  }
+
+  for (const openApiSource of ensureArray(collection.openapi)) {
+    if (!openApiSource) {
+      continue;
+    }
+    addUtilityPagesFromSourceKey(
+      pages,
+      bySource,
+      getGroupedOpenApiSourceKey(openApiSource)
+    );
+  }
+
+  for (const group of docsNavigation?.groups ?? []) {
+    const groupHidden = group.hidden === true;
+    addReferencedUtilityPages(
+      pages,
+      byIdentifier,
+      group.pages,
+      hiddenPages,
+      groupHidden
+    );
+
+    if (groupHidden || !group.openapi) {
+      continue;
+    }
+    addUtilityPagesFromSourceKey(
+      pages,
+      bySource,
+      getGroupedOpenApiSourceKey(group.openapi)
+    );
+  }
+
+  addReferencedUtilityPages(
+    pages,
+    byIdentifier,
+    docsNavigation?.pages,
+    hiddenPages
+  );
+
+  return [...pages.values()];
+};
+
+export const buildSearchIndex = (
+  index: ContentIndex,
+  config: SiteConfig,
+  utilityIndex?: UtilityIndex
+): SearchIndexItem[] => {
+  const pageMetadataMap = buildPageMetadataMap(index);
+  const items = new Map<string, SearchIndexItem>();
+
+  for (const page of utilityIndex?.pages ?? []) {
+    items.set(page.slug, {
+      path: page.slug,
+      title: page.title,
+    });
+  }
+
+  for (const entry of index.entries) {
+    if (!shouldIncludeSearchEntry(entry, pageMetadataMap, config)) {
+      continue;
+    }
+
+    const pageMeta = pageMetadataMap.get(entry.slug);
+    items.set(entry.slug, {
+      href: pageMeta?.url,
+      path: entry.slug,
+      title: pageMeta?.sidebarTitle ?? entry.title,
+    });
+  }
+
+  return [...items.values()];
+};
+
+export const buildUtilityIndex = async (
+  index: ContentIndex,
+  source: ContentSource,
+  config: SiteConfig
+): Promise<UtilityIndex> => {
+  const pageMetadataMap = buildPageMetadataMap(index);
+  const pages = new Map<string, UtilityPage>();
+
+  for (const entry of index.entries) {
+    if (entry.kind !== "entry") {
+      continue;
+    }
+
+    if (!shouldIncludeSearchEntry(entry, pageMetadataMap, config)) {
+      continue;
+    }
+
+    const rawContent = await source.readFile(entry.relativePath);
+    pages.set(entry.slug, {
+      content: stripFrontmatter(rawContent),
+      description: entry.description,
+      slug: entry.slug,
+      title: entry.title,
+    });
+  }
+
+  for (const page of await buildUtilityOpenApiPages(
+    config,
+    getDocsCollectionWithNavigation(config),
+    source
+  )) {
+    pages.set(page.slug, page);
+  }
+
+  const sortedPages = [...pages.values()];
+  // oxlint-disable-next-line eslint-plugin-unicorn/no-array-sort
+  sortedPages.sort((left, right) => left.slug.localeCompare(right.slug));
+
+  return {
+    description: config.description,
+    name: config.name,
+    pages: sortedPages,
+  };
+};
+
+const toUtilityDocPath = (value: string) => {
+  const clean = normalizePath(value);
+  if (!clean || clean === "index") {
+    return "/";
+  }
+  return `/${clean}`;
+};
+
+const toUtilityTemplatedDocUrl = (value: string) =>
+  `${UTILITY_DOCS_ROOT_TOKEN}${toUtilityDocPath(value)}`;
+
+export const getPrebuiltUtilityLlmPagePath = (slug: string) => {
+  const normalized = normalizePath(slug);
+  return `_utility/llms-pages/${normalized || "index"}.mdx`;
+};
+
+export const buildUtilityArtifacts = (
+  index: UtilityIndex
+): UtilityArtifact[] => {
+  const llmsLines = [
+    `# ${index.name}`,
+    index.description ? `> ${index.description}` : null,
+    "",
+    `Sitemap: ${toUtilityTemplatedDocUrl("sitemap.xml")}`,
+    "",
+    "## Docs",
+    ...index.pages.map((page) => {
+      const description = page.description ? `: ${page.description}` : "";
+      return `- [${page.title}](${toUtilityTemplatedDocUrl(page.slug)})${description}`;
+    }),
+  ];
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${index.pages
+  .map(
+    (page) => `  <url><loc>${toUtilityTemplatedDocUrl(page.slug)}</loc></url>`
+  )
+  .join("\n")}
+</urlset>`;
+
+  const llmsFull = index.pages
+    .map(
+      (page) =>
+        `# ${page.title} (${toUtilityTemplatedDocUrl(page.slug)})\n\n${page.content}`
+    )
+    .join("\n\n");
+
+  return [
+    {
+      content: sitemap,
+      contentType: "application/xml; charset=utf-8",
+      path: PREBUILT_UTILITY_SITEMAP_PATH,
+    },
+    {
+      content: llmsLines.filter((line) => line !== null).join("\n"),
+      contentType: "text/plain; charset=utf-8",
+      path: PREBUILT_UTILITY_LLMS_PATH,
+    },
+    {
+      content: llmsFull,
+      contentType: "text/plain; charset=utf-8",
+      path: PREBUILT_UTILITY_LLMS_FULL_PATH,
+    },
+    ...index.pages.map((page) => ({
+      content: `# ${page.title}\n\n${page.content}`,
+      contentType: "text/markdown; charset=utf-8",
+      path: getPrebuiltUtilityLlmPagePath(page.slug),
+    })),
+  ];
+};
+
+export const buildTocIndex = async (
+  index: ContentIndex,
+  source: ContentSource
+): Promise<Map<string, TocItem[]>> => {
+  const itemsBySlug = new Map<string, TocItem[]>();
+
+  for (const entry of index.entries) {
+    if (entry.kind !== "entry") {
+      continue;
+    }
+
+    const rawContent = await source.readFile(entry.relativePath);
+    itemsBySlug.set(entry.slug, extractToc(rawContent));
+  }
+
+  return itemsBySlug;
+};
+
 export const serializeContentIndex = (index: ContentIndex): string =>
   JSON.stringify({
     collections: Object.fromEntries(index.byCollection),
@@ -799,6 +1327,82 @@ export const loadPrebuiltContentIndex = async (
       bySlug,
       entries: data.entries,
       errors: [],
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const serializeSearchIndex = (items: SearchIndexItem[]): string =>
+  JSON.stringify({
+    items,
+    version: 1,
+  } satisfies SerializedSearchIndex);
+
+export const loadPrebuiltSearchIndex = async (
+  source: ContentSource
+): Promise<SearchIndexItem[] | null> => {
+  try {
+    const raw = await source.readFile(PREBUILT_SEARCH_INDEX_PATH);
+    const data = JSON.parse(raw) as SerializedSearchIndex;
+    if (data.version !== 1 || !Array.isArray(data.items)) {
+      return null;
+    }
+
+    return data.items;
+  } catch {
+    return null;
+  }
+};
+
+export const serializeTocIndex = (
+  itemsBySlug: Map<string, TocItem[]>
+): string =>
+  JSON.stringify({
+    itemsBySlug: Object.fromEntries(itemsBySlug),
+    version: 1,
+  } satisfies SerializedTocIndex);
+
+export const loadPrebuiltTocIndex = async (
+  source: ContentSource
+): Promise<Map<string, TocItem[]> | null> => {
+  try {
+    const raw = await source.readFile(PREBUILT_TOC_INDEX_PATH);
+    const data = JSON.parse(raw) as SerializedTocIndex;
+    if (data.version !== 1 || typeof data.itemsBySlug !== "object") {
+      return null;
+    }
+
+    return new Map(Object.entries(data.itemsBySlug ?? {}));
+  } catch {
+    return null;
+  }
+};
+
+export const serializeUtilityIndex = (index: UtilityIndex): string =>
+  JSON.stringify({
+    ...index,
+    version: 1,
+  } satisfies SerializedUtilityIndex);
+
+export const loadPrebuiltUtilityIndex = async (
+  source: ContentSource
+): Promise<UtilityIndex | null> => {
+  try {
+    const raw = await source.readFile(PREBUILT_UTILITY_INDEX_PATH);
+    const data = JSON.parse(raw) as SerializedUtilityIndex;
+    if (
+      data.version !== 1 ||
+      typeof data.name !== "string" ||
+      !Array.isArray(data.pages)
+    ) {
+      return null;
+    }
+
+    return {
+      description: data.description,
+      name: data.name,
+      pages: data.pages,
     };
   } catch {
     return null;
