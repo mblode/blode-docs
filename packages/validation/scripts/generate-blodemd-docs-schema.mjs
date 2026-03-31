@@ -1,6 +1,9 @@
 import fs from "node:fs/promises";
 
-const sourcePath = new URL("../vendor/mintlify-docs-schema.json", import.meta.url);
+const sourcePath = new URL(
+  "../vendor/mintlify-docs-schema.json",
+  import.meta.url
+);
 const outputPath = new URL("../src/blodemd-docs-schema.json", import.meta.url);
 
 const ALLOWED_TOP_LEVEL_FIELDS = new Set([
@@ -52,8 +55,7 @@ const main = async () => {
 
   if (properties.$schema) {
     properties.$schema.default = "https://blode.md/docs.json";
-    properties.$schema.description =
-      "JSON Schema URL for editor autocomplete.";
+    properties.$schema.description = "JSON Schema URL for editor autocomplete.";
   }
 
   if (properties.logo) {
@@ -77,8 +79,8 @@ const main = async () => {
   }
 
   const contextualEnum =
-    properties.contextual?.properties?.options?.items?.anyOf?.find(
-      (entry) => Array.isArray(entry?.enum)
+    properties.contextual?.properties?.options?.items?.anyOf?.find((entry) =>
+      Array.isArray(entry?.enum)
     );
   if (contextualEnum) {
     contextualEnum.enum = CONTEXTUAL_OPTIONS;

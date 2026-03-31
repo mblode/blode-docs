@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 import { DocShell } from "@/components/docs/doc-shell";
 import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
-import { toDocHref, toMarkdownDocHref } from "@/lib/routes";
+import { toMarkdownDocHref } from "@/lib/routes";
 import { TENANT_HEADERS } from "@/lib/tenant-headers";
 import {
   getCanonicalDocBasePath,

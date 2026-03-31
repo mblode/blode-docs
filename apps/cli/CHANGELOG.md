@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.9
+
+### Patch Changes
+
+- Refactor API with CORS support, header-based auth, and domains/tenants overhaul; add new CLI commands (new, scaffold, upload, logout, whoami); improve docs UI components and search
+
 ## 0.0.8
 
 ### Patch Changes
