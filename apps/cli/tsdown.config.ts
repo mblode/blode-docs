@@ -7,13 +7,13 @@ export default defineConfig([
     entry: { cli: "src/cli.ts" },
     format: ["esm"],
     sourcemap: true,
-    target: "node22",
+    target: "node20",
   },
   {
     dts: true,
     entry: { index: "src/index.ts" },
     format: ["esm"],
     sourcemap: true,
-    target: "node22",
+    target: "node20",
   },
 ]);

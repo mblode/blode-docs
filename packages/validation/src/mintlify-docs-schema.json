@@ -10,7 +10,7 @@
         "$schema": {
           "type": "string",
           "format": "uri",
-          "default": "https://mintlify.com/docs.json",
+          "default": "https://docs.blode.md/docs.json",
           "description": "The URL of the schema file"
         },
         "name": {

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://docs.blode.md/docs.json",
   "theme": "mint",
   "name": "docs",
   "description": "Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.",

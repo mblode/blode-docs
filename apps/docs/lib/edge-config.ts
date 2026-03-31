@@ -5,15 +5,16 @@ import type {
 import {
   TenantEdgeHostRecordSchema,
   TenantEdgeSlugRecordSchema,
+  getTenantEdgeHostKeys,
+  getTenantEdgeHostKey,
+  getTenantEdgeSlugKeys,
+  getTenantEdgeSlugKey,
 } from "@repo/contracts";
 import { createClient } from "@vercel/edge-config";
 
 import { createTimedPromiseCache } from "./server-cache";
 
 const EDGE_CONFIG_CACHE_TTL_MS = 30 * 1000;
-
-const normalizeHost = (host: string) =>
-  host.trim().toLowerCase().replace(/:\d+$/, "");
 
 const readTrimmedEnv = (name: string) => {
   const value = process.env[name];
@@ -31,6 +32,8 @@ const edgeConfigConnectionString = readTrimmedEnv("EDGE_CONFIG");
 const edgeConfigClient = edgeConfigConnectionString
   ? createClient(edgeConfigConnectionString)
   : null;
+
+export { getTenantEdgeHostKey, getTenantEdgeSlugKey };
 
 const hostRecordCache = createTimedPromiseCache<
   string,
@@ -62,37 +65,31 @@ const getEdgeConfigValue = async (key: string) => {
 
 export const isEdgeConfigEnabled = () => Boolean(edgeConfigClient);
 
-export const getTenantEdgeHostKey = (host: string) =>
-  `tenant:host:${normalizeHost(host)}`;
-
-export const getTenantEdgeSlugKey = (slug: string) =>
-  `tenant:slug:${slug.trim().toLowerCase()}`;
-
 export const clearTenantEdgeConfigCaches = () => {
   hostRecordCache.clear();
   slugRecordCache.clear();
 };
 
-export const getTenantEdgeHostRecord = async (host: string) => {
-  const key = getTenantEdgeHostKey(host);
-  return await hostRecordCache.getOrCreate(key, async () => {
-    const value = await getEdgeConfigValue(key);
-    const parsed = TenantEdgeHostRecordSchema.safeParse(value);
-    if (!parsed.success) {
-      return null;
+export const getTenantEdgeHostRecord = async (host: string) =>
+  await hostRecordCache.getOrCreate(getTenantEdgeHostKey(host), async () => {
+    for (const key of getTenantEdgeHostKeys(host)) {
+      const value = await getEdgeConfigValue(key);
+      const parsed = TenantEdgeHostRecordSchema.safeParse(value);
+      if (parsed.success) {
+        return parsed.data;
+      }
     }
-    return parsed.data;
+    return null;
   });
-};
 
-export const getTenantEdgeSlugRecord = async (slug: string) => {
-  const key = getTenantEdgeSlugKey(slug);
-  return await slugRecordCache.getOrCreate(key, async () => {
-    const value = await getEdgeConfigValue(key);
-    const parsed = TenantEdgeSlugRecordSchema.safeParse(value);
-    if (!parsed.success) {
-      return null;
+export const getTenantEdgeSlugRecord = async (slug: string) =>
+  await slugRecordCache.getOrCreate(getTenantEdgeSlugKey(slug), async () => {
+    for (const key of getTenantEdgeSlugKeys(slug)) {
+      const value = await getEdgeConfigValue(key);
+      const parsed = TenantEdgeSlugRecordSchema.safeParse(value);
+      if (parsed.success) {
+        return parsed.data;
+      }
     }
-    return parsed.data;
+    return null;
   });
-};

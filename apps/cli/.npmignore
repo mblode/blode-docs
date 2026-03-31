@@ -1,0 +1,3 @@
+dev-server/.next
+**/*.test.*
+**/*.unit.test.*

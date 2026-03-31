@@ -17,11 +17,17 @@ import RocketIcon from "blode-icons-react/icons/rocket";
 import SparkleIcon from "blode-icons-react/icons/sparkle";
 import StarIcon from "blode-icons-react/icons/star";
 import TriangleExclamationIcon from "blode-icons-react/icons/triangle-exclamation";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactElement, SVGProps } from "react";
 
 import { cn } from "@/lib/utils";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+interface DocIconProps {
+  icon: string;
+  color?: string;
+  size?: number;
+  className?: string;
+}
 
 const DOC_ICON_MAP: Record<string, IconComponent> = {
   "alert-triangle": TriangleExclamationIcon,
@@ -45,7 +51,7 @@ const DOC_ICON_MAP: Record<string, IconComponent> = {
   terminal: ConsoleIcon,
 };
 
-export const resolveDocIcon = (icon: string) =>
+const getIconComponent = (icon: string): IconComponent | null =>
   DOC_ICON_MAP[icon.trim().toLowerCase()] ?? null;
 
 export const DocIcon = ({
@@ -53,13 +59,8 @@ export const DocIcon = ({
   color,
   size = 16,
   className,
-}: {
-  icon: string;
-  color?: string;
-  size?: number;
-  className?: string;
-}) => {
-  const IconComponent = resolveDocIcon(icon);
+}: DocIconProps): ReactElement => {
+  const IconComponent = getIconComponent(icon);
 
   if (!IconComponent) {
     return (

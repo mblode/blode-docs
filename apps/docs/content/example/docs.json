@@ -1,5 +1,5 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://docs.blode.md/docs.json",
   "colors": {
     "primary": "#0FB59F",
     "light": "#CFF6EE",

@@ -3,13 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { createApiKeyToken } from "../lib/api-key-auth";
-import {
-  addCnameRecord,
-  addTxtRecord,
-  isCloudflareEnabled,
-} from "../lib/cloudflare";
-import { rootDomain, vercelCnameTarget } from "../lib/config";
 import { apiKeyDao, projectDao } from "../lib/db";
+import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
 import { logWarn } from "../lib/logger";
 import {
   authorizeProjectRequest,
@@ -17,11 +12,6 @@ import {
 } from "../lib/project-auth";
 import { badRequest, notFound, unauthorized } from "../lib/responses";
 import { validateJson, validateParams } from "../lib/validators";
-import {
-  addProjectDomain,
-  isVercelEnabled,
-  verifyProjectDomain,
-} from "../lib/vercel";
 import { mapApiKey, mapProject } from "../mappers/records";
 
 const projectIdParamsSchema = z.object({ projectId: z.string().uuid() });
@@ -34,38 +24,6 @@ const projectCreateSchema = z.object({
     .min(1)
     .regex(/^[a-z0-9-]+$/),
 });
-
-const provisionSubdomain = async (slug: string): Promise<void> => {
-  const hostname = `${slug}.${rootDomain}`;
-
-  if (isVercelEnabled()) {
-    try {
-      const domain = await addProjectDomain(hostname);
-
-      if (isCloudflareEnabled()) {
-        await addCnameRecord(slug, vercelCnameTarget).catch((error: unknown) =>
-          logWarn("Failed to add Cloudflare CNAME record", error)
-        );
-
-        const txtRecord = domain.verification?.find((r) => r.type === "TXT");
-        if (txtRecord) {
-          await addTxtRecord(txtRecord.domain, txtRecord.value).catch(
-            (error: unknown) =>
-              logWarn("Failed to add Cloudflare TXT record", error)
-          );
-        }
-      }
-
-      await verifyProjectDomain(hostname).catch(() => null);
-    } catch (error: unknown) {
-      logWarn("Failed to provision subdomain on Vercel", error);
-    }
-  } else if (isCloudflareEnabled()) {
-    await addCnameRecord(slug, vercelCnameTarget).catch((error: unknown) =>
-      logWarn("Failed to add Cloudflare CNAME record", error)
-    );
-  }
-};
 
 export const projects = new Hono();
 
@@ -111,8 +69,11 @@ projects.post("/", validateJson(projectCreateSchema), async (c) => {
     userId: user.id,
   });
 
-  // Best-effort: provision subdomain on Vercel + Cloudflare DNS
-  await provisionSubdomain(body.slug);
+  try {
+    await syncProjectTenantEdgeConfig(record.id);
+  } catch (error: unknown) {
+    logWarn("Failed to sync tenant Edge Config after project create", error);
+  }
 
   return c.json(
     {
@@ -157,6 +118,13 @@ projects.patch(
       return notFound(c);
     }
     const record = await projectDao.update(projectId, body);
+
+    try {
+      await syncProjectTenantEdgeConfig(projectId);
+    } catch (error: unknown) {
+      logWarn("Failed to sync tenant Edge Config after project update", error);
+    }
+
     return c.json(mapProject(record), 200);
   }
 );

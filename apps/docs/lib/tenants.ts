@@ -2,7 +2,7 @@ import { TenantSchema } from "@repo/contracts";
 import type { Tenant } from "@repo/models";
 
 import { getTenantDocsPath } from "./content-root";
-import { getTenantEdgeSlugRecord } from "./edge-config";
+import { getTenantEdgeSlugRecord, isEdgeConfigEnabled } from "./edge-config";
 import { docsApiBase } from "./env";
 import { createTimedPromiseCache } from "./server-cache";
 
@@ -32,12 +32,7 @@ const tenantCache = createTimedPromiseCache<string, Tenant | null>({
   ttlMs: TENANT_REVALIDATE_SECONDS * 1000,
 });
 
-const fetchTenant = async (slug: string): Promise<Tenant | null> => {
-  const edgeRecord = await getTenantEdgeSlugRecord(slug);
-  if (edgeRecord) {
-    return mapTenant(edgeRecord.tenant);
-  }
-
+const fetchTenantFromApi = async (slug: string): Promise<Tenant | null> => {
   const url = new URL(`/tenants/${slug}`, docsApiBase);
   const response = await fetch(url.toString(), {
     next: {
@@ -54,6 +49,15 @@ const fetchTenant = async (slug: string): Promise<Tenant | null> => {
     return null;
   }
   return mapTenant(parsed.data);
+};
+
+const fetchTenant = async (slug: string): Promise<Tenant | null> => {
+  if (isEdgeConfigEnabled()) {
+    const edgeRecord = await getTenantEdgeSlugRecord(slug);
+    return edgeRecord ? mapTenant(edgeRecord.tenant) : null;
+  }
+
+  return await fetchTenantFromApi(slug);
 };
 
 export const clearTenantCache = () => {

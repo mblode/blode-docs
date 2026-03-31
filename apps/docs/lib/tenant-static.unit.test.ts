@@ -164,7 +164,7 @@ describe("tenant static LLM helpers", () => {
     const docsPath = await createTempUtilityRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://mintlify.com/docs.json",
+          $schema: "https://docs.blode.md/docs.json",
           colors: {
             primary: "#171717",
           },

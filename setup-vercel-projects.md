@@ -12,7 +12,9 @@ Use this when recreating the live Vercel setup from scratch.
    - **Framework Preset**: Next.js
    - **Build Command**: `npx turbo run build --filter=docs...`
    - **Output Directory**: `apps/docs/.next`
-4. Add production aliases for `blode.md`, `www.blode.md`, and the tenant subdomains you want to expose.
+4. Add `blode.md` as a production domain.
+5. After the domain is verified, add the wildcard entry `.blode.md`.
+6. Recreate any non-website DNS records you still need in Vercel DNS before removing the old provider.
 
 ## 2. API
 
@@ -42,8 +44,11 @@ Use this when recreating the live Vercel setup from scratch.
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `BLOB_READ_WRITE_TOKEN`
 - `PLATFORM_ROOT_DOMAIN`
-- `VERCEL_CNAME_TARGET`
-- optional Cloudflare credentials if you want the API to manage DNS automatically
+- `VERCEL_TOKEN`
+- `VERCEL_PROJECT_ID`
+- optional `VERCEL_TEAM_ID`
+- optional `VERCEL_TEAM_SLUG`
+- optional `VERCEL_EDGE_CONFIG_ID` if you want Edge Config sync
 
 ## Important Routing Note
 
@@ -53,3 +58,8 @@ The product docs are served through the tenant with slug `docs`.
 - `https://docs.blode.md`
 
 Both routes require the production database to contain a `docs` project row.
+
+## Wildcard Note
+
+Platform subdomains are now served by the wildcard on Vercel DNS. The API no
+longer provisions `{slug}.blode.md` hosts one by one.

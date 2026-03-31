@@ -81,7 +81,7 @@ describe("getTenantSearchItems", () => {
     const docsPath = await createDocsRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://mintlify.com/docs.json",
+          $schema: "https://docs.blode.md/docs.json",
           api: {
             openapi: {
               directory: "api",

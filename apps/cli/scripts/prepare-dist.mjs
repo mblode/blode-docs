@@ -39,11 +39,20 @@ const EXCLUDE_DIRS = new Set([
   ".turbo",
   "next-env.d.ts",
 ]);
+const TEST_FILE_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
 
-const devServerFilter = (src) => {
-  const rel = path.relative(path.join(repoRoot, "apps/dev-server"), src);
-  const topSegment = rel.split(path.sep)[0];
-  return !EXCLUDE_DIRS.has(topSegment);
+const createCopyFilter = (sourceRoot) => (source) => {
+  const relative = path.relative(sourceRoot, source);
+  if (!relative) {
+    return true;
+  }
+
+  const topSegment = relative.split(path.sep)[0] ?? "";
+  if (EXCLUDE_DIRS.has(topSegment)) {
+    return false;
+  }
+
+  return !TEST_FILE_PATTERN.test(path.basename(source));
 };
 
 // Clean previous artifacts
@@ -56,7 +65,10 @@ console.log("Copying dev-server...");
 cpSync(
   path.join(repoRoot, "apps/dev-server"),
   path.join(cliRoot, "dev-server"),
-  { filter: devServerFilter, recursive: true }
+  {
+    filter: createCopyFilter(path.join(repoRoot, "apps/dev-server")),
+    recursive: true,
+  }
 );
 
 // 2. Generate standalone tsconfig.json (inlines @repo/typescript-config)
@@ -69,7 +81,7 @@ const standaloneTsConfig = {
     esModuleInterop: true,
     incremental: false,
     isolatedModules: true,
-    jsx: "preserve",
+    jsx: "react-jsx",
     lib: ["es2022", "DOM", "DOM.Iterable"],
     module: "ESNext",
     moduleDetection: "force",
@@ -94,29 +106,36 @@ const standaloneTsConfig = {
     "next-env.d.ts",
     "next.config.js",
     ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
   ],
 };
 writeFileSync(
   path.join(cliRoot, "dev-server/tsconfig.json"),
-  JSON.stringify(standaloneTsConfig, null, 2) + "\n"
+  `${JSON.stringify(standaloneTsConfig, null, 2)}\n`
+);
+
+writeFileSync(
+  path.join(cliRoot, "dev-server/next-env.d.ts"),
+  [
+    '/// <reference types="next" />',
+    '/// <reference types="next/image-types/global" />',
+    "",
+    "// NOTE: This file should not be edited",
+    "// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.",
+    "",
+  ].join("\n")
 );
 
 // 3. Copy shared docs code
 console.log("Copying shared docs code...");
 
-const DOCS_COMPONENT_DIRS = ["api", "content", "docs", "mdx", "ui"];
-for (const comp of DOCS_COMPONENT_DIRS) {
-  cpSync(
-    path.join(repoRoot, `apps/docs/components/${comp}`),
-    path.join(cliRoot, `docs/components/${comp}`),
-    { recursive: true }
-  );
-}
-
-// Copy providers.tsx (used by dev-server layout)
 cpSync(
-  path.join(repoRoot, "apps/docs/components/providers.tsx"),
-  path.join(cliRoot, "docs/components/providers.tsx")
+  path.join(repoRoot, "apps/docs/components"),
+  path.join(cliRoot, "docs/components"),
+  {
+    filter: createCopyFilter(path.join(repoRoot, "apps/docs/components")),
+    recursive: true,
+  }
 );
 
 const DOCS_LIB_FILES = [
@@ -146,6 +165,10 @@ cpSync(
   path.join(repoRoot, "apps/docs/app/globals.css"),
   path.join(cliRoot, "docs/app/globals.css")
 );
+cpSync(
+  path.join(repoRoot, "apps/docs/app/favicon.ico"),
+  path.join(cliRoot, "dev-server/app/favicon.ico")
+);
 
 // 4. Copy @repo packages (uses the same REPO_PACKAGES list as the build step)
 console.log("Copying @repo packages...");
@@ -161,6 +184,7 @@ for (const pkg of REPO_PACKAGES) {
     recursive: true,
   });
   cpSync(path.join(repoRoot, `packages/${pkg}/src`), path.join(dest, "src"), {
+    filter: createCopyFilter(path.join(repoRoot, `packages/${pkg}/src`)),
     recursive: true,
   });
 }
