@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.8
+
+### Patch Changes
+
+- Refactor edge-config handling, enhance CLI dev server and packaging, remove Cloudflare DNS integration
+
 ## 0.0.7
 
 ### Patch Changes
