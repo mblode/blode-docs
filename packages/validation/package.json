@@ -18,6 +18,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc",
     "check-types": "tsc --noEmit",
+    "generate:docs-schema": "node ./scripts/generate-blodemd-docs-schema.mjs",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt --write .",

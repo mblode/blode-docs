@@ -1,54 +1,45 @@
 ---
 title: docs.json reference
-description: Complete reference for the docs.json configuration file.
+description: Configure navigation, branding, and runtime behavior with docs.json.
 ---
 
-Every Blode.md project is configured through a single `docs.json` file at the root of your docs directory. This page covers every top-level field.
+Every Blode.md project is configured through a single `docs.json` file at the root of your docs directory.
+
+<Callout type="info">
+  If you are coming from Mintlify, Blode.md intentionally keeps this contract
+  smaller. `theme`, `colors`, `fonts`, `icons`, `background`, and `styling` are
+  not supported in `docs.json`.
+</Callout>
 
 ## Minimal example
 
 ```json title="docs.json"
 {
-  "$schema": "https://docs.blode.md/docs.json",
+  "$schema": "https://blode.md/docs.json",
   "name": "my-project",
-  "theme": "mint",
-  "colors": { "primary": "#0D9373" },
   "navigation": {
     "groups": [{ "group": "Getting started", "pages": ["index"] }]
   }
 }
 ```
 
-## Full example
+## Branded example
 
 ```json title="docs.json"
 {
-  "$schema": "https://docs.blode.md/docs.json",
+  "$schema": "https://blode.md/docs.json",
   "name": "my-project",
-  "theme": "mint",
   "description": "Documentation for my product.",
-  "colors": {
-    "primary": "#0D9373",
-    "light": "#CFF6EE",
-    "dark": "#0C3A33"
-  },
   "logo": {
-    "light": "/images/logo-light.svg",
-    "dark": "/images/logo-dark.svg"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "alt": "Example Co. logo",
+    "href": "https://example.com"
   },
-  "favicon": "/images/favicon.svg",
-  "fonts": {
-    "heading": "Inter",
-    "body": "Inter",
-    "provider": "google"
-  },
+  "favicon": "/favicon.svg",
+  "appearance": { "default": "system" },
   "navbar": {
-    "links": [{ "label": "GitHub", "href": "https://github.com/example/docs" }],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.example.com"
-    }
+    "links": [{ "label": "GitHub", "href": "https://github.com/example/docs" }]
   },
   "navigation": {
     "tabs": [
@@ -60,17 +51,14 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
       }
     ]
   },
-  "appearance": { "default": "system" },
-  "search": { "prompt": "Search docs..." },
-  "seo": { "indexing": "all" },
-  "metadata": { "timestamp": true },
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
   },
   "api": {
     "openapi": "openapi.yaml",
     "playground": { "display": "interactive" }
-  }
+  },
+  "seo": { "indexing": "all" }
 }
 ```
 
@@ -80,17 +68,12 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
   type={{
     $schema: {
       description:
-        "JSON Schema URL for editor autocomplete. Use `https://docs.blode.md/docs.json`.",
+        "JSON Schema URL for editor autocomplete. Use `https://blode.md/docs.json`.",
       type: "string",
     },
     name: {
       description:
-        "Project slug. Determines the default `{name}.blode.md` hostname served by the platform wildcard and acts as the project identifier.",
-      type: "string",
-      required: true,
-    },
-    theme: {
-      description: "Visual theme for your documentation site.",
+        "Project name and default project slug. This determines the default `{name}.blode.md` hostname.",
       type: "string",
       required: true,
     },
@@ -98,30 +81,23 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
       description: "Short project description used in metadata and SEO.",
       type: "string",
     },
-    colors: {
-      description:
-        "Brand colors for the site. Only `primary` is required. See [Theming](/configuration/theming).",
-      type: "object",
-      required: true,
-    },
     logo: {
       description:
-        "Logo displayed in the navbar. Accepts a URL string or an object with `light` and `dark` variants.",
-      type: "string | { light, dark, href? }",
+        "Logo shown in the header. Accepts a single path or `{ light, dark, alt?, href? }`.",
+      type: "string | { light, dark, alt?, href? }",
     },
     favicon: {
       description:
-        "Favicon path or URL. Accepts a string or an object with `light` and `dark` variants.",
+        "Browser tab icon. Accepts a single path or `{ light, dark }`.",
       type: "string | { light, dark }",
     },
-    fonts: {
+    appearance: {
       description:
-        "Typography settings for body, heading, and monospace text. See [Theming](/configuration/theming).",
+        "Light and dark mode settings. Set `default` to `dark`, `light`, or `system`. Use `strict` to lock the site mode.",
       type: "object",
     },
     navbar: {
-      description:
-        "Top navigation bar configuration with links and a primary CTA button.",
+      description: "Header links shown above your content.",
       type: "object",
     },
     navigation: {
@@ -132,57 +108,73 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
     },
     api: {
       description:
-        "API reference configuration including OpenAPI/AsyncAPI sources and playground settings.",
-      type: "object",
-    },
-    appearance: {
-      description:
-        "Dark/light mode settings. Set `default` to `dark`, `light`, or `system`. Use `strict` to lock to one mode.",
+        "API reference configuration for OpenAPI and AsyncAPI sources plus playground settings.",
       type: "object",
     },
     contextual: {
       description:
-        "Contextual action buttons shown on each page (copy, view source, open in ChatGPT, Claude, etc.).",
+        "Contextual action buttons shown on each page, such as copy, view source, or assistant shortcuts.",
       type: "object",
     },
     search: {
-      description:
-        "Search configuration. Set `prompt` to customize the search placeholder text.",
+      description: "Search configuration.",
       type: "object",
     },
     seo: {
-      description:
-        "SEO settings. Set `indexing` to `all` or `default` to control search engine indexing.",
+      description: "Search engine indexing settings.",
       type: "object",
     },
     metadata: {
-      description:
-        "Metadata options. Set `timestamp: true` to show last-updated dates on pages.",
+      description: "Metadata configuration.",
       type: "object",
     },
   }}
 />
 
-## Navbar
-
-The `navbar` object configures the top navigation bar.
+## Branding fields
 
 <TypeTable
   type={{
-    "navbar.links": {
-      description: "Array of link objects displayed in the navbar.",
-      type: "Array<{ label: string, href: string }>",
+    "logo.light": {
+      description: "Logo path for light mode.",
+      type: "string",
     },
-    "navbar.primary": {
-      description: "Primary CTA button in the navbar.",
-      type: "{ type: 'button' | 'discord' | 'github', label?: string, href: string }",
+    "logo.dark": {
+      description: "Logo path for dark mode.",
+      type: "string",
+    },
+    "logo.alt": {
+      description: "Accessible alt text for the logo image.",
+      type: "string",
+    },
+    "logo.href": {
+      description:
+        "Optional destination when someone clicks the logo. Defaults to the docs homepage.",
+      type: "string",
+    },
+    "favicon.light": {
+      description: "Favicon path for light mode.",
+      type: "string",
+    },
+    "favicon.dark": {
+      description: "Favicon path for dark mode.",
+      type: "string",
+    },
+    "appearance.default": {
+      description: "Initial color mode. Defaults to `system`.",
+      type: "'system' | 'light' | 'dark'",
+    },
+    "appearance.strict": {
+      description:
+        "When `true`, hides the mode toggle and locks the site to the selected default mode.",
+      type: "boolean",
     },
   }}
 />
 
 ## API reference
 
-The `api` object controls OpenAPI/AsyncAPI rendering and the API playground.
+The `api` object controls OpenAPI and AsyncAPI rendering plus playground behavior.
 
 <TypeTable
   type={{
@@ -200,7 +192,7 @@ The `api` object controls OpenAPI/AsyncAPI rendering and the API playground.
       type: "{ display?: 'auth' | 'interactive' | 'none' | 'simple', proxy?: boolean, credentials?: boolean }",
     },
     "api.examples": {
-      description: "Code example generation settings.",
+      description: "Autogenerated code example settings.",
       type: "{ autogenerate?: boolean, defaults?: 'all' | 'required', languages?: string[], prefill?: boolean }",
     },
     "api.params": {
@@ -208,21 +200,17 @@ The `api` object controls OpenAPI/AsyncAPI rendering and the API playground.
       type: "{ expanded?: 'all' | 'closed' }",
     },
     "api.mdx": {
-      description:
-        "MDX-based API page settings including auth method and server URL.",
+      description: "MDX API page settings.",
       type: "{ auth?: { method, name }, server?: string | string[] }",
     },
     "api.url": {
-      description:
-        "URL display mode. Set to `full` to show the complete URL in API pages.",
+      description: "URL display mode for endpoint headers.",
       type: "'full'",
     },
   }}
 />
 
 ## Contextual actions
-
-The `contextual` object adds action buttons to each page, letting readers copy content, open it in AI assistants, or perform custom actions.
 
 <TypeTable
   type={{
@@ -250,4 +238,4 @@ blodemd validate
 ## Related pages
 
 - [Navigation](/configuration/navigation) -- configure sidebar groups, tabs, and page ordering
-- [Theming and branding](/configuration/theming) -- customize colors, logos, fonts, and appearance
+- [Appearance and branding](/configuration/theming) -- configure logo, favicon, and color mode behavior

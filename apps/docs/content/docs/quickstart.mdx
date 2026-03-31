@@ -7,7 +7,7 @@ This guide walks you through installing the CLI, scaffolding a docs project, and
 
 ## Prerequisites
 
-You need [Node.js](https://nodejs.org) 20 or later.
+You need [Node.js](https://nodejs.org) 20.17 or later.
 
 ## Steps
 
@@ -20,15 +20,15 @@ You need [Node.js](https://nodejs.org) 20 or later.
     blodemd login
     ```
 
-    This opens your browser for OAuth authentication. You can also use an API key with `blodemd login --token`.
+    This opens your browser for OAuth authentication. Use `blodemd login --token` to paste an API key instead.
 
   </Step>
   <Step title="Scaffold your docs">
     ```bash
-    blodemd init docs
+    blodemd new
     ```
 
-    This creates a `docs/` directory with a starter `docs.json` and `index.mdx`:
+    In a non-empty repo, the CLI recommends creating a `docs/` subdirectory. Choosing that path creates:
 
     <Tree>
       <Tree.Folder name="docs" defaultOpen>
@@ -37,15 +37,18 @@ You need [Node.js](https://nodejs.org) 20 or later.
       </Tree.Folder>
     </Tree>
 
+    If you want to scaffold the current directory instead, run `blodemd new .`.
+
+    For a fuller kit with `.gitignore`, `README.md`, `AGENTS.md`, `CLAUDE.md`, `favicon.svg`, `logo/`, and `images/`, add `--template starter`.
+
   </Step>
-  <Step title="Set your project name">
-    Open `docs/docs.json` and set `name` to your project slug. This determines your subdomain:
+  <Step title="Review your project slug">
+    The scaffold writes `name` into `docs/docs.json`. Change it later if you want a different subdomain:
 
     ```json title="docs/docs.json"
     {
-      "name": "my-project",
-      "theme": "mint",
-      "colors": { "primary": "#0D9373" },
+      "$schema": "https://blode.md/docs.json",
+      "name": "acme-docs",
       "navigation": {
         "groups": [{ "group": "Getting Started", "pages": ["index"] }]
       }
@@ -58,7 +61,7 @@ You need [Node.js](https://nodejs.org) 20 or later.
     blodemd push docs
     ```
 
-    Your docs are live at `my-project.blode.md`.
+    Your docs are live at `your-slug.blode.md`.
 
   </Step>
 </Steps>

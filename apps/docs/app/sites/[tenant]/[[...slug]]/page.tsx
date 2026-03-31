@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { DocShell } from "@/components/docs/doc-shell";
 import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
-import { toDocHref } from "@/lib/routes";
+import { toDocHref, toMarkdownDocHref } from "@/lib/routes";
+import { TENANT_HEADERS } from "@/lib/tenant-headers";
 import {
   getCanonicalDocBasePath,
   getCanonicalOrigin,
-  getStaticTenantRequestContext,
+  getTenantRequestContextFromHeaders,
 } from "@/lib/tenant-static";
 
 export const preferredRegion = "home";
@@ -23,6 +25,18 @@ const DocContentFallback = () => (
     <div className="h-40 rounded-xl border border-dashed border-border/70 bg-muted/30" />
   </div>
 );
+
+const getTenantRequestContext = async (
+  tenantSlug: string,
+  tenant: Parameters<typeof getTenantRequestContextFromHeaders>[0]
+) => {
+  const headerStore = await headers();
+  if (headerStore.get(TENANT_HEADERS.SLUG) !== tenantSlug) {
+    return null;
+  }
+
+  return getTenantRequestContextFromHeaders(tenant, headerStore);
+};
 
 const DocContent = async ({
   rawContent,
@@ -76,7 +90,13 @@ export const generateMetadata = async ({
   const baseTitle = config?.name ?? "Docs";
   const titleTemplate = `%s · ${baseTitle}`;
   const title = pageTitle ? titleTemplate.replace("%s", pageTitle) : baseTitle;
-  const requestContext = getStaticTenantRequestContext(tenant);
+  const requestContext = await getTenantRequestContext(tenantSlug, tenant);
+  if (!requestContext) {
+    return {
+      description: "Documentation",
+      title: "Docs",
+    };
+  }
 
   const canonicalBasePath = getCanonicalDocBasePath(tenant, requestContext);
   const canonicalPath = slugKey ? `/${slugKey}` : "/";
@@ -122,6 +142,14 @@ const DocPage = async ({
   const slugKey = slug.join("/");
   const shell = await getDocShellData(tenantSlug, slugKey);
   if (!shell) {
+    return notFound();
+  }
+
+  const requestContext = await getTenantRequestContext(
+    tenantSlug,
+    shell.tenant
+  );
+  if (!requestContext) {
     return notFound();
   }
 
@@ -189,20 +217,14 @@ const DocPage = async ({
     );
   }
 
-  const requestContext = getStaticTenantRequestContext(shell.tenant);
   const basePath = getCanonicalDocBasePath(shell.tenant, requestContext);
 
   let content: React.ReactNode;
   let rawContent: string | undefined;
   let toc: { id: string; title: string; level: number }[] = [];
   const markdownHref =
-    shell.kind === "page"
-      ? toDocHref(
-          shell.currentPath === "index"
-            ? "index.mdx"
-            : `${shell.currentPath}.mdx`,
-          basePath
-        )
+    shell.kind === "page" || shell.kind === "openapi"
+      ? toMarkdownDocHref(shell.currentPath, basePath)
       : undefined;
 
   if (shell.kind === "openapi") {
@@ -211,6 +233,7 @@ const DocPage = async ({
       <ApiReference
         entry={shell.openApiEntry}
         proxyEnabled={shell.openapiProxyEnabled}
+        tenantSlug={tenantSlug}
       />
     );
     rawContent = shell.openApiEntry.operation.description ?? "";

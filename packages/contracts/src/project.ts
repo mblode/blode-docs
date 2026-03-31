@@ -24,7 +24,7 @@ export type ProjectCreateInput = z.infer<typeof ProjectCreateSchema>;
 
 export const ProjectUpdateSchema = z.object({
   deploymentName: z.string().min(1).optional(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   name: z.string().min(1).optional(),
 });
 export type ProjectUpdateInput = z.infer<typeof ProjectUpdateSchema>;

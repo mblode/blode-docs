@@ -2,28 +2,16 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import type { ApiKeyAuthRecord, ApiKeyDao } from "@repo/db";
 
+import { getBearerToken, getHeaderToken } from "./header-auth";
+
 const API_KEY_PREFIX = "ndk_";
 const API_KEY_PREFIX_LENGTH = 8;
 
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 
-const getTokenFromHeaders = (headers: Record<string, unknown>) => {
-  const { authorization } = headers;
-  if (typeof authorization === "string") {
-    const [scheme, token] = authorization.split(/\s+/, 2);
-    if (scheme?.toLowerCase() === "bearer" && token) {
-      return token.trim();
-    }
-  }
-
-  const apiKeyHeader = headers["x-api-key"];
-  if (typeof apiKeyHeader === "string") {
-    return apiKeyHeader.trim();
-  }
-
-  return null;
-};
+const getTokenFromHeaders = (headers: Record<string, unknown>) =>
+  getBearerToken(headers) ?? getHeaderToken(headers, "x-api-key");
 
 const getTokenPrefix = (token: string) => {
   const [prefix] = token.split(".", 1);

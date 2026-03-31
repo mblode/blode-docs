@@ -3,13 +3,13 @@ title: CLI overview
 description: Install and use the blodemd command-line interface.
 ---
 
-The blodemd CLI lets you authenticate, scaffold, validate, preview, and deploy documentation from your terminal.
+The blodemd CLI lets you authenticate, create, validate, preview, and deploy documentation from your terminal.
 
 ## Installation
 
 <Installer command="npm install -g blodemd" />
 
-Requires Node.js 20.17+ and <25. The current version is **0.0.6**.
+Requires Node.js 20.17 or later. The current version is **0.0.8**.
 
 ## Commands
 
@@ -28,9 +28,9 @@ Requires Node.js 20.17+ and <25. The current version is **0.0.6**.
       description: "Show the current authentication status.",
       type: "command",
     },
-    init: {
+    new: {
       description:
-        "Scaffold a new documentation directory with a starter docs.json and index page.",
+        "Create a new documentation site with a starter docs.json and index page.",
       type: "command",
     },
     validate: {
@@ -55,8 +55,8 @@ Requires Node.js 20.17+ and <25. The current version is **0.0.6**.
   <Card title="blodemd login" icon="key" href="/cli/login">
     Authenticate with browser OAuth or an API key.
   </Card>
-  <Card title="blodemd init" icon="folder-plus" href="/cli/init">
-    Scaffold a docs directory with starter files.
+  <Card title="blodemd new" icon="folder-plus" href="/cli/new">
+    Create a docs directory with starter files.
   </Card>
   <Card title="blodemd push" icon="rocket" href="/cli/push">
     Deploy your documentation to Blode.md.
@@ -73,7 +73,7 @@ Requires Node.js 20.17+ and <25. The current version is **0.0.6**.
 
 ### Credentials
 
-All authentication state is stored locally at `~/.config/blodemd/credentials.json`. The CLI never sends credentials to any third party.
+The CLI stores all authentication state at `~/.config/blodemd/credentials.json` and never sends credentials to any third party.
 
 ### Environment variables
 

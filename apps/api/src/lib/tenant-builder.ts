@@ -21,7 +21,7 @@ export const buildTenant = async (
     (domain) => domain.status === validConfiguredDomainStatus
   );
   const customDomains = verifiedDomains.map((domain) => domain.hostname);
-  const preferredCustomDomain = verifiedDomains[0] ?? null;
+  const preferredCustomDomain = verifiedDomains.at(-1) ?? null;
   const primaryDomain =
     preferCustomDomain && preferredCustomDomain
       ? preferredCustomDomain.hostname

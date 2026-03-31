@@ -28,6 +28,7 @@ export const DocsLogoSchema = z
   .object({
     alt: z.string().optional(),
     dark: UrlOrPathSchema.optional(),
+    href: z.string().min(1).optional(),
     light: UrlOrPathSchema.optional(),
   })
   .strict();
@@ -139,26 +140,6 @@ export const DocsOpenApiProxySchema = z
   .object({
     allowedHosts: z.array(z.string()).optional(),
     enabled: z.boolean().optional(),
-  })
-  .strict();
-
-const MintlifyFontSchema = z
-  .object({
-    family: z.string().min(1),
-    format: z.enum(["woff", "woff2"]).optional(),
-    source: z.string().min(1).optional(),
-    weight: z.number().optional(),
-  })
-  .strict();
-
-const MintlifyFontsSchema = z
-  .object({
-    body: MintlifyFontSchema.optional(),
-    family: z.string().min(1).optional(),
-    format: z.enum(["woff", "woff2"]).optional(),
-    heading: MintlifyFontSchema.optional(),
-    source: z.string().min(1).optional(),
-    weight: z.number().optional(),
   })
   .strict();
 
@@ -436,22 +417,14 @@ export type ContextualCustomOption = z.infer<
 export type ContextualOption = z.infer<typeof ContextualOptionSchema>;
 export type DocsContextual = z.infer<typeof DocsContextualSchema>;
 
-export const MintlifyDocsConfigSchema = z
+export const DocsConfigSchema = z
   .object({
     $schema: z.string().optional(),
     api: MintlifyApiSchema.optional(),
     appearance: MintlifyAppearanceSchema.optional(),
-    colors: z
-      .object({
-        dark: z.string().optional(),
-        light: z.string().optional(),
-        primary: z.string().min(1),
-      })
-      .strict(),
     contextual: DocsContextualSchema.optional(),
     description: z.string().optional(),
     favicon: MintlifyFaviconSchema.optional(),
-    fonts: MintlifyFontsSchema.optional(),
     logo: MintlifyLogoSchema.optional(),
     metadata: MintlifyMetadataSchema.optional(),
     name: z.string().min(1),
@@ -459,11 +432,12 @@ export const MintlifyDocsConfigSchema = z
     navigation: MintlifyNavigationSchema,
     search: MintlifySearchSchema.optional(),
     seo: DocsSeoSchema.optional(),
-    theme: z.string().min(1),
   })
   .strict();
 
-export type MintlifyDocsConfig = z.infer<typeof MintlifyDocsConfigSchema>;
+export type DocsConfig = z.infer<typeof DocsConfigSchema>;
+export const MintlifyDocsConfigSchema = DocsConfigSchema;
+export type MintlifyDocsConfig = DocsConfig;
 
 export const ContentTypeSchema = z.enum([
   "site",

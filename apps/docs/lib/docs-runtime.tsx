@@ -26,6 +26,7 @@ import {
   getTenantContentSource,
   resolveSiteConfigAssets,
 } from "@/lib/content-source";
+import { contextualOptionsRequirePageContent } from "@/lib/contextual-options";
 import {
   getDocsCollection,
   getDocsCollectionWithNavigation,
@@ -508,7 +509,9 @@ export const getDocShellData = cache(
       entry.type === "docs" && artifacts.config.features?.toc !== false;
 
     const prebuiltToc = artifacts.tocBySlug.get(currentPath) ?? null;
-    const needsRawContent = Boolean(artifacts.config.contextual);
+    const needsRawContent = artifacts.config.contextual
+      ? contextualOptionsRequirePageContent(artifacts.config.contextual.options)
+      : false;
 
     let rawContent: string | undefined;
     let toc: ReturnType<typeof extractToc> = prebuiltToc ?? [];

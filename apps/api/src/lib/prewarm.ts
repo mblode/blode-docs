@@ -55,7 +55,7 @@ export const prewarmProject = async (projectId: string) => {
 
   for (let index = 0; index < urls.length; index += PREWARM_CONCURRENCY) {
     const batch = urls.slice(index, index + PREWARM_CONCURRENCY);
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       batch.map(async (url) => {
         const response = await fetch(url, {
           headers: {
@@ -69,5 +69,21 @@ export const prewarmProject = async (projectId: string) => {
         }
       })
     );
+
+    const failures = results.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected"
+    );
+    if (failures.length > 0) {
+      const messages = failures
+        .slice(0, 3)
+        .map((failure) =>
+          failure.reason instanceof Error
+            ? failure.reason.message
+            : String(failure.reason)
+        );
+      throw new Error(
+        `Prewarm failed for ${failures.length} URL(s): ${messages.join("; ")}`
+      );
+    }
   }
 };

@@ -1,38 +1,222 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import type { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { OpenApiEntry } from "@/lib/openapi";
+import { TENANT_HEADERS } from "@/lib/tenant-headers";
+
+interface OperationParameter {
+  description?: string;
+  name?: string;
+  required?: boolean;
+}
 
 const extractParams = (entry: OpenApiEntry, location: "path" | "query") =>
   (entry.operation.parameters ?? []).filter(
     (param) => (param as { in?: string }).in === location
-  ) as { name?: string; required?: boolean; description?: string }[];
+  ) as OperationParameter[];
+
+interface PlaygroundState {
+  authToken: string;
+  body: string;
+  isLoading: boolean;
+  pathValues: Record<string, string>;
+  queryValues: Record<string, string>;
+  response: string | null;
+  serverIndex: number;
+  status: number | null;
+  useProxyPreference: boolean;
+}
+
+type PlaygroundAction =
+  | { type: "requestError"; response: string }
+  | { type: "requestStart" }
+  | { type: "requestSuccess"; response: string; status: number }
+  | { type: "setAuthToken"; value: string }
+  | { type: "setBody"; value: string }
+  | { type: "setPathValue"; name: string; value: string }
+  | { type: "setQueryValue"; name: string; value: string }
+  | { type: "setServerIndex"; value: number }
+  | { type: "setUseProxyPreference"; value: boolean };
+
+const initialPlaygroundState: PlaygroundState = {
+  authToken: "",
+  body: "{}",
+  isLoading: false,
+  pathValues: {},
+  queryValues: {},
+  response: null,
+  serverIndex: 0,
+  status: null,
+  useProxyPreference: true,
+};
+
+const playgroundReducer = (
+  state: PlaygroundState,
+  action: PlaygroundAction
+) => {
+  switch (action.type) {
+    case "requestError": {
+      return {
+        ...state,
+        isLoading: false,
+        response: action.response,
+        status: 0,
+      };
+    }
+    case "requestStart": {
+      return {
+        ...state,
+        isLoading: true,
+        response: null,
+        status: null,
+      };
+    }
+    case "requestSuccess": {
+      return {
+        ...state,
+        isLoading: false,
+        response: action.response,
+        status: action.status,
+      };
+    }
+    case "setAuthToken": {
+      return {
+        ...state,
+        authToken: action.value,
+      };
+    }
+    case "setBody": {
+      return {
+        ...state,
+        body: action.value,
+      };
+    }
+    case "setPathValue": {
+      return {
+        ...state,
+        pathValues: {
+          ...state.pathValues,
+          [action.name]: action.value,
+        },
+      };
+    }
+    case "setQueryValue": {
+      return {
+        ...state,
+        queryValues: {
+          ...state.queryValues,
+          [action.name]: action.value,
+        },
+      };
+    }
+    case "setServerIndex": {
+      return {
+        ...state,
+        serverIndex: action.value,
+      };
+    }
+    case "setUseProxyPreference": {
+      return {
+        ...state,
+        useProxyPreference: action.value,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+};
+
+const ParameterFieldGrid = ({
+  idPrefix,
+  onChange,
+  parameters,
+  values,
+}: {
+  idPrefix: "path" | "query";
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  parameters: OperationParameter[];
+  values: Record<string, string>;
+}) => {
+  if (!parameters.length) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+      {parameters.map((param) => (
+        <Field key={param.name}>
+          <FieldLabel htmlFor={`${idPrefix}-${param.name}`}>
+            {param.name}
+          </FieldLabel>
+          <Input
+            id={`${idPrefix}-${param.name}`}
+            name={param.name ?? ""}
+            onChange={onChange}
+            placeholder={param.required ? "Required" : "Optional"}
+            type="text"
+            value={values[param.name ?? ""] ?? ""}
+          />
+        </Field>
+      ))}
+    </div>
+  );
+};
+
+const ResponsePanel = ({
+  response,
+  status,
+}: {
+  response: string | null;
+  status: number | null;
+}) => {
+  if (response === null) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-primary/[0.08] p-3">
+      <div className="font-semibold">Status: {status}</div>
+      <pre className="mt-2 overflow-x-auto">{response}</pre>
+    </div>
+  );
+};
 
 export const ApiPlayground = ({
   entry,
   proxyEnabled,
+  proxyPath = "/_internal/proxy",
+  tenantSlug,
 }: {
   entry: OpenApiEntry;
   proxyEnabled: boolean;
+  proxyPath?: string;
+  tenantSlug?: string;
 }) => {
   const servers = entry.spec.servers ?? [];
-  const [serverIndex, setServerIndex] = useState(0);
-  const [response, setResponse] = useState<string | null>(null);
-  const [status, setStatus] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [body, setBody] = useState("{}");
-  const [authToken, setAuthToken] = useState("");
-  const [useProxy, setUseProxy] = useState(proxyEnabled);
+  const [state, dispatch] = useReducer(
+    playgroundReducer,
+    initialPlaygroundState
+  );
+  const {
+    authToken,
+    body,
+    isLoading,
+    pathValues,
+    queryValues,
+    response,
+    serverIndex,
+    status,
+  } = state;
+  const useProxy = proxyEnabled && state.useProxyPreference;
 
   const pathParams = useMemo(() => extractParams(entry, "path"), [entry]);
   const queryParams = useMemo(() => extractParams(entry, "query"), [entry]);
-  const [pathValues, setPathValues] = useState<Record<string, string>>({});
-  const [queryValues, setQueryValues] = useState<Record<string, string>>({});
 
   const baseUrl = servers[serverIndex]?.url ?? "";
   const canSend = Boolean(baseUrl);
@@ -66,54 +250,64 @@ export const ApiPlayground = ({
 
   const handleUseProxyChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setUseProxy(event.target.checked);
+      dispatch({
+        type: "setUseProxyPreference",
+        value: event.target.checked,
+      });
     },
     []
   );
   const handleServerChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
-      setServerIndex(Number(event.target.value));
+      dispatch({
+        type: "setServerIndex",
+        value: Number(event.target.value),
+      });
     },
     []
   );
   const handlePathValueChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = event.target;
-      setPathValues((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      dispatch({
+        name: event.target.name,
+        type: "setPathValue",
+        value: event.target.value,
+      });
     },
     []
   );
   const handleQueryValueChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = event.target;
-      setQueryValues((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      dispatch({
+        name: event.target.name,
+        type: "setQueryValue",
+        value: event.target.value,
+      });
     },
     []
   );
   const handleAuthTokenChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setAuthToken(event.target.value);
+      dispatch({
+        type: "setAuthToken",
+        value: event.target.value,
+      });
     },
     []
   );
   const handleBodyChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
-      setBody(event.target.value);
+      dispatch({
+        type: "setBody",
+        value: event.target.value,
+      });
     },
     []
   );
 
   const handleSend = useCallback(async () => {
     const url = buildUrl();
-    setIsLoading(true);
-    setResponse(null);
-    setStatus(null);
+    dispatch({ type: "requestStart" });
 
     try {
       const { method } = entry.operation;
@@ -129,11 +323,12 @@ export const ApiPlayground = ({
         url,
       };
 
-      const requestUrl = useProxy ? "/blodemd-internal/proxy" : url;
+      const requestUrl = useProxy ? proxyPath : url;
       const requestMethod = useProxy ? "POST" : method;
       const requestHeadersToSend = useProxy
         ? {
             "Content-Type": "application/json",
+            ...(tenantSlug ? { [TENANT_HEADERS.SLUG]: tenantSlug } : {}),
           }
         : requestHeaders;
 
@@ -153,21 +348,32 @@ export const ApiPlayground = ({
       });
 
       const text = await res.text();
-      setStatus(res.status);
       let formatted = text;
       try {
         formatted = JSON.stringify(JSON.parse(text), null, 2);
       } catch {
         formatted = text;
       }
-      setResponse(formatted || "(empty response)");
+      dispatch({
+        response: formatted || "(empty response)",
+        status: res.status,
+        type: "requestSuccess",
+      });
     } catch (error) {
-      setStatus(0);
-      setResponse(error instanceof Error ? error.message : "Request failed.");
-    } finally {
-      setIsLoading(false);
+      dispatch({
+        response: error instanceof Error ? error.message : "Request failed.",
+        type: "requestError",
+      });
     }
-  }, [authToken, body, buildUrl, entry.operation, useProxy]);
+  }, [
+    authToken,
+    body,
+    buildUrl,
+    entry.operation,
+    proxyPath,
+    tenantSlug,
+    useProxy,
+  ]);
 
   return (
     <section className="mt-7 grid gap-3">
@@ -205,45 +411,19 @@ export const ApiPlayground = ({
           </Field>
         ) : null}
 
-        {pathParams.length ? (
-          <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-            {pathParams.map((param) => (
-              <Field key={param.name}>
-                <FieldLabel htmlFor={`path-${param.name}`}>
-                  {param.name}
-                </FieldLabel>
-                <Input
-                  id={`path-${param.name}`}
-                  name={param.name ?? ""}
-                  onChange={handlePathValueChange}
-                  placeholder={param.required ? "Required" : "Optional"}
-                  type="text"
-                  value={pathValues[param.name ?? ""] ?? ""}
-                />
-              </Field>
-            ))}
-          </div>
-        ) : null}
+        <ParameterFieldGrid
+          idPrefix="path"
+          onChange={handlePathValueChange}
+          parameters={pathParams}
+          values={pathValues}
+        />
 
-        {queryParams.length ? (
-          <div className="grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-            {queryParams.map((param) => (
-              <Field key={param.name}>
-                <FieldLabel htmlFor={`query-${param.name}`}>
-                  {param.name}
-                </FieldLabel>
-                <Input
-                  id={`query-${param.name}`}
-                  name={param.name ?? ""}
-                  onChange={handleQueryValueChange}
-                  placeholder={param.required ? "Required" : "Optional"}
-                  type="text"
-                  value={queryValues[param.name ?? ""] ?? ""}
-                />
-              </Field>
-            ))}
-          </div>
-        ) : null}
+        <ParameterFieldGrid
+          idPrefix="query"
+          onChange={handleQueryValueChange}
+          parameters={queryParams}
+          values={queryValues}
+        />
 
         <Field>
           <FieldLabel htmlFor="auth-token">Auth token</FieldLabel>
@@ -283,12 +463,7 @@ export const ApiPlayground = ({
           </p>
         )}
 
-        {response === null ? null : (
-          <div className="rounded-xl border border-border bg-primary/[0.08] p-3">
-            <div className="font-semibold">Status: {status}</div>
-            <pre className="mt-2 overflow-x-auto">{response}</pre>
-          </div>
-        )}
+        <ResponsePanel response={response} status={status} />
       </div>
     </section>
   );

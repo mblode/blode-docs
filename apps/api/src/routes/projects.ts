@@ -2,14 +2,15 @@ import { ProjectUpdateSchema } from "@repo/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { createApiKeyToken } from "../lib/api-key-auth";
-import { apiKeyDao, projectDao } from "../lib/db";
+import { projectDao } from "../lib/db";
+import { isUniqueViolationError } from "../lib/db-errors";
 import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
 import { logWarn } from "../lib/logger";
 import {
   authorizeProjectRequest,
   getAuthenticatedUser,
 } from "../lib/project-auth";
+import { createProjectWithDefaultApiKey } from "../lib/project-service";
 import { badRequest, notFound, unauthorized } from "../lib/responses";
 import { validateJson, validateParams } from "../lib/validators";
 import { mapApiKey, mapProject } from "../mappers/records";
@@ -52,34 +53,32 @@ projects.post("/", validateJson(projectCreateSchema), async (c) => {
     return badRequest(c, `Project slug "${body.slug}" is already taken.`);
   }
 
-  const record = await projectDao.create({
-    deploymentName: body.slug,
-    description: body.description,
-    name: body.name,
-    slug: body.slug,
-    userId: user.id,
-  });
-
-  const { prefix, token, tokenHash } = createApiKeyToken();
-  const apiKey = await apiKeyDao.create({
-    name: "Default",
-    prefix,
-    projectId: record.id,
-    tokenHash,
-    userId: user.id,
-  });
+  let created: Awaited<ReturnType<typeof createProjectWithDefaultApiKey>>;
+  try {
+    created = await createProjectWithDefaultApiKey({
+      description: body.description,
+      name: body.name,
+      slug: body.slug,
+      userId: user.id,
+    });
+  } catch (error) {
+    if (isUniqueViolationError(error)) {
+      return badRequest(c, `Project slug "${body.slug}" is already taken.`);
+    }
+    throw error;
+  }
 
   try {
-    await syncProjectTenantEdgeConfig(record.id);
+    await syncProjectTenantEdgeConfig(created.project.id);
   } catch (error: unknown) {
     logWarn("Failed to sync tenant Edge Config after project create", error);
   }
 
   return c.json(
     {
-      apiKey: mapApiKey(apiKey),
-      project: mapProject(record),
-      token,
+      apiKey: mapApiKey(created.apiKey),
+      project: mapProject(created.project),
+      token: created.token,
     },
     201
   );

@@ -10,6 +10,7 @@ import {
   validConfiguredDomainStatus,
 } from "../lib/config";
 import { domainDao } from "../lib/db";
+import { isUniqueViolationError } from "../lib/db-errors";
 import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
 import { logError, logWarn } from "../lib/logger";
 import { normalizeHostnameInput, normalizePathPrefix } from "../lib/normalize";
@@ -48,11 +49,68 @@ const domainRecordTypes = new Set([
   "NS",
   "CAA",
 ]);
+type PersistedDomain = Awaited<ReturnType<typeof domainDao.create>>;
 
 const toDomainStatus = (verified: boolean) =>
   mapDomainStatusFromContract(
     verified ? "Valid Configuration" : "Pending Verification"
   );
+
+const getRedirectHostname = (hostname: string) => {
+  if (!(autoWwwRedirect && !hostname.startsWith("www."))) {
+    return null;
+  }
+
+  return hostname.split(".").length === 2 ? `www.${hostname}` : null;
+};
+
+const getDomainConflictMessage = (hostname: string) =>
+  `Domain "${hostname}" already exists.`;
+
+const getDomainHostnameError = (hostname: string | null) => {
+  if (!hostname) {
+    return "Domain hostname must be valid.";
+  }
+
+  if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
+    return "Domain must be external to the blode.md zone.";
+  }
+
+  return null;
+};
+
+const getStoredVerification = (verified: boolean): DomainVerification => ({
+  records: [],
+  verified,
+});
+
+const removeProvisionedDomain = async (hostname: string) => {
+  await removeProjectDomain(hostname, true);
+  await deleteDomain(hostname).catch((error: unknown) => {
+    logWarn("Failed to delete Vercel domain", error);
+  });
+};
+
+const rollbackCreatedDomain = async (input: {
+  domainId: string;
+  provisionedHostnames: string[];
+}) => {
+  await Promise.allSettled(
+    input.provisionedHostnames.map(async (hostname) => {
+      try {
+        await removeProvisionedDomain(hostname);
+      } catch (error) {
+        logWarn("Failed to roll back provisioned Vercel domain", error);
+      }
+    })
+  );
+
+  try {
+    await domainDao.delete(input.domainId);
+  } catch (error) {
+    logWarn("Failed to roll back created domain record", error);
+  }
+};
 
 type VerificationRecord = NonNullable<
   VercelProjectDomain["verification"]
@@ -82,6 +140,164 @@ const mapVerification = (domain: VercelProjectDomain | null) => {
   };
 };
 
+const getVercelVerification = (
+  domain: VercelProjectDomain
+): DomainVerification =>
+  mapVerification(domain) ?? getStoredVerification(Boolean(domain.verified));
+
+const createDomainRecord = async (input: {
+  hostname: string;
+  pathPrefix: string | null;
+  projectId: string;
+  status: ReturnType<typeof mapDomainStatusFromContract>;
+  verifiedAt: Date | null;
+}) => {
+  try {
+    return await domainDao.create(input);
+  } catch (error) {
+    if (isUniqueViolationError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+};
+
+const maybeVerifyProvisionedDomain = async (
+  hostname: string,
+  domainResponse: VercelProjectDomain
+) => {
+  let verification = mapVerification(domainResponse);
+  let status = toDomainStatus(Boolean(domainResponse.verified));
+  let verifiedAt = domainResponse.verified ? new Date() : null;
+
+  if (!domainResponse.verified) {
+    const verifyResponse = await verifyProjectDomain(hostname).catch(
+      () => null
+    );
+    if (verifyResponse) {
+      verification = mapVerification(verifyResponse);
+      const verifiedNow = Boolean(verifyResponse.verified);
+      status = toDomainStatus(verifiedNow);
+      verifiedAt = verifiedNow ? new Date() : null;
+    }
+  }
+
+  return { status, verification, verifiedAt };
+};
+
+const addRedirectDomainIfNeeded = async (
+  hostname: string,
+  redirectHostname: string | null,
+  provisionedHostnames: string[]
+) => {
+  if (!redirectHostname) {
+    return;
+  }
+
+  await addProjectDomain(redirectHostname, hostname)
+    .then(() => {
+      provisionedHostnames.push(redirectHostname);
+    })
+    .catch(() => null);
+};
+
+const provisionDomainRecord = async (
+  record: PersistedDomain,
+  hostname: string,
+  redirectHostname: string | null
+) => {
+  if (!isVercelEnabled()) {
+    return { record, verification: undefined };
+  }
+
+  const provisionedHostnames: string[] = [];
+  try {
+    const domainResponse = await addProjectDomain(hostname);
+    provisionedHostnames.push(hostname);
+
+    const { status, verification, verifiedAt } =
+      await maybeVerifyProvisionedDomain(hostname, domainResponse);
+
+    await addRedirectDomainIfNeeded(
+      hostname,
+      redirectHostname,
+      provisionedHostnames
+    );
+
+    const updatedRecord = await domainDao.update(record.id, {
+      status,
+      verifiedAt,
+    });
+
+    return { record: updatedRecord, verification };
+  } catch (error) {
+    await rollbackCreatedDomain({
+      domainId: record.id,
+      provisionedHostnames,
+    });
+    logError("Failed to provision Vercel domain", error);
+    return null;
+  }
+};
+
+const syncTenantEdgeConfigAfterDomainChange = async (
+  projectId: string,
+  reason: "create" | "delete" | "verification fetch" | "verify",
+  options?: { removedHosts?: string[] }
+) => {
+  try {
+    await syncProjectTenantEdgeConfig(projectId, options);
+  } catch (error) {
+    logWarn(`Failed to sync tenant Edge Config after domain ${reason}`, error);
+  }
+};
+
+const markDomainVerified = async (
+  domainId: string,
+  projectId: string,
+  syncReason: "verification fetch" | "verify"
+) => {
+  await domainDao.update(domainId, {
+    status: toDomainStatus(true),
+    verifiedAt: new Date(),
+  });
+  await syncTenantEdgeConfigAfterDomainChange(projectId, syncReason);
+};
+
+const restoreDeletedDomain = async (domain: PersistedDomain) => {
+  try {
+    await domainDao.create({
+      hostname: domain.hostname,
+      pathPrefix: domain.pathPrefix,
+      projectId: domain.projectId,
+      status: domain.status,
+      verifiedAt: domain.verifiedAt,
+    });
+  } catch (error) {
+    logWarn("Failed to restore domain record after Vercel error", error);
+  }
+};
+
+const removeHostedDomain = async (domain: PersistedDomain) => {
+  const redirectHostname = getRedirectHostname(domain.hostname);
+
+  try {
+    await removeProvisionedDomain(domain.hostname);
+    if (redirectHostname) {
+      await removeProvisionedDomain(redirectHostname).catch((error) => {
+        logWarn("Failed to remove Vercel redirect domain", error);
+      });
+    }
+
+    return true;
+  } catch (error) {
+    await restoreDeletedDomain(domain);
+    logError("Failed to remove Vercel domain", error);
+    return false;
+  }
+};
+
 export const domains = new Hono();
 
 domains.get(
@@ -101,7 +317,6 @@ domains.post(
   "/:projectId/domains",
   validateParams(projectIdParamsSchema),
   validateJson(domainCreateBodySchema),
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: Refactor this handler by extracting domain provisioning logic into separate functions
   async (c) => {
     const { projectId } = c.req.valid("param");
     if (!(await authorizeProjectRequest(c, projectId))) {
@@ -109,67 +324,54 @@ domains.post(
     }
     const body = c.req.valid("json");
     const hostname = normalizeHostnameInput(body.hostname);
+    const hostnameError = getDomainHostnameError(hostname);
+    if (hostnameError) {
+      return badRequest(c, hostnameError);
+    }
     if (!hostname) {
-      return badRequest(c, "Domain hostname is required.");
+      return badRequest(c, "Domain hostname must be valid.");
     }
-    if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
-      return badRequest(c, "Domain must be external to the blode.md zone.");
+    const normalizedHostname = hostname;
+
+    const existingDomain = await domainDao.getByHostname(normalizedHostname);
+    if (existingDomain) {
+      return badRequest(c, getDomainConflictMessage(normalizedHostname));
     }
 
-    let verification: DomainVerification | undefined;
-    let status = mapDomainStatusFromContract("Pending Verification");
-    let verifiedAt: Date | null = null;
+    const status = mapDomainStatusFromContract("Pending Verification");
+    const verifiedAt: Date | null = null;
     const pathPrefix = normalizePathPrefix(body.pathPrefix);
+    const redirectHostname = getRedirectHostname(normalizedHostname);
 
-    if (isVercelEnabled()) {
-      try {
-        const domainResponse = await addProjectDomain(hostname);
-        verification = mapVerification(domainResponse);
-        const isVerified = Boolean(domainResponse.verified);
-        status = toDomainStatus(isVerified);
-        verifiedAt = isVerified ? new Date() : null;
-
-        if (!isVerified) {
-          const verifyResponse = await verifyProjectDomain(hostname).catch(
-            () => null
-          );
-          if (verifyResponse) {
-            verification = mapVerification(verifyResponse);
-            const verifiedNow = Boolean(verifyResponse.verified);
-            status = toDomainStatus(verifiedNow);
-            verifiedAt = verifiedNow ? new Date() : null;
-          }
-        }
-
-        if (autoWwwRedirect && !hostname.startsWith("www.")) {
-          const parts = hostname.split(".");
-          if (parts.length === 2) {
-            await addProjectDomain(`www.${hostname}`, hostname).catch(
-              () => null
-            );
-          }
-        }
-      } catch (error) {
-        logError("Failed to provision Vercel domain", error);
-        return badGateway(c, "Unable to provision domain");
-      }
-    }
-
-    const record = await domainDao.create({
-      hostname,
+    const createdRecord = await createDomainRecord({
+      hostname: normalizedHostname,
       pathPrefix,
       projectId,
       status,
       verifiedAt,
     });
-
-    try {
-      await syncProjectTenantEdgeConfig(projectId);
-    } catch (error) {
-      logWarn("Failed to sync tenant Edge Config after domain create", error);
+    if (!createdRecord) {
+      return badRequest(c, getDomainConflictMessage(normalizedHostname));
     }
 
-    return c.json({ domain: mapDomain(record), verification }, 201);
+    const provisionedDomain = await provisionDomainRecord(
+      createdRecord,
+      normalizedHostname,
+      redirectHostname
+    );
+    if (!provisionedDomain) {
+      return badGateway(c, "Unable to provision domain");
+    }
+
+    await syncTenantEdgeConfigAfterDomainChange(projectId, "create");
+
+    return c.json(
+      {
+        domain: mapDomain(provisionedDomain.record),
+        verification: provisionedDomain.verification,
+      },
+      201
+    );
   }
 );
 
@@ -188,33 +390,16 @@ domains.get(
 
     if (!isVercelEnabled()) {
       return c.json(
-        {
-          records: [],
-          verified: domain.status === validConfiguredDomainStatus,
-        },
+        getStoredVerification(domain.status === validConfiguredDomainStatus),
         200
       );
     }
 
     try {
       const domainResponse = await getProjectDomain(domain.hostname);
-      const verification = mapVerification(domainResponse) ?? {
-        records: [],
-        verified: Boolean(domainResponse.verified),
-      };
+      const verification = getVercelVerification(domainResponse);
       if (verification.verified && !domain.verifiedAt) {
-        await domainDao.update(domain.id, {
-          status: toDomainStatus(true),
-          verifiedAt: new Date(),
-        });
-        try {
-          await syncProjectTenantEdgeConfig(projectId);
-        } catch (error) {
-          logWarn(
-            "Failed to sync tenant Edge Config after domain verification fetch",
-            error
-          );
-        }
+        await markDomainVerified(domain.id, projectId, "verification fetch");
       }
       return c.json(verification, 200);
     } catch (error) {
@@ -239,33 +424,16 @@ domains.post(
 
     if (!isVercelEnabled()) {
       return c.json(
-        {
-          records: [],
-          verified: domain.status === validConfiguredDomainStatus,
-        },
+        getStoredVerification(domain.status === validConfiguredDomainStatus),
         200
       );
     }
 
     try {
       const domainResponse = await verifyProjectDomain(domain.hostname);
-      const verification = mapVerification(domainResponse) ?? {
-        records: [],
-        verified: Boolean(domainResponse.verified),
-      };
+      const verification = getVercelVerification(domainResponse);
       if (verification.verified) {
-        await domainDao.update(domain.id, {
-          status: toDomainStatus(true),
-          verifiedAt: new Date(),
-        });
-        try {
-          await syncProjectTenantEdgeConfig(projectId);
-        } catch (error) {
-          logWarn(
-            "Failed to sync tenant Edge Config after domain verify",
-            error
-          );
-        }
+        await markDomainVerified(domain.id, projectId, "verify");
       }
       return c.json(verification, 200);
     } catch (error) {
@@ -288,26 +456,20 @@ domains.delete(
       return notFound(c);
     }
 
-    if (isVercelEnabled()) {
-      try {
-        await removeProjectDomain(domain.hostname, true);
-        await deleteDomain(domain.hostname).catch((error: unknown) => {
-          logWarn("Failed to delete Vercel domain", error);
-        });
-      } catch (error) {
-        logError("Failed to remove Vercel domain", error);
-        return badGateway(c, "Unable to remove domain");
-      }
+    const redirectHostname = getRedirectHostname(domain.hostname);
+    const deletedDomain = await domainDao.delete(domain.id);
+
+    if (isVercelEnabled() && !(await removeHostedDomain(deletedDomain))) {
+      return badGateway(c, "Unable to remove domain");
     }
 
-    await domainDao.delete(domain.id);
-    try {
-      await syncProjectTenantEdgeConfig(projectId, {
-        removedHosts: [domain.hostname],
-      });
-    } catch (error) {
-      logWarn("Failed to sync tenant Edge Config after domain delete", error);
-    }
+    await syncTenantEdgeConfigAfterDomainChange(projectId, "delete", {
+      removedHosts: [
+        domain.hostname,
+        ...(redirectHostname ? [redirectHostname] : []),
+      ],
+    });
+
     return noContent();
   }
 );

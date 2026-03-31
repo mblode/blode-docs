@@ -1,1797 +1,7 @@
 {
-  "anyOf": [
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "mint"
-        },
-        "$schema": {
-          "type": "string",
-          "format": "uri",
-          "default": "https://docs.blode.md/docs.json",
-          "description": "The URL of the schema file"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "description": "The name of the project, organization, or product"
-        },
-        "public": {
-          "type": "boolean",
-          "description": "Whether the documentation is publicly accessible by default"
-        },
-        "description": {
-          "type": "string",
-          "description": "Optional description used for SEO and LLM indexing"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "anyOf": [
-            {
-              "type": "string",
-              "minLength": 3,
-              "description": "The logo (for both light and dark mode)"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "light": {
-                  "type": "string",
-                  "description": "Path pointing to the light logo file to use in dark mode, including the file extension. Example: `/logo.png`"
-                },
-                "dark": {
-                  "type": "string",
-                  "description": "Path pointing to the dark logo file to use in light mode, including the file extension. Example: `/logo-dark.png`"
-                },
-                "href": {
-                  "$ref": "#/definitions/anchorSchema/anyOf/0/properties/href",
-                  "description": "The URL to redirect to when clicking the logo. If not provided, the logo will link to the homepage. Example: `https://example.com`"
-                }
-              },
-              "required": ["light", "dark"],
-              "additionalProperties": false
-            }
-          ],
-          "description": "The logo configuration. Can be a single image path for both light and dark mode, or separate paths for each mode with an optional click target URL"
-        },
-        "favicon": {
-          "anyOf": [
-            {
-              "type": "string",
-              "description": "Path pointing to the favicon file in your docs folder, including the file extension. The favicon will automatically be resized to the appropriate sizes"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "light": {
-                  "type": "string",
-                  "description": "Path pointing to the light favicon file to use in dark mode, including the file extension. Example: `/favicon.png`"
-                },
-                "dark": {
-                  "type": "string",
-                  "description": "Path pointing to the dark favicon file to use in light mode, including the file extension. Example: `/favicon-dark.png`"
-                }
-              },
-              "required": ["light", "dark"],
-              "additionalProperties": false,
-              "description": "The path to the favicon. Can be a single file or a pair for light and dark mode. Example: `/favicon.png`"
-            }
-          ]
-        },
-        "api": {
-          "type": "object",
-          "properties": {
-            "openapi": {
-              "$ref": "#/definitions/anchorSchema/anyOf/0/properties/openapi",
-              "description": "A string or an array of strings of absolute or relative urls pointing to the OpenAPI file(s)"
-            },
-            "asyncapi": {
-              "$ref": "#/definitions/anchorSchema/anyOf/0/properties/asyncapi",
-              "description": "A string or an array of strings of absolute or relative urls pointing to the AsyncAPI file(s)"
-            },
-            "params": {
-              "type": "object",
-              "properties": {
-                "expanded": {
-                  "type": "string",
-                  "enum": ["all", "closed"],
-                  "description": "The view mode of the API parameters. Defaults to `closed`."
-                }
-              },
-              "additionalProperties": false,
-              "description": "Configurations for the API parameters"
-            },
-            "playground": {
-              "type": "object",
-              "properties": {
-                "display": {
-                  "type": "string",
-                  "enum": ["interactive", "simple", "none", "auth"],
-                  "description": "The display mode of the API playground. Defaults to `interactive`. Use `auth` to show the playground only to authenticated users."
-                },
-                "proxy": {
-                  "type": "boolean",
-                  "description": "Whether to pass API requests through a proxy server. Defaults to `true`."
-                },
-                "credentials": {
-                  "type": "boolean",
-                  "description": "Whether to include cookies/auth for cross-origin requests when proxy is disabled. Defaults to `false`."
-                }
-              },
-              "additionalProperties": false,
-              "description": "Configurations for the API playground"
-            },
-            "examples": {
-              "type": "object",
-              "properties": {
-                "defaults": {
-                  "type": "string",
-                  "enum": ["required", "all"],
-                  "description": "Whether to show only required parameters in the examples, defaults to `all`."
-                },
-                "languages": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Example languages for the autogenerated API snippets"
-                },
-                "prefill": {
-                  "type": "boolean",
-                  "description": "Whether to prefill the API playground with the examples"
-                },
-                "autogenerate": {
-                  "type": "boolean",
-                  "description": "Whether to generate code samples for API endpoints. Defaults to `true`. If `false`, only manually-written code samples (from either `x-codeSamples` property in the OpenAPI spec or `<RequestExample>` components in the MDX files) will be shown."
-                }
-              },
-              "additionalProperties": false,
-              "description": "Configurations for the autogenerated API examples"
-            },
-            "url": {
-              "type": "string",
-              "enum": ["full"],
-              "description": "The display mode of the base URL in the endpoint header. Set to `full` to always show the full base URL on every endpoint page."
-            },
-            "mdx": {
-              "type": "object",
-              "properties": {
-                "auth": {
-                  "type": "object",
-                  "properties": {
-                    "method": {
-                      "type": "string",
-                      "enum": ["bearer", "basic", "key", "cobo"],
-                      "description": "Authentication method for the API"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Authentication name for the API"
-                    }
-                  },
-                  "additionalProperties": false,
-                  "description": "Authentication configuration for the API"
-                },
-                "server": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "format": "uri"
-                    },
-                    {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "format": "uri"
-                      }
-                    }
-                  ],
-                  "description": "Base URL(s) for the API"
-                }
-              },
-              "additionalProperties": false,
-              "description": "Configurations for API pages generated from MDX files"
-            }
-          },
-          "additionalProperties": false,
-          "description": "API reference configuration and playground settings"
-        },
-        "appearance": {
-          "type": "object",
-          "properties": {
-            "default": {
-              "type": "string",
-              "enum": ["system", "light", "dark"],
-              "description": "The default light/dark mode. Defaults to system"
-            },
-            "strict": {
-              "type": "boolean",
-              "description": "Whether to hide the light / dark mode toggle. Defaults to `false`."
-            }
-          },
-          "additionalProperties": false,
-          "description": "Light / dark mode toggle settings"
-        },
-        "background": {
-          "type": "object",
-          "properties": {
-            "image": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "light": {
-                      "type": "string"
-                    },
-                    "dark": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["light", "dark"],
-                  "additionalProperties": false
-                }
-              ],
-              "description": "A fixed background image. Can be an absolute URL or relative path."
-            },
-            "decoration": {
-              "type": "string",
-              "enum": ["gradient", "grid", "windows"],
-              "description": "The background decoration of the theme"
-            },
-            "color": {
-              "$ref": "#/definitions/anchorSchema/anyOf/0/properties/color",
-              "description": "The colors of the background"
-            }
-          },
-          "additionalProperties": false,
-          "description": "Background color and decoration settings"
-        },
-        "navbar": {
-          "$ref": "#/definitions/anchorSchema/anyOf/0/properties/global/properties/languages/items/properties/navbar",
-          "description": "Navbar content and settings"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/definitions/anchorSchema/anyOf/0/properties/global/properties/languages/items/properties/footer",
-          "description": "Footer configurations"
-        },
-        "search": {
-          "type": "object",
-          "properties": {
-            "prompt": {
-              "type": "string",
-              "description": "The prompt to be displayed in the search bar placeholder"
-            }
-          },
-          "additionalProperties": false,
-          "description": "Search display settings"
-        },
-        "seo": {
-          "type": "object",
-          "properties": {
-            "metatags": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string",
-                "minLength": 1
-              },
-              "description": "Meta tags added to every page. Must be a valid key-value pair"
-            },
-            "indexing": {
-              "type": "string",
-              "enum": ["navigable", "all"],
-              "description": "Specify which pages to be indexed by search engines. Setting `navigable` indexes pages that are set in navigation, `all` indexes all pages. Defaults to `navigable`."
-            }
-          },
-          "additionalProperties": false,
-          "description": "SEO indexing configurations"
-        },
-        "fonts": {
-          "anyOf": [
-            {
-              "type": "object",
-              "properties": {
-                "family": {
-                  "type": "string",
-                  "description": "The font family, such as \"Open Sans\", \"Playfair Display\""
-                },
-                "weight": {
-                  "type": "number",
-                  "description": "The font weight, such as 400, 700. Precise font weights such as 550 are supported for variable fonts."
-                },
-                "source": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "The font source, such as /path/to/font.woff2 or https://example.com/path/to/font.woff2"
-                },
-                "format": {
-                  "type": "string",
-                  "enum": ["woff", "woff2"],
-                  "description": "The font format, can be one of woff, woff2"
-                }
-              },
-              "required": ["family"],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "heading": {
-                  "$ref": "#/anyOf/0/properties/fonts/anyOf/0"
-                },
-                "body": {
-                  "$ref": "#/anyOf/0/properties/fonts/anyOf/0"
-                }
-              },
-              "additionalProperties": false
-            }
-          ],
-          "description": "The fonts to be used"
-        },
-        "icons": {
-          "type": "object",
-          "properties": {
-            "library": {
-              "type": "string",
-              "enum": ["fontawesome", "lucide", "tabler"],
-              "description": "The icon library to be used. Defaults to `fontawesome`."
-            }
-          },
-          "required": ["library"],
-          "additionalProperties": false,
-          "description": "Icon library settings"
-        },
-        "styling": {
-          "type": "object",
-          "properties": {
-            "eyebrows": {
-              "type": "string",
-              "enum": ["section", "breadcrumbs"],
-              "description": "The eyebrows style of the content. Defaults to `section`."
-            },
-            "codeblocks": {
-              "anyOf": [
-                {
-                  "anyOf": [
-                    {
-                      "not": {}
-                    },
-                    {
-                      "type": "string",
-                      "enum": ["system", "dark"]
-                    }
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "theme": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "andromeeda",
-                            "aurora-x",
-                            "ayu-dark",
-                            "catppuccin-frappe",
-                            "catppuccin-latte",
-                            "catppuccin-macchiato",
-                            "catppuccin-mocha",
-                            "dark-plus",
-                            "dracula",
-                            "dracula-soft",
-                            "everforest-dark",
-                            "everforest-light",
-                            "github-dark",
-                            "github-dark-default",
-                            "github-dark-dimmed",
-                            "github-dark-high-contrast",
-                            "github-light",
-                            "github-light-default",
-                            "github-light-high-contrast",
-                            "gruvbox-dark-hard",
-                            "gruvbox-dark-medium",
-                            "gruvbox-dark-soft",
-                            "gruvbox-light-hard",
-                            "gruvbox-light-medium",
-                            "gruvbox-light-soft",
-                            "houston",
-                            "kanagawa-dragon",
-                            "kanagawa-lotus",
-                            "kanagawa-wave",
-                            "laserwave",
-                            "light-plus",
-                            "material-theme",
-                            "material-theme-darker",
-                            "material-theme-lighter",
-                            "material-theme-ocean",
-                            "material-theme-palenight",
-                            "min-dark",
-                            "min-light",
-                            "monokai",
-                            "night-owl",
-                            "nord",
-                            "one-dark-pro",
-                            "one-light",
-                            "plastic",
-                            "poimandres",
-                            "red",
-                            "rose-pine",
-                            "rose-pine-dawn",
-                            "rose-pine-moon",
-                            "slack-dark",
-                            "slack-ochin",
-                            "snazzy-light",
-                            "solarized-dark",
-                            "solarized-light",
-                            "synthwave-84",
-                            "tokyo-night",
-                            "vesper",
-                            "vitesse-black",
-                            "vitesse-dark",
-                            "vitesse-light",
-                            "css-variables"
-                          ]
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "light": {
-                              "type": "string",
-                              "enum": [
-                                "andromeeda",
-                                "aurora-x",
-                                "ayu-dark",
-                                "catppuccin-frappe",
-                                "catppuccin-latte",
-                                "catppuccin-macchiato",
-                                "catppuccin-mocha",
-                                "dark-plus",
-                                "dracula",
-                                "dracula-soft",
-                                "everforest-dark",
-                                "everforest-light",
-                                "github-dark",
-                                "github-dark-default",
-                                "github-dark-dimmed",
-                                "github-dark-high-contrast",
-                                "github-light",
-                                "github-light-default",
-                                "github-light-high-contrast",
-                                "gruvbox-dark-hard",
-                                "gruvbox-dark-medium",
-                                "gruvbox-dark-soft",
-                                "gruvbox-light-hard",
-                                "gruvbox-light-medium",
-                                "gruvbox-light-soft",
-                                "houston",
-                                "kanagawa-dragon",
-                                "kanagawa-lotus",
-                                "kanagawa-wave",
-                                "laserwave",
-                                "light-plus",
-                                "material-theme",
-                                "material-theme-darker",
-                                "material-theme-lighter",
-                                "material-theme-ocean",
-                                "material-theme-palenight",
-                                "min-dark",
-                                "min-light",
-                                "monokai",
-                                "night-owl",
-                                "nord",
-                                "one-dark-pro",
-                                "one-light",
-                                "plastic",
-                                "poimandres",
-                                "red",
-                                "rose-pine",
-                                "rose-pine-dawn",
-                                "rose-pine-moon",
-                                "slack-dark",
-                                "slack-ochin",
-                                "snazzy-light",
-                                "solarized-dark",
-                                "solarized-light",
-                                "synthwave-84",
-                                "tokyo-night",
-                                "vesper",
-                                "vitesse-black",
-                                "vitesse-dark",
-                                "vitesse-light",
-                                "css-variables"
-                              ]
-                            },
-                            "dark": {
-                              "type": "string",
-                              "enum": [
-                                "andromeeda",
-                                "aurora-x",
-                                "ayu-dark",
-                                "catppuccin-frappe",
-                                "catppuccin-latte",
-                                "catppuccin-macchiato",
-                                "catppuccin-mocha",
-                                "dark-plus",
-                                "dracula",
-                                "dracula-soft",
-                                "everforest-dark",
-                                "everforest-light",
-                                "github-dark",
-                                "github-dark-default",
-                                "github-dark-dimmed",
-                                "github-dark-high-contrast",
-                                "github-light",
-                                "github-light-default",
-                                "github-light-high-contrast",
-                                "gruvbox-dark-hard",
-                                "gruvbox-dark-medium",
-                                "gruvbox-dark-soft",
-                                "gruvbox-light-hard",
-                                "gruvbox-light-medium",
-                                "gruvbox-light-soft",
-                                "houston",
-                                "kanagawa-dragon",
-                                "kanagawa-lotus",
-                                "kanagawa-wave",
-                                "laserwave",
-                                "light-plus",
-                                "material-theme",
-                                "material-theme-darker",
-                                "material-theme-lighter",
-                                "material-theme-ocean",
-                                "material-theme-palenight",
-                                "min-dark",
-                                "min-light",
-                                "monokai",
-                                "night-owl",
-                                "nord",
-                                "one-dark-pro",
-                                "one-light",
-                                "plastic",
-                                "poimandres",
-                                "red",
-                                "rose-pine",
-                                "rose-pine-dawn",
-                                "rose-pine-moon",
-                                "slack-dark",
-                                "slack-ochin",
-                                "snazzy-light",
-                                "solarized-dark",
-                                "solarized-light",
-                                "synthwave-84",
-                                "tokyo-night",
-                                "vesper",
-                                "vitesse-black",
-                                "vitesse-dark",
-                                "vitesse-light",
-                                "css-variables"
-                              ]
-                            }
-                          },
-                          "required": ["light", "dark"],
-                          "additionalProperties": false
-                        }
-                      ]
-                    },
-                    "languages": {
-                      "type": "object",
-                      "properties": {
-                        "custom": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "description": "Path (absolute or relative) to a JSON file describing a custom Shiki language"
-                          }
-                        }
-                      },
-                      "additionalProperties": false,
-                      "description": "Custom language configuration for codeblocks"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              ],
-              "description": "The codeblock theme configuration. Defaults to `system`. To use a built-in shiki theme, add the theme name as \"theme\" in the object. To use different shiki themes for light and dark modes, add \"themes\" in the object with \"dark\" and \"light\" keys."
-            },
-            "latex": {
-              "type": "boolean",
-              "description": "Whether to include latex styling, overriding our default latex detection"
-            }
-          },
-          "additionalProperties": false,
-          "description": "Styling configurations"
-        },
-        "redirects": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "source": {
-                "type": "string"
-              },
-              "destination": {
-                "type": "string"
-              },
-              "permanent": {
-                "type": "boolean"
-              }
-            },
-            "required": ["source", "destination"],
-            "additionalProperties": false
-          }
-        },
-        "integrations": {
-          "type": "object",
-          "properties": {
-            "adobe": {
-              "type": "object",
-              "properties": {
-                "launchUrl": {
-                  "type": "string",
-                  "format": "uri"
-                }
-              },
-              "required": ["launchUrl"],
-              "additionalProperties": false
-            },
-            "amplitude": {
-              "type": "object",
-              "properties": {
-                "apiKey": {
-                  "type": "string"
-                }
-              },
-              "required": ["apiKey"],
-              "additionalProperties": false
-            },
-            "clarity": {
-              "type": "object",
-              "properties": {
-                "projectId": {
-                  "type": "string"
-                }
-              },
-              "required": ["projectId"],
-              "additionalProperties": false
-            },
-            "clearbit": {
-              "type": "object",
-              "properties": {
-                "publicApiKey": {
-                  "type": "string"
-                }
-              },
-              "required": ["publicApiKey"],
-              "additionalProperties": false
-            },
-            "fathom": {
-              "type": "object",
-              "properties": {
-                "siteId": {
-                  "type": "string"
-                }
-              },
-              "required": ["siteId"],
-              "additionalProperties": false
-            },
-            "frontchat": {
-              "type": "object",
-              "properties": {
-                "snippetId": {
-                  "type": "string",
-                  "minLength": 6
-                }
-              },
-              "required": ["snippetId"],
-              "additionalProperties": false
-            },
-            "ga4": {
-              "type": "object",
-              "properties": {
-                "measurementId": {
-                  "type": "string",
-                  "pattern": "^G"
-                }
-              },
-              "required": ["measurementId"],
-              "additionalProperties": false
-            },
-            "gtm": {
-              "type": "object",
-              "properties": {
-                "tagId": {
-                  "type": "string",
-                  "pattern": "^G"
-                }
-              },
-              "required": ["tagId"],
-              "additionalProperties": false
-            },
-            "heap": {
-              "type": "object",
-              "properties": {
-                "appId": {
-                  "type": "string"
-                }
-              },
-              "required": ["appId"],
-              "additionalProperties": false
-            },
-            "hightouch": {
-              "type": "object",
-              "properties": {
-                "writeKey": {
-                  "type": "string"
-                },
-                "apiHost": {
-                  "type": "string"
-                }
-              },
-              "required": ["writeKey"],
-              "additionalProperties": false
-            },
-            "hotjar": {
-              "type": "object",
-              "properties": {
-                "hjid": {
-                  "type": "string"
-                },
-                "hjsv": {
-                  "type": "string"
-                }
-              },
-              "required": ["hjid", "hjsv"],
-              "additionalProperties": false
-            },
-            "intercom": {
-              "type": "object",
-              "properties": {
-                "appId": {
-                  "type": "string",
-                  "minLength": 6
-                }
-              },
-              "required": ["appId"],
-              "additionalProperties": false
-            },
-            "koala": {
-              "type": "object",
-              "properties": {
-                "publicApiKey": {
-                  "type": "string",
-                  "minLength": 2
-                }
-              },
-              "required": ["publicApiKey"],
-              "additionalProperties": false
-            },
-            "logrocket": {
-              "type": "object",
-              "properties": {
-                "appId": {
-                  "type": "string"
-                }
-              },
-              "required": ["appId"],
-              "additionalProperties": false
-            },
-            "mixpanel": {
-              "type": "object",
-              "properties": {
-                "projectToken": {
-                  "type": "string"
-                }
-              },
-              "required": ["projectToken"],
-              "additionalProperties": false
-            },
-            "pirsch": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                }
-              },
-              "required": ["id"],
-              "additionalProperties": false
-            },
-            "posthog": {
-              "type": "object",
-              "properties": {
-                "apiKey": {
-                  "type": "string",
-                  "pattern": "^phc\\_"
-                },
-                "apiHost": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "sessionRecording": {
-                  "type": "boolean"
-                }
-              },
-              "required": ["apiKey"],
-              "additionalProperties": false
-            },
-            "plausible": {
-              "type": "object",
-              "properties": {
-                "domain": {
-                  "type": "string"
-                },
-                "server": {
-                  "type": "string"
-                }
-              },
-              "required": ["domain"],
-              "additionalProperties": false
-            },
-            "segment": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string"
-                }
-              },
-              "required": ["key"],
-              "additionalProperties": false
-            },
-            "telemetry": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean"
-                }
-              },
-              "additionalProperties": false
-            },
-            "cookies": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "string"
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "additionalProperties": false,
-          "description": "Configurations for official integrations"
-        },
-        "banner": {
-          "$ref": "#/definitions/anchorSchema/anyOf/0/properties/global/properties/languages/items/properties/banner"
-        },
-        "errors": {
-          "type": "object",
-          "properties": {
-            "404": {
-              "type": "object",
-              "properties": {
-                "redirect": {
-                  "type": "boolean",
-                  "default": true,
-                  "description": "Whether to redirect to the home page, if the page is not found"
-                },
-                "title": {
-                  "type": "string",
-                  "description": "The title of the error page"
-                },
-                "description": {
-                  "type": "string",
-                  "description": "The description of the error page. Supports MDX formatting including links, bold, italic text, and custom components."
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "required": ["404"],
-          "additionalProperties": false,
-          "description": "Error pages configuration"
-        },
-        "contextual": {
-          "type": "object",
-          "properties": {
-            "options": {
-              "type": "array",
-              "items": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "enum": [
-                      "assistant",
-                      "copy",
-                      "view",
-                      "chatgpt",
-                      "claude",
-                      "perplexity",
-                      "grok",
-                      "aistudio",
-                      "devin",
-                      "windsurf",
-                      "mcp",
-                      "add-mcp",
-                      "cursor",
-                      "vscode",
-                      "devin-mcp"
-                    ]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "title": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "icon": {
-                        "$ref": "#/definitions/anchorSchema/anyOf/0/properties/icon",
-                        "description": "The icon to be displayed in the section"
-                      },
-                      "href": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "base": {
-                                "type": "string"
-                              },
-                              "query": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "key": {
-                                      "type": "string"
-                                    },
-                                    "value": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "required": ["key", "value"],
-                                  "additionalProperties": false
-                                }
-                              }
-                            },
-                            "required": ["base"],
-                            "additionalProperties": false
-                          }
-                        ]
-                      }
-                    },
-                    "required": ["title", "description", "href"],
-                    "additionalProperties": false,
-                    "description": "Custom contextual option"
-                  }
-                ]
-              },
-              "description": "Contextual options"
-            },
-            "display": {
-              "type": "string",
-              "enum": ["header", "toc"],
-              "default": "header",
-              "description": "Where to display the contextual options: \"header\" (default) shows them in the top-of-page context menu, \"toc\" shows them in the table of contents sidebar"
-            }
-          },
-          "required": ["options"],
-          "additionalProperties": false,
-          "description": "Contextual options"
-        },
-        "thumbnails": {
-          "type": "object",
-          "properties": {
-            "appearance": {
-              "type": "string",
-              "enum": ["light", "dark"],
-              "description": "The appearance of the thumbnail. Defaults to generated by colors."
-            },
-            "background": {
-              "type": "string",
-              "description": "Background image for the thumbnail. Can be an absolute URL or relative path."
-            },
-            "fonts": {
-              "type": "object",
-              "properties": {
-                "family": {
-                  "type": "string",
-                  "description": "The font family, such as \"Open Sans\", \"Playfair Display\""
-                }
-              },
-              "required": ["family"],
-              "additionalProperties": false,
-              "description": "The font to be used for thumbnails. Only family name is supported for Google Fonts."
-            }
-          },
-          "additionalProperties": false
-        },
-        "interaction": {
-          "type": "object",
-          "properties": {
-            "drilldown": {
-              "type": "boolean",
-              "description": "Whether to automatically navigate to the first page when navigation groups are expanded"
-            }
-          },
-          "additionalProperties": false,
-          "description": "Options for how users interact with links in the documentation"
-        },
-        "metadata": {
-          "type": "object",
-          "properties": {
-            "timestamp": {
-              "type": "boolean",
-              "default": false,
-              "description": "When enabled, all pages will display the date the content was last modified. Default is false."
-            }
-          },
-          "additionalProperties": false,
-          "description": "Metadata configuration for documentation pages"
-        },
-        "variables": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "Set of custom variables used throughout your documentation."
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "maple"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "palm"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "willow"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "linden"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "almond"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "aspen"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "luma"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "const": "sequoia"
-        },
-        "$schema": {
-          "$ref": "#/anyOf/0/properties/$schema"
-        },
-        "name": {
-          "$ref": "#/anyOf/0/properties/name"
-        },
-        "public": {
-          "$ref": "#/anyOf/0/properties/public"
-        },
-        "description": {
-          "$ref": "#/anyOf/0/properties/description"
-        },
-        "colors": {
-          "$ref": "#/definitions/colorsSchema"
-        },
-        "logo": {
-          "$ref": "#/anyOf/0/properties/logo"
-        },
-        "favicon": {
-          "$ref": "#/anyOf/0/properties/favicon"
-        },
-        "api": {
-          "$ref": "#/anyOf/0/properties/api"
-        },
-        "appearance": {
-          "$ref": "#/anyOf/0/properties/appearance"
-        },
-        "background": {
-          "$ref": "#/anyOf/0/properties/background"
-        },
-        "navbar": {
-          "$ref": "#/anyOf/0/properties/navbar"
-        },
-        "navigation": {
-          "$ref": "#/definitions/navigationSchema"
-        },
-        "footer": {
-          "$ref": "#/anyOf/0/properties/footer"
-        },
-        "search": {
-          "$ref": "#/anyOf/0/properties/search"
-        },
-        "seo": {
-          "$ref": "#/anyOf/0/properties/seo"
-        },
-        "fonts": {
-          "$ref": "#/anyOf/0/properties/fonts"
-        },
-        "icons": {
-          "$ref": "#/anyOf/0/properties/icons"
-        },
-        "styling": {
-          "$ref": "#/anyOf/0/properties/styling"
-        },
-        "redirects": {
-          "$ref": "#/anyOf/0/properties/redirects"
-        },
-        "integrations": {
-          "$ref": "#/anyOf/0/properties/integrations"
-        },
-        "banner": {
-          "$ref": "#/anyOf/0/properties/banner"
-        },
-        "errors": {
-          "$ref": "#/anyOf/0/properties/errors"
-        },
-        "contextual": {
-          "$ref": "#/anyOf/0/properties/contextual"
-        },
-        "thumbnails": {
-          "$ref": "#/anyOf/0/properties/thumbnails"
-        },
-        "interaction": {
-          "$ref": "#/anyOf/0/properties/interaction"
-        },
-        "metadata": {
-          "$ref": "#/anyOf/0/properties/metadata"
-        },
-        "variables": {
-          "$ref": "#/anyOf/0/properties/variables"
-        }
-      },
-      "required": ["theme", "name", "colors", "navigation"],
-      "additionalProperties": false
-    }
-  ],
+  "$id": "https://blode.md/docs.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
   "definitions": {
     "anchorSchema": {
       "anyOf": [
@@ -5012,5 +3222,347 @@
       "$ref": "#/definitions/anchorSchema/anyOf/1/properties/languages/items/anyOf/1/properties/versions"
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "description": "Schema for Blode.md docs.json configuration files. Derived from the vendored Mintlify schema and pruned to the supported Blode.md surface.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "default": "https://blode.md/docs.json",
+      "description": "JSON Schema URL for editor autocomplete."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The name of the project, organization, or product"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description used for SEO and LLM indexing"
+    },
+    "logo": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 3,
+          "description": "The logo (for both light and dark mode)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "string",
+              "description": "Path pointing to the light logo file to use in dark mode, including the file extension. Example: `/logo.png`"
+            },
+            "dark": {
+              "type": "string",
+              "description": "Path pointing to the dark logo file to use in light mode, including the file extension. Example: `/logo-dark.png`"
+            },
+            "href": {
+              "$ref": "#/definitions/anchorSchema/anyOf/0/properties/href",
+              "description": "The URL to redirect to when clicking the logo. If not provided, the logo will link to the homepage. Example: `https://example.com`"
+            }
+          },
+          "required": ["light", "dark"],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Your site logo. Provide a single image path or separate files for light and dark mode."
+    },
+    "favicon": {
+      "anyOf": [
+        {
+          "type": "string",
+          "description": "Path pointing to the favicon file in your docs folder, including the file extension. The favicon will automatically be resized to the appropriate sizes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "string",
+              "description": "Path pointing to the light favicon file to use in dark mode, including the file extension. Example: `/favicon.png`"
+            },
+            "dark": {
+              "type": "string",
+              "description": "Path pointing to the dark favicon file to use in light mode, including the file extension. Example: `/favicon-dark.png`"
+            }
+          },
+          "required": ["light", "dark"],
+          "additionalProperties": false,
+          "description": "The path to the favicon. Can be a single file or a pair for light and dark mode. Example: `/favicon.png`"
+        }
+      ],
+      "description": "Path to your favicon file, including the file extension. Provide a single file or separate files for light and dark mode."
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "openapi": {
+          "$ref": "#/definitions/anchorSchema/anyOf/0/properties/openapi",
+          "description": "A string or an array of strings of absolute or relative urls pointing to the OpenAPI file(s)"
+        },
+        "asyncapi": {
+          "$ref": "#/definitions/anchorSchema/anyOf/0/properties/asyncapi",
+          "description": "A string or an array of strings of absolute or relative urls pointing to the AsyncAPI file(s)"
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "expanded": {
+              "type": "string",
+              "enum": ["all", "closed"],
+              "description": "The view mode of the API parameters. Defaults to `closed`."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configurations for the API parameters"
+        },
+        "playground": {
+          "type": "object",
+          "properties": {
+            "display": {
+              "type": "string",
+              "enum": ["interactive", "simple", "none", "auth"],
+              "description": "The display mode of the API playground. Defaults to `interactive`. Use `auth` to show the playground only to authenticated users."
+            },
+            "proxy": {
+              "type": "boolean",
+              "description": "Whether to pass API requests through a proxy server. Defaults to `true`."
+            },
+            "credentials": {
+              "type": "boolean",
+              "description": "Whether to include cookies/auth for cross-origin requests when proxy is disabled. Defaults to `false`."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configurations for the API playground"
+        },
+        "examples": {
+          "type": "object",
+          "properties": {
+            "defaults": {
+              "type": "string",
+              "enum": ["required", "all"],
+              "description": "Whether to show only required parameters in the examples, defaults to `all`."
+            },
+            "languages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Example languages for the autogenerated API snippets"
+            },
+            "prefill": {
+              "type": "boolean",
+              "description": "Whether to prefill the API playground with the examples"
+            },
+            "autogenerate": {
+              "type": "boolean",
+              "description": "Whether to generate code samples for API endpoints. Defaults to `true`. If `false`, only manually-written code samples (from either `x-codeSamples` property in the OpenAPI spec or `<RequestExample>` components in the MDX files) will be shown."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configurations for the autogenerated API examples"
+        },
+        "url": {
+          "type": "string",
+          "enum": ["full"],
+          "description": "The display mode of the base URL in the endpoint header. Set to `full` to always show the full base URL on every endpoint page."
+        },
+        "mdx": {
+          "type": "object",
+          "properties": {
+            "auth": {
+              "type": "object",
+              "properties": {
+                "method": {
+                  "type": "string",
+                  "enum": ["bearer", "basic", "key", "cobo"],
+                  "description": "Authentication method for the API"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Authentication name for the API"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Authentication configuration for the API"
+            },
+            "server": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uri"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              ],
+              "description": "Base URL(s) for the API"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configurations for API pages generated from MDX files"
+        }
+      },
+      "additionalProperties": false,
+      "description": "API reference configuration and playground settings"
+    },
+    "appearance": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": ["system", "light", "dark"],
+          "description": "The default light/dark mode. Defaults to system"
+        },
+        "strict": {
+          "type": "boolean",
+          "description": "Whether to hide the light / dark mode toggle. Defaults to `false`."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Light and dark mode settings."
+    },
+    "navbar": {
+      "$ref": "#/definitions/anchorSchema/anyOf/0/properties/global/properties/languages/items/properties/navbar",
+      "description": "Navbar content and settings"
+    },
+    "navigation": {
+      "$ref": "#/definitions/navigationSchema"
+    },
+    "search": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "The prompt to be displayed in the search bar placeholder"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Search display settings"
+    },
+    "seo": {
+      "additionalProperties": false,
+      "description": "SEO indexing configuration.",
+      "properties": {
+        "indexing": {
+          "description": "Set `all` to index every page, or `default` to respect page-level `noindex` frontmatter.",
+          "enum": ["all", "default"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "contextual": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "add-mcp",
+                  "aistudio",
+                  "assistant",
+                  "chatgpt",
+                  "claude",
+                  "copy",
+                  "cursor",
+                  "devin",
+                  "devin-mcp",
+                  "grok",
+                  "mcp",
+                  "perplexity",
+                  "view",
+                  "vscode",
+                  "windsurf"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "$ref": "#/definitions/anchorSchema/anyOf/0/properties/icon",
+                    "description": "The icon to be displayed in the section"
+                  },
+                  "href": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "base": {
+                            "type": "string"
+                          },
+                          "query": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["key", "value"],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": ["base"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": ["title", "description", "href"],
+                "additionalProperties": false,
+                "description": "Custom contextual option"
+              }
+            ]
+          },
+          "description": "Contextual options"
+        },
+        "display": {
+          "type": "string",
+          "enum": ["header", "toc"],
+          "default": "header",
+          "description": "Where to display the contextual options: \"header\" (default) shows them in the top-of-page context menu, \"toc\" shows them in the table of contents sidebar"
+        }
+      },
+      "required": ["options"],
+      "additionalProperties": false,
+      "description": "Contextual options"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, all pages will display the date the content was last modified. Default is false."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Metadata configuration for documentation pages"
+    }
+  },
+  "required": ["name", "navigation"],
+  "type": "object"
 }

@@ -164,15 +164,11 @@ describe("tenant static LLM helpers", () => {
     const docsPath = await createTempUtilityRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://docs.blode.md/docs.json",
-          colors: {
-            primary: "#171717",
-          },
+          $schema: "https://blode.md/docs.json",
           name: "Example Docs",
           navigation: {
             groups: [{ group: "Docs", pages: ["guide"] }],
           },
-          theme: "mint",
         },
         null,
         2

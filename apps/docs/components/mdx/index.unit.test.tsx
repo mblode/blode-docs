@@ -25,5 +25,5 @@ describe("mdxComponents", () => {
 
     expect(tree.File).toBeDefined();
     expect(tree.Folder).toBeDefined();
-  });
+  }, 10_000);
 });

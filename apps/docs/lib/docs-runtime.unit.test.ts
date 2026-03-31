@@ -81,17 +81,12 @@ describe("getTenantSearchItems", () => {
     const docsPath = await createDocsRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://docs.blode.md/docs.json",
+          $schema: "https://blode.md/docs.json",
           api: {
             openapi: {
               directory: "api",
               source: "openapi.yaml",
             },
-          },
-          colors: {
-            dark: "#0C3A33",
-            light: "#CFF6EE",
-            primary: "#0FB59F",
           },
           description: "Fixture docs",
           name: "Fixture Docs",
@@ -103,7 +98,6 @@ describe("getTenantSearchItems", () => {
               },
             ],
           },
-          theme: "mint",
         },
         null,
         2

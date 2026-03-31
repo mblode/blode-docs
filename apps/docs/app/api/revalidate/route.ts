@@ -5,7 +5,15 @@ import {
   clearDocsRuntimeCaches,
   clearDocsRuntimeCachesForTenant,
 } from "@/lib/docs-runtime";
+import {
+  clearOpenApiProxyConfigCache,
+  clearOpenApiProxyConfigCacheForTenant,
+} from "@/lib/openapi-proxy";
 import { clearTenantResolutionCache } from "@/lib/tenancy";
+import {
+  clearTenantStaticCaches,
+  clearTenantStaticCachesForTenant,
+} from "@/lib/tenant-static";
 import { clearTenantCache } from "@/lib/tenants";
 
 interface RevalidatePayload {
@@ -41,18 +49,19 @@ const handleRevalidation = (payload: RevalidatePayload) => {
     revalidateTag(tag, "max");
   }
 
-  // Revalidate tenant-scoped cache tags used by 'use cache' functions
-  if (payload.tenantId) {
-    revalidateTag(`tenant:${payload.tenantId}`, "max");
-  }
-
   after(() => {
     if (payload.tenantId) {
       clearDocsRuntimeCachesForTenant(payload.tenantId);
-    } else {
-      clearDocsRuntimeCaches();
+      clearOpenApiProxyConfigCacheForTenant(payload.tenantId);
       clearTenantCache();
       clearTenantResolutionCache();
+      clearTenantStaticCachesForTenant(payload.tenantId);
+    } else {
+      clearDocsRuntimeCaches();
+      clearOpenApiProxyConfigCache();
+      clearTenantCache();
+      clearTenantResolutionCache();
+      clearTenantStaticCaches();
     }
   });
 

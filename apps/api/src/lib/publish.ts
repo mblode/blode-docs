@@ -49,6 +49,14 @@ interface DeploymentManifest {
   version: 1;
 }
 
+export class PublishValidationError extends Error {
+  name = "PublishValidationError";
+}
+
+export const isPublishValidationError = (
+  error: unknown
+): error is PublishValidationError => error instanceof PublishValidationError;
+
 const getDocsCollection = (
   config: SiteConfig
 ): SiteConfig["collections"][number] | undefined =>
@@ -172,7 +180,9 @@ const buildPrebuiltOpenApiIndex = async (
 
 const normalizeDeploymentFilePath = (value: string) => {
   if (value.startsWith("/") || value.startsWith("\\")) {
-    throw new Error(`Invalid deployment file path "${value}".`);
+    throw new PublishValidationError(
+      `Invalid deployment file path "${value}".`
+    );
   }
 
   const normalized = normalizePath(path.posix.normalize(value));
@@ -182,7 +192,9 @@ const normalizeDeploymentFilePath = (value: string) => {
     normalized.startsWith("../") ||
     normalized.includes("/../")
   ) {
-    throw new Error(`Invalid deployment file path "${value}".`);
+    throw new PublishValidationError(
+      `Invalid deployment file path "${value}".`
+    );
   }
 
   return normalized;
@@ -329,7 +341,9 @@ export const finalizeDeploymentManifest = async (input: {
   files.sort((left, right) => left.path.localeCompare(right.path));
 
   if (!files.some((file) => file.path === SITE_CONFIG_FILE)) {
-    throw new Error(`Deployment is missing ${SITE_CONFIG_FILE}.`);
+    throw new PublishValidationError(
+      `Deployment is missing ${SITE_CONFIG_FILE}.`
+    );
   }
 
   // Build and upload pre-built content index for fast runtime loading

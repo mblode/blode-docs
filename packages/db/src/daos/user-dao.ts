@@ -61,10 +61,18 @@ export class UserDao {
   }
 
   async upsertByAuthId(input: UserCreateInput): Promise<UserRecord> {
-    const existing = await this.getByAuthId(input.authId);
-    if (existing) {
-      return existing;
-    }
-    return this.create(input);
+    const [record] = await db
+      .insert(users)
+      .values(input)
+      .onConflictDoUpdate({
+        set: {
+          email: input.email,
+          name: input.name,
+          updatedAt: new Date(),
+        },
+        target: users.authId,
+      })
+      .returning(userSelect);
+    return assertRecord(record, "Failed to upsert user.");
   }
 }

@@ -1,12 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { normalizePath } from "@repo/common";
+import { normalizePath, shouldIgnoreRootDocsFile } from "@repo/common";
 
 import type { ContentSource } from "./content-source.js";
 
 const IGNORED_DIRECTORIES = new Set(["app", "lib", "node_modules", "public"]);
-const IGNORED_ROOT_FILES = new Set(["AGENTS.md", "README.md"]);
 
 const isNotFoundError = (error: unknown) =>
   Boolean(
@@ -54,7 +53,7 @@ const walkFiles = async (
     }
 
     if (entry.isFile()) {
-      if (!prefix && IGNORED_ROOT_FILES.has(entry.name)) {
+      if (!prefix && shouldIgnoreRootDocsFile(entry.name)) {
         continue;
       }
       files.push(normalizePath(relativePath));

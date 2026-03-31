@@ -1,0 +1,36 @@
+---
+title: blodemd logout
+description: Remove stored credentials from your local machine.
+---
+
+Delete the credentials file saved by `blodemd login` from your local machine.
+
+```bash
+blodemd logout
+```
+
+The CLI stores credentials at `~/.config/blodemd/credentials.json` (or `%APPDATA%\blodemd\` on Windows). `blodemd logout` removes that file. If the CLI finds no credentials file, it prints a message and exits cleanly.
+
+This command has no flags.
+
+## Examples
+
+<CodeGroup>
+```bash title="Log out"
+blodemd logout
+```
+
+</CodeGroup>
+
+### Output
+
+```bash
+$ blodemd logout
+~ Logged out successfully.
+i Done
+```
+
+```bash
+$ blodemd logout
+i No credentials found.
+```

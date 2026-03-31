@@ -5,15 +5,19 @@ test("landing page renders primary CTA", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Launch a docs platform that feels handcrafted.",
+      name: "Documentation should ship as fast as code.",
     })
   ).toBeVisible();
 
-  const cta = page.getByRole("link", { name: "Start now" }).first();
-  await expect(cta).toHaveAttribute(
-    "href",
-    "https://dashboard.blode.md/signup"
-  );
-
-  await expect(page.getByPlaceholder("Work email")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Get started" }).first()
+  ).toHaveAttribute("href", "#get-started");
+  await expect(
+    page.getByRole("link", { name: "Read the docs" })
+  ).toHaveAttribute("href", "https://docs.blode.md");
+  await expect(
+    page.getByRole("heading", {
+      name: "Ship your first doc in under a minute.",
+    })
+  ).toBeVisible();
 });

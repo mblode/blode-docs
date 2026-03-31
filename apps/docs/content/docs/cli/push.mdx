@@ -29,7 +29,7 @@ If none contain a `docs.json`, the current directory is used.
     },
     "--project <slug>": {
       description:
-        "Project slug. Falls back to the name field in docs.json, then the BLODEMD_PROJECT environment variable.",
+        "Project slug. Falls back to the BLODEMD_PROJECT environment variable, then the name field in docs.json.",
       type: "string",
     },
     "--api-url <url>": {
@@ -77,8 +77,8 @@ When you run `blodemd push`, the CLI executes these steps:
     split across multiple requests.
   </Step>
   <Step title="Finalize and promote">
-    Marks the deployment as complete and promotes it to production. Your docs
-    are live immediately.
+    The CLI marks the deployment as complete and promotes it to production. Your
+    docs are live immediately.
   </Step>
 </Steps>
 

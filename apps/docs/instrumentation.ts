@@ -1,6 +1,4 @@
 export const register = async () => {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { getHighlighter } = await import("./lib/shiki");
-    await getHighlighter();
-  }
+  // Shiki is initialized lazily from the MDX render path so non-doc routes
+  // do not pay the syntax-highlighting cold start cost.
 };

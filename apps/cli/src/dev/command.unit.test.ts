@@ -1,8 +1,17 @@
 import { EventEmitter } from "node:events";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resolveDevPort, shutdownChildProcess } from "./command.js";
+import {
+  buildDevServerLaunch,
+  createStandaloneRuntimeRoot,
+  devCommand,
+  resolveDevPort,
+  shutdownChildProcess,
+} from "./command.js";
 
 // eslint-disable-next-line unicorn/prefer-event-target
 class FakeChildProcess extends EventEmitter {
@@ -38,6 +47,16 @@ class FakeChildProcess extends EventEmitter {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+const tempRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    tempRoots.splice(0).map(async (root) => {
+      await fs.rm(root, { force: true, recursive: true });
+    })
+  );
 });
 
 describe("resolveDevPort", () => {
@@ -91,5 +110,217 @@ describe("shutdownChildProcess", () => {
     await expect(shutdown).resolves.toBeUndefined();
     expect(child.kill).toHaveBeenCalledTimes(2);
     expect(child.signals).toEqual(["SIGTERM", "SIGKILL"]);
+  });
+});
+
+describe("createStandaloneRuntimeRoot", () => {
+  it("creates a unique runtime directory for each session", async () => {
+    const configDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "blodemd-runtime-root-")
+    );
+    tempRoots.push(configDir);
+
+    const first = await createStandaloneRuntimeRoot(configDir);
+    const second = await createStandaloneRuntimeRoot(configDir);
+
+    tempRoots.push(first, second);
+
+    expect(first).not.toBe(second);
+    await expect(fs.stat(first)).resolves.toMatchObject({
+      isDirectory: expect.any(Function),
+    });
+    await expect(fs.stat(second)).resolves.toMatchObject({
+      isDirectory: expect.any(Function),
+    });
+  });
+
+  it("removes stale runtime directories before creating a new one", async () => {
+    const configDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "blodemd-runtime-cleanup-")
+    );
+    tempRoots.push(configDir);
+
+    const staleRoot = path.join(configDir, "standalone-runtime-stale");
+    await fs.mkdir(staleRoot, { recursive: true });
+
+    const staleDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    await fs.utimes(staleRoot, staleDate, staleDate);
+
+    const runtimeRoot = await createStandaloneRuntimeRoot(configDir);
+    tempRoots.push(runtimeRoot);
+
+    await expect(fs.stat(runtimeRoot)).resolves.toMatchObject({
+      isDirectory: expect.any(Function),
+    });
+    await expect(fs.stat(staleRoot)).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+});
+
+describe("buildDevServerLaunch", () => {
+  it("uses turbopack for standalone launches", () => {
+    const launch = buildDevServerLaunch(
+      {
+        devServerDir: "/runtime/dev-server",
+        mode: "standalone",
+        nextPackageRoot: path.join(process.cwd(), "apps/cli"),
+        runtimeRoot: "/runtime",
+      },
+      { port: 3140, root: "/docs" }
+    );
+
+    expect(launch.command).toBe(process.execPath);
+    expect(launch.args[0]).toMatch(/node_modules\/next\/dist\/bin\/next$/);
+    expect(launch.args.slice(1)).toEqual(["dev", "--turbopack"]);
+    expect(launch.cwd).toBe("/runtime/dev-server");
+    expect(launch.env.BLODEMD_PACKAGES_DIR).toBe("/runtime/packages");
+    expect(launch.env.BLODEMD_TURBOPACK_ROOT).toBe(
+      path.parse(process.cwd()).root
+    );
+    expect(launch.env.DOCS_ROOT).toBe("/docs");
+    expect(launch.env.PORT).toBe("3140");
+  });
+
+  it("uses the workspace dev script for monorepo launches", () => {
+    const launch = buildDevServerLaunch(
+      {
+        mode: "monorepo",
+        repoRoot: "/repo",
+      },
+      { port: 3030, root: "/docs" }
+    );
+
+    expect(launch.command).toBe(
+      process.platform === "win32" ? "npm.cmd" : "npm"
+    );
+    expect(launch.args).toEqual(["run", "dev", "--workspace=dev-server"]);
+    expect(launch.cwd).toBe("/repo");
+    expect(launch.env.DOCS_ROOT).toBe("/docs");
+    expect(launch.env.PORT).toBe("3030");
+  });
+});
+
+describe("devCommand", () => {
+  it("opens the browser exactly once after the server is ready", async () => {
+    const child = new FakeChildProcess("graceful");
+    const openCalls: string[] = [];
+    const lifecycle: string[] = [];
+    const watcher = {
+      close: vi.fn(() => {
+        lifecycle.push("watcher.close");
+        return Promise.resolve();
+      }),
+    };
+
+    await devCommand(
+      { openBrowser: true, port: "3030" },
+      {
+        createWatcher: vi.fn(() => {
+          lifecycle.push("createWatcher");
+          return watcher;
+        }) as never,
+        getCliFilePath: () => "/fake/dist/cli.mjs",
+        getIntro: vi.fn(),
+        getLog: {
+          error: vi.fn(),
+          info: vi.fn(),
+          success: vi.fn(() => {
+            lifecycle.push("log.success");
+          }),
+        } as never,
+        getOpen: vi.fn((url: string) => {
+          lifecycle.push("open");
+          openCalls.push(url);
+          setTimeout(() => {
+            child.exitCode = 0;
+            child.emit("exit", 0, null);
+          }, 0);
+          return Promise.resolve();
+        }) as never,
+        parsePortValue: vi.fn(() => 3030),
+        removeDirectory: vi.fn(() => Promise.resolve()),
+        resolveDevPortValue: vi.fn(() => Promise.resolve(3030)),
+        resolveDocsRootValue: vi.fn(() => Promise.resolve("/docs")),
+        resolveServer: vi.fn(() =>
+          Promise.resolve({
+            mode: "monorepo",
+            repoRoot: "/repo",
+          })
+        ) as never,
+        shutdownChild: vi.fn(() => Promise.resolve()),
+        spawnServer: vi.fn(() => child as never),
+        validateDocsRootValue: vi.fn(() =>
+          Promise.resolve({
+            config: {} as never,
+            warnings: [],
+          })
+        ) as never,
+        waitForServerReady: vi.fn(() => {
+          lifecycle.push("waitForServer");
+          return Promise.resolve();
+        }),
+      }
+    );
+
+    expect(openCalls).toEqual(["http://localhost:3030"]);
+    expect(lifecycle).toEqual([
+      "waitForServer",
+      "createWatcher",
+      "log.success",
+      "open",
+      "watcher.close",
+    ]);
+  });
+
+  it("skips opening the browser when --no-open is used", async () => {
+    const child = new FakeChildProcess("graceful");
+    const openSpy = vi.fn(() => Promise.resolve());
+
+    setTimeout(() => {
+      child.exitCode = 0;
+      child.emit("exit", 0, null);
+    }, 0);
+
+    await devCommand(
+      { openBrowser: false, port: "3030" },
+      {
+        createWatcher: vi.fn(
+          () =>
+            ({
+              close: vi.fn(() => Promise.resolve()),
+            }) as never
+        ) as never,
+        getCliFilePath: () => "/fake/dist/cli.mjs",
+        getIntro: vi.fn(),
+        getLog: {
+          error: vi.fn(),
+          info: vi.fn(),
+          success: vi.fn(),
+        } as never,
+        getOpen: openSpy as never,
+        parsePortValue: vi.fn(() => 3030),
+        removeDirectory: vi.fn(() => Promise.resolve()),
+        resolveDevPortValue: vi.fn(() => Promise.resolve(3030)),
+        resolveDocsRootValue: vi.fn(() => Promise.resolve("/docs")),
+        resolveServer: vi.fn(() =>
+          Promise.resolve({
+            mode: "monorepo",
+            repoRoot: "/repo",
+          })
+        ) as never,
+        shutdownChild: vi.fn(() => Promise.resolve()),
+        spawnServer: vi.fn(() => child as never),
+        validateDocsRootValue: vi.fn(() =>
+          Promise.resolve({
+            config: {} as never,
+            warnings: [],
+          })
+        ) as never,
+        waitForServerReady: vi.fn(() => Promise.resolve()),
+      }
+    );
+
+    expect(openSpy).not.toHaveBeenCalled();
   });
 });

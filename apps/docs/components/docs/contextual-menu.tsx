@@ -23,12 +23,40 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   buildBuiltinUrl,
   builtinOptions,
   resolveCustomHref,
 } from "@/lib/contextual-options";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+type ActionId = "add-mcp" | "assistant" | "copy" | "mcp";
+
+interface ResolvedOption {
+  key: string;
+  title: string;
+  description: string;
+  icon: IconComponent;
+  type: "action" | "link";
+  action?: ActionId;
+  href?: string;
+}
+
+interface ContextualContext {
+  pageUrl: string;
+  pageContent: string;
+  pagePath: string;
+  mcpServerUrl?: string;
+}
+
+interface ActionFeedback {
+  id: string;
+  state: "copied" | "error";
+}
 
 const iconMap: Record<string, IconComponent> = {
   ClaudeaiIcon,
@@ -50,36 +78,64 @@ const iconMap: Record<string, IconComponent> = {
 const getBuiltinIcon = (iconName: string): IconComponent =>
   iconMap[iconName] ?? CopySimpleIcon;
 
-type ActionId = "copy" | "mcp" | "add-mcp" | "assistant";
+const getFeedbackLabel = (
+  feedbackState: ActionFeedback["state"] | null,
+  defaultLabel: string
+) => {
+  switch (feedbackState) {
+    case "copied": {
+      return "Copied";
+    }
+    case "error": {
+      return "Copy failed";
+    }
+    default: {
+      return defaultLabel;
+    }
+  }
+};
 
-interface ResolvedOption {
-  key: string;
-  title: string;
-  description: string;
-  icon: IconComponent;
-  type: "action" | "link";
-  action?: ActionId;
-  href?: string;
-}
+const getFeedbackDescription = (
+  feedbackState: ActionFeedback["state"] | null,
+  defaultDescription: string
+) => {
+  switch (feedbackState) {
+    case "copied": {
+      return "Copied to clipboard";
+    }
+    case "error": {
+      return "Clipboard access was blocked";
+    }
+    default: {
+      return defaultDescription;
+    }
+  }
+};
 
-interface ContextualContext {
-  pageUrl: string;
-  pageContent: string;
-  pagePath: string;
-  mcpServerUrl?: string;
-}
+const getFeedbackIcon = (
+  feedbackState: ActionFeedback["state"] | null,
+  defaultIcon: IconComponent
+) => {
+  if (feedbackState === "copied") {
+    return Checkmark1Icon;
+  }
+
+  return defaultIcon;
+};
 
 const resolveOptions = (
   options: ContextualOption[],
   context: ContextualContext
 ): ResolvedOption[] => {
   const resolved: ResolvedOption[] = [];
+
   for (const option of options) {
     if (typeof option === "string") {
       const definition = builtinOptions[option];
       if (!definition) {
         continue;
       }
+
       if (definition.type === "action") {
         resolved.push({
           action: option as ActionId,
@@ -89,59 +145,96 @@ const resolveOptions = (
           title: definition.title,
           type: "action",
         });
-      } else {
-        const href = buildBuiltinUrl(option, context);
-        if (href) {
-          resolved.push({
-            description: definition.description,
-            href,
-            icon: getBuiltinIcon(definition.iconName),
-            key: option,
-            title: definition.title,
-            type: "link",
-          });
-        }
+        continue;
       }
-    } else {
+
+      const href = buildBuiltinUrl(option, context);
+      if (!href) {
+        continue;
+      }
+
       resolved.push({
-        description: option.description,
-        href: resolveCustomHref(option.href, context),
-        icon: CopySimpleIcon,
-        key: `custom-${option.title}`,
-        title: option.title,
+        description: definition.description,
+        href,
+        icon: getBuiltinIcon(definition.iconName),
+        key: option,
+        title: definition.title,
         type: "link",
       });
+      continue;
     }
+
+    resolved.push({
+      description: option.description,
+      href: resolveCustomHref(option.href, context),
+      icon: CopySimpleIcon,
+      key: `custom-${option.title}`,
+      title: option.title,
+      type: "link",
+    });
   }
+
   return resolved;
 };
 
-const useContextualActions = (content: string, title: string) => {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+const useContextualActions = (content: string | undefined, title: string) => {
+  const resetTimerRef = useRef<number | null>(null);
+  const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    },
+    []
+  );
+
+  const setActionFeedback = useCallback(
+    (id: string, state: ActionFeedback["state"]) => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+
+      setFeedback({ id, state });
+      resetTimerRef.current = window.setTimeout(() => {
+        setFeedback(null);
+        resetTimerRef.current = null;
+      }, 2000);
+    },
+    []
+  );
 
   const handleAction = useCallback(
     async (action: string, key?: string) => {
       const id = key ?? action;
+
       switch (action) {
         case "copy": {
-          await navigator.clipboard.writeText(`# ${title}\n\n${content}`);
-          setCopiedId(id);
-          setTimeout(() => setCopiedId(null), 2000);
-          break;
+          try {
+            await navigator.clipboard.writeText(
+              `# ${title}\n\n${content ?? ""}`
+            );
+            setActionFeedback(id, "copied");
+            return true;
+          } catch {
+            setActionFeedback(id, "error");
+            return false;
+          }
         }
         default: {
-          break;
+          return true;
         }
       }
     },
-    [content, title]
+    [content, setActionFeedback, title]
   );
 
-  return { copiedId, handleAction };
+  return { feedback, handleAction };
 };
 
 const usePageContext = (
-  content: string,
+  content: string | undefined,
   title: string,
   pagePath: string
 ): ContextualContext => {
@@ -149,14 +242,17 @@ const usePageContext = (
 
   useEffect(() => {
     setPageUrl(window.location.href);
-  }, []);
+  }, [pagePath]);
 
-  return {
-    mcpServerUrl: undefined,
-    pageContent: `# ${title}\n\n${content}`,
-    pagePath,
-    pageUrl,
-  };
+  return useMemo(
+    () => ({
+      mcpServerUrl: undefined,
+      pageContent: `# ${title}\n\n${content ?? ""}`,
+      pagePath,
+      pageUrl,
+    }),
+    [content, pagePath, pageUrl, title]
+  );
 };
 
 const MenuIcon = ({ children }: { children: ReactNode }) => (
@@ -172,11 +268,11 @@ const MenuItem = ({
 }: {
   children: ReactNode;
   href?: string;
-  onSelect?: () => void;
+  onSelect?: () => Promise<void> | void;
 }) =>
   href ? (
     <a
-      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-secondary/25"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-secondary/25 focus-visible:bg-secondary/25 focus-visible:outline-none"
       href={href}
       onClick={onSelect}
       rel="noopener noreferrer"
@@ -186,7 +282,7 @@ const MenuItem = ({
     </a>
   ) : (
     <button
-      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-secondary/25"
+      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-secondary/25 focus-visible:bg-secondary/25 focus-visible:outline-none"
       onClick={onSelect}
       type="button"
     >
@@ -211,7 +307,7 @@ const ExternalArrow = () => (
 
 interface ContextualMenuProps {
   options: ContextualOption[];
-  content: string;
+  content?: string;
   title: string;
   pagePath: string;
 }
@@ -222,40 +318,19 @@ export const ContextualMenu = ({
   title,
   pagePath,
 }: ContextualMenuProps) => {
-  const menuRef = useRef<HTMLDivElement>(null);
   const context = usePageContext(content, title, pagePath);
-  const { copiedId, handleAction } = useContextualActions(content, title);
+  const { feedback, handleAction } = useContextualActions(content, title);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const resolved = useMemo(
     () => resolveOptions(options, context),
     [context, options]
   );
-
   const [primaryOption] = resolved;
-
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (menuRef.current?.contains(event.target as Node)) {
-        return;
-      }
-      setMenuOpen(false);
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [menuOpen]);
+  const hasSecondaryOptions = resolved.length > 1;
 
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
-  }, []);
-
-  const toggleMenu = useCallback(() => {
-    setMenuOpen((current) => !current);
   }, []);
 
   const handlePrimaryAction = useCallback(async () => {
@@ -279,11 +354,16 @@ export const ContextualMenu = ({
           .map((item) => [
             item.key,
             async () => {
-              await handleAction(item.action ?? "", item.key);
-              closeMenu();
+              const didComplete = await handleAction(
+                item.action ?? "",
+                item.key
+              );
+              if (didComplete) {
+                closeMenu();
+              }
             },
           ])
-      ),
+      ) as Record<string, () => Promise<void>>,
     [closeMenu, handleAction, resolved]
   );
 
@@ -291,34 +371,38 @@ export const ContextualMenu = ({
     return null;
   }
 
-  const isCopied = copiedId === primaryOption.key;
+  const primaryFeedback =
+    feedback?.id === primaryOption.key ? feedback.state : null;
+  const primaryLabel = getFeedbackLabel(primaryFeedback, primaryOption.title);
+  const PrimaryIcon = getFeedbackIcon(primaryFeedback, primaryOption.icon);
+  const primaryButtonClassName = hasSecondaryOptions
+    ? "inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/25"
+    : "inline-flex items-center gap-2 rounded-xl border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/25";
+  const primaryButton = (
+    <button
+      className={primaryButtonClassName}
+      onClick={handlePrimaryAction}
+      type="button"
+    >
+      <PrimaryIcon aria-hidden="true" className="size-[18px]" />
+      <span>{primaryLabel}</span>
+    </button>
+  );
+
+  if (!hasSecondaryOptions) {
+    return <div className="flex shrink-0 items-center">{primaryButton}</div>;
+  }
 
   return (
-    <div className="relative flex shrink-0 items-center" ref={menuRef}>
-      <button
-        className="inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/25"
-        onClick={handlePrimaryAction}
-        type="button"
-      >
-        {primaryOption.type === "action" && isCopied ? (
-          <Checkmark1Icon aria-hidden="true" className="size-[18px]" />
-        ) : (
-          <primaryOption.icon aria-hidden="true" className="size-[18px]" />
-        )}
-        <span>
-          {primaryOption.type === "action" && isCopied
-            ? "Copied"
-            : primaryOption.title}
-        </span>
-      </button>
+    <Popover onOpenChange={setMenuOpen} open={menuOpen}>
+      <div className="flex shrink-0 items-center">
+        {primaryButton}
 
-      {resolved.length > 1 ? (
-        <>
+        <PopoverTrigger asChild>
           <button
             aria-expanded={menuOpen}
             aria-label="More actions"
             className="inline-flex items-center self-stretch rounded-r-xl border border-border px-2 transition-colors hover:bg-secondary/25"
-            onClick={toggleMenu}
             type="button"
           >
             <ChevronDownSmallIcon
@@ -326,44 +410,45 @@ export const ContextualMenu = ({
               className="size-[18px] text-muted-foreground"
             />
           </button>
-          {menuOpen ? (
-            <div className="absolute right-0 top-[calc(100%+0.25rem)] z-50 min-w-[320px] rounded-xl border border-border bg-background p-1 shadow-lg">
-              {resolved.slice(1).map((item) => (
-                <MenuItem
-                  href={item.type === "link" ? item.href : undefined}
-                  key={item.key}
-                  onSelect={
-                    item.type === "action"
-                      ? actionHandlers[item.key]
-                      : closeMenu
-                  }
-                >
-                  <MenuIcon>
-                    {item.type === "action" && copiedId === item.key ? (
-                      <Checkmark1Icon
-                        aria-hidden="true"
-                        className="size-[18px]"
-                      />
-                    ) : (
-                      <item.icon aria-hidden="true" className="size-[18px]" />
-                    )}
-                  </MenuIcon>
-                  <div className="flex-1">
-                    <div className="font-medium">
-                      {item.title}
-                      {item.type === "link" ? <ExternalArrow /> : null}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.description}
-                    </div>
-                  </div>
-                </MenuItem>
-              ))}
-            </div>
-          ) : null}
-        </>
-      ) : null}
-    </div>
+        </PopoverTrigger>
+      </div>
+
+      <PopoverContent align="end" className="w-[320px] rounded-xl p-1">
+        {resolved.slice(1).map((item) => {
+          const itemFeedback =
+            feedback?.id === item.key ? feedback.state : null;
+          const itemLabel = getFeedbackLabel(itemFeedback, item.title);
+          const itemDescription = getFeedbackDescription(
+            itemFeedback,
+            item.description
+          );
+          const ItemIcon = getFeedbackIcon(itemFeedback, item.icon);
+
+          return (
+            <MenuItem
+              href={item.type === "link" ? item.href : undefined}
+              key={item.key}
+              onSelect={
+                item.type === "action" ? actionHandlers[item.key] : closeMenu
+              }
+            >
+              <MenuIcon>
+                <ItemIcon aria-hidden="true" className="size-[18px]" />
+              </MenuIcon>
+              <div className="flex-1">
+                <div className="font-medium">
+                  {itemLabel}
+                  {item.type === "link" ? <ExternalArrow /> : null}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {itemDescription}
+                </div>
+              </div>
+            </MenuItem>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 };
 

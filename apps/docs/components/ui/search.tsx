@@ -8,8 +8,8 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
 } from "react";
 import type {
   ChangeEvent,
@@ -17,6 +17,12 @@ import type {
   MouseEvent as ReactMouseEvent,
 } from "react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
 
 export interface SearchItem {
@@ -29,7 +35,33 @@ interface SearchResponse {
   items: SearchItem[];
 }
 
+type SearchStatus = "idle" | "loading" | "ready" | "error";
+
+interface SearchState {
+  activeIndex: number;
+  items: SearchItem[];
+  open: boolean;
+  query: string;
+  status: SearchStatus;
+}
+
+type SearchAction =
+  | { type: "close" }
+  | { type: "load-error" }
+  | { type: "load-start" }
+  | { items: SearchItem[]; type: "load-success" }
+  | { type: "open" }
+  | { index: number; type: "set-active-index" }
+  | { query: string; type: "set-query" };
+
 const MAX_RESULTS = 12;
+const INITIAL_SEARCH_STATE: SearchState = {
+  activeIndex: 0,
+  items: [],
+  open: false,
+  query: "",
+  status: "idle",
+};
 
 const isEditableTarget = (target: EventTarget | null) =>
   (target instanceof HTMLElement && target.isContentEditable) ||
@@ -63,18 +95,145 @@ const getWrappedPrevIndex = (current: number, length: number) => {
   return current - 1;
 };
 
+const searchReducer = (
+  state: SearchState,
+  action: SearchAction
+): SearchState => {
+  switch (action.type) {
+    case "close": {
+      return {
+        ...state,
+        activeIndex: 0,
+        open: false,
+        query: "",
+      };
+    }
+    case "load-error": {
+      return {
+        ...state,
+        status: "error",
+      };
+    }
+    case "load-start": {
+      return {
+        ...state,
+        status: "loading",
+      };
+    }
+    case "load-success": {
+      return {
+        ...state,
+        items: action.items,
+        status: "ready",
+      };
+    }
+    case "open": {
+      return {
+        ...state,
+        open: true,
+      };
+    }
+    case "set-active-index": {
+      return {
+        ...state,
+        activeIndex: action.index,
+      };
+    }
+    case "set-query": {
+      return {
+        ...state,
+        activeIndex: 0,
+        query: action.query,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+};
+
+const SearchResults = ({
+  activeIndex,
+  basePath,
+  filteredItems,
+  onResultClick,
+  onResultMouseEnter,
+  status,
+}: {
+  activeIndex: number;
+  basePath: string;
+  filteredItems: SearchItem[];
+  onResultClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  onResultMouseEnter: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  status: SearchStatus;
+}) => {
+  if (status === "loading") {
+    return (
+      <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+        Loading search index...
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+        Search is temporarily unavailable.
+      </div>
+    );
+  }
+
+  if (status === "ready" && filteredItems.length === 0) {
+    return (
+      <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+        No results found.
+      </div>
+    );
+  }
+
+  if (status !== "ready") {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-1">
+      {filteredItems.map((item, index) => {
+        const href = item.href
+          ? resolveHref(item.href, basePath)
+          : toDocHref(item.path, basePath);
+        const isActive = index === activeIndex;
+
+        return (
+          <button
+            className={
+              isActive
+                ? "grid gap-1 rounded-xl bg-accent px-3 py-2 text-left text-foreground transition-colors"
+                : "grid gap-1 rounded-xl px-3 py-2 text-left text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
+            }
+            data-index={index}
+            key={`${item.path}-${item.href ?? "internal"}`}
+            onClick={onResultClick}
+            onMouseEnter={onResultMouseEnter}
+            type="button"
+          >
+            <span className="text-sm font-medium text-foreground">
+              {item.title}
+            </span>
+            <span className="text-xs">{href}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 export const Search = ({ basePath }: { basePath: string }) => {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const requestRef = useRef<Promise<void> | null>(null);
   const loadedRef = useRef(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [items, setItems] = useState<SearchItem[]>([]);
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">(
-    "idle"
-  );
+  const [state, dispatch] = useReducer(searchReducer, INITIAL_SEARCH_STATE);
+  const { activeIndex, items, open, query, status } = state;
 
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
 
@@ -82,11 +241,12 @@ export const Search = ({ basePath }: { basePath: string }) => {
     if (loadedRef.current) {
       return Promise.resolve();
     }
+
     if (requestRef.current) {
       return requestRef.current;
     }
 
-    setStatus("loading");
+    dispatch({ type: "load-start" });
     const request = (async () => {
       try {
         const response = await fetch(toDocHref("search", basePath), {
@@ -103,11 +263,10 @@ export const Search = ({ basePath }: { basePath: string }) => {
         const nextItems = Array.isArray(payload.items) ? payload.items : [];
         loadedRef.current = true;
         startTransition(() => {
-          setItems(nextItems);
-          setStatus("ready");
+          dispatch({ items: nextItems, type: "load-success" });
         });
       } catch {
-        setStatus("error");
+        dispatch({ type: "load-error" });
       } finally {
         requestRef.current = null;
       }
@@ -126,9 +285,7 @@ export const Search = ({ basePath }: { basePath: string }) => {
   );
 
   const closeSearch = useCallback(() => {
-    setOpen(false);
-    setQuery("");
-    setActiveIndex(0);
+    dispatch({ type: "close" });
   }, []);
 
   const runSelection = useCallback(
@@ -137,19 +294,35 @@ export const Search = ({ basePath }: { basePath: string }) => {
       const href = item.href
         ? resolveHref(item.href, basePath)
         : toDocHref(item.path, basePath);
+
       if (item.href && isExternalHref(item.href)) {
         window.open(href, "_blank", "noopener,noreferrer");
         return;
       }
+
       router.push(href);
     },
     [basePath, closeSearch, router]
   );
 
   const openSearch = useCallback(async () => {
-    setOpen(true);
+    dispatch({ type: "open" });
     await loadSearchItems();
   }, [loadSearchItems]);
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        closeSearch();
+      }
+    },
+    [closeSearch]
+  );
+
+  const handleOpenAutoFocus = useCallback((event: Event) => {
+    event.preventDefault();
+    inputRef.current?.focus();
+  }, []);
 
   const warmSearch = useCallback(async () => {
     try {
@@ -161,7 +334,7 @@ export const Search = ({ basePath }: { basePath: string }) => {
 
   const handleQueryChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setQuery(event.target.value);
+      dispatch({ query: event.target.value, type: "set-query" });
     },
     []
   );
@@ -186,28 +359,10 @@ export const Search = ({ basePath }: { basePath: string }) => {
         return;
       }
 
-      setActiveIndex(index);
+      dispatch({ index, type: "set-active-index" });
     },
     []
   );
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    inputRef.current?.focus();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [deferredQuery, open]);
 
   useEffect(() => {
     const handleKeydown = async (event: KeyboardEvent) => {
@@ -224,16 +379,9 @@ export const Search = ({ basePath }: { basePath: string }) => {
           closeSearch();
           return;
         }
+
         await openSearch();
-        return;
       }
-
-      if (!open || event.key !== "Escape") {
-        return;
-      }
-
-      event.preventDefault();
-      closeSearch();
     };
 
     document.addEventListener("keydown", handleKeydown);
@@ -244,17 +392,19 @@ export const Search = ({ basePath }: { basePath: string }) => {
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((current) =>
-          getWrappedNextIndex(current, filteredItems.length)
-        );
+        dispatch({
+          index: getWrappedNextIndex(activeIndex, filteredItems.length),
+          type: "set-active-index",
+        });
         return;
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
-        setActiveIndex((current) =>
-          getWrappedPrevIndex(current, filteredItems.length)
-        );
+        dispatch({
+          index: getWrappedPrevIndex(activeIndex, filteredItems.length),
+          type: "set-active-index",
+        });
         return;
       }
 
@@ -296,89 +446,48 @@ export const Search = ({ basePath }: { basePath: string }) => {
           Cmd K
         </span>
       </button>
-      {open ? (
-        <div className="fixed inset-0 z-50">
-          <button
-            aria-label="Close search"
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={closeSearch}
-            type="button"
-          />
-          <div
-            aria-modal="true"
-            className="relative mx-auto mt-[10vh] flex w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
-            onKeyDown={handleDialogKeyDown}
-            role="dialog"
-          >
-            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-              <SearchIcon className="size-4 text-muted-foreground" />
-              <input
-                aria-label="Search documentation"
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                onChange={handleQueryChange}
-                placeholder="Search docs..."
-                ref={inputRef}
-                type="text"
-                value={query}
-              />
-              <button
-                className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-                onClick={closeSearch}
-                type="button"
-              >
-                Esc
-              </button>
-            </div>
-            <div className="max-h-[min(70vh,32rem)] overflow-y-auto p-2">
-              {status === "loading" ? (
-                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
-                  Loading search index...
-                </div>
-              ) : null}
-              {status === "error" ? (
-                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
-                  Search is temporarily unavailable.
-                </div>
-              ) : null}
-              {status === "ready" && filteredItems.length === 0 ? (
-                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
-                  No results found.
-                </div>
-              ) : null}
-              {status === "ready" && filteredItems.length > 0 ? (
-                <div className="grid gap-1">
-                  {filteredItems.map((item, index) => {
-                    const isActive = index === activeIndex;
-                    const href = item.href
-                      ? resolveHref(item.href, basePath)
-                      : toDocHref(item.path, basePath);
-
-                    return (
-                      <button
-                        className={`grid gap-1 rounded-xl px-3 py-2 text-left transition-colors ${
-                          isActive
-                            ? "bg-accent text-foreground"
-                            : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-                        }`}
-                        data-index={index}
-                        key={`${item.path}-${item.href ?? "internal"}`}
-                        onClick={handleResultClick}
-                        onMouseEnter={handleResultMouseEnter}
-                        type="button"
-                      >
-                        <span className="text-sm font-medium text-foreground">
-                          {item.title}
-                        </span>
-                        <span className="text-xs">{href}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
+      <Dialog onOpenChange={handleOpenChange} open={open}>
+        <DialogContent
+          className="max-w-2xl gap-0 overflow-hidden p-0"
+          onKeyDown={handleDialogKeyDown}
+          onOpenAutoFocus={handleOpenAutoFocus}
+          showCloseButton={false}
+        >
+          <DialogTitle className="sr-only">Search documentation</DialogTitle>
+          <DialogDescription className="sr-only">
+            Search documentation pages and jump directly to a result.
+          </DialogDescription>
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+            <SearchIcon className="size-4 text-muted-foreground" />
+            <input
+              aria-label="Search documentation"
+              className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              onChange={handleQueryChange}
+              placeholder="Search docs..."
+              ref={inputRef}
+              type="text"
+              value={query}
+            />
+            <button
+              className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={closeSearch}
+              type="button"
+            >
+              Esc
+            </button>
           </div>
-        </div>
-      ) : null}
+          <div className="max-h-[min(70vh,32rem)] overflow-y-auto p-2">
+            <SearchResults
+              activeIndex={activeIndex}
+              basePath={basePath}
+              filteredItems={filteredItems}
+              onResultClick={handleResultClick}
+              onResultMouseEnter={handleResultMouseEnter}
+              status={status}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

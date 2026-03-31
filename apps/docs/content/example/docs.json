@@ -1,10 +1,5 @@
 {
-  "$schema": "https://docs.blode.md/docs.json",
-  "colors": {
-    "primary": "#0FB59F",
-    "light": "#CFF6EE",
-    "dark": "#0C3A33"
-  },
+  "$schema": "https://blode.md/docs.json",
   "name": "Example Docs",
   "navigation": {
     "groups": [
@@ -63,20 +58,7 @@
       }
     ]
   },
-  "theme": "mint",
-  "description": "Build a Mintlify-style documentation platform on Vercel.",
-  "logo": {
-    "light": "/logos/example-mark-dark.svg",
-    "dark": "/logos/example-mark-light.svg"
-  },
-  "fonts": {
-    "body": {
-      "family": "Space Grotesk"
-    },
-    "heading": {
-      "family": "Fraunces"
-    }
-  },
+  "description": "Build a branded documentation platform on Vercel.",
   "navbar": {
     "links": [
       {

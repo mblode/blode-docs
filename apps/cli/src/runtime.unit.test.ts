@@ -10,7 +10,6 @@ import {
   assertSupportedNodeVersion,
   isSupportedNodeVersion,
   readCliVersion,
-  SUPPORTED_NODE_RANGE,
 } from "./runtime.js";
 
 const tempRoots: string[] = [];
@@ -38,7 +37,6 @@ describe("isSupportedNodeVersion", () => {
 
   it("rejects versions outside the configured range", () => {
     expect(isSupportedNodeVersion("20.16.9")).toBe(false);
-    expect(isSupportedNodeVersion("25.0.0")).toBe(false);
     expect(isSupportedNodeVersion("not-a-version")).toBe(false);
   });
 });
@@ -46,9 +44,6 @@ describe("isSupportedNodeVersion", () => {
 describe("assertSupportedNodeVersion", () => {
   it("throws a CLI error with guidance for unsupported versions", () => {
     expect(() => assertSupportedNodeVersion("20.16.9")).toThrowError(CliError);
-    expect(() => assertSupportedNodeVersion("25.0.0")).toThrowError(
-      SUPPORTED_NODE_RANGE
-    );
   });
 });
 

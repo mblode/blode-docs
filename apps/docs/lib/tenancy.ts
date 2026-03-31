@@ -1,3 +1,4 @@
+import { getLocalRootHostsFromEnv, normalizeHost } from "@repo/common";
 import type { Tenant } from "@repo/contracts";
 import { TenantResolutionSchema } from "@repo/contracts";
 
@@ -11,9 +12,10 @@ import { platformConfig } from "./platform-config";
 import { createTimedPromiseCache } from "./server-cache";
 
 const DEFAULT_RESERVED_PATHS = [
-  "/blodemd-internal",
+  "/_internal",
   "/_next",
   "/.well-known",
+  "/docs.json",
   "/favicon.ico",
   "/llms.txt",
   "/oauth",
@@ -41,22 +43,6 @@ const ROOT_TENANT_UTILITY_PATHS = new Set([
   "/robots.txt",
   "/sitemap.xml",
 ]);
-
-const normalizeHost = (host: string) =>
-  host.trim().toLowerCase().replace(/:\d+$/, "");
-
-const getPortlessHost = () => {
-  const portlessUrl = process.env.PORTLESS_URL?.trim();
-  if (!portlessUrl) {
-    return null;
-  }
-
-  try {
-    return normalizeHost(new URL(portlessUrl).host);
-  } catch {
-    return normalizeHost(portlessUrl);
-  }
-};
 
 const slugifyPath = (value: string) => {
   const trimmed = value
@@ -110,7 +96,7 @@ export const isRootRuntimeHost = (host: string) => {
   return (
     normalizedHost === platformConfig.rootDomain ||
     LOCAL_ROOT_HOSTS.has(normalizedHost) ||
-    normalizedHost === getPortlessHost()
+    getLocalRootHostsFromEnv(process.env).has(normalizedHost)
   );
 };
 
@@ -255,9 +241,10 @@ export const resolveTenantFromEdgeConfig = async (
   }
 
   const localSuffixes = ["localhost", "127.0.0.1"];
-  const localSuffix = localSuffixes.find((suffix) =>
-    normalizedHost.endsWith(`.${suffix}`)
-  );
+  const localRootHosts = getLocalRootHostsFromEnv(process.env);
+  const localSuffix = localRootHosts.has(normalizedHost)
+    ? null
+    : localSuffixes.find((suffix) => normalizedHost.endsWith(`.${suffix}`));
   if (localSuffix) {
     const subdomain = normalizedHost.slice(0, -1 * (localSuffix.length + 1));
     if (subdomain) {

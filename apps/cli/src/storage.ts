@@ -6,10 +6,41 @@ import type {
   ApiKeyCredentials,
   AuthFileData,
   StoredAuthSession,
+  StoredSessionUser,
 } from "./types.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+
+const readNullableString = (value: unknown): string | null | undefined => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return typeof value === "string" ? value : undefined;
+};
+
+const parseStoredSessionUser = (
+  value: unknown
+): StoredSessionUser | null | undefined => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!isRecord(value) || typeof value.id !== "string") {
+    return undefined;
+  }
+
+  const email = readNullableString(value.email);
+  if (email === undefined) {
+    return undefined;
+  }
+
+  return {
+    email,
+    id: value.id,
+  };
+};
 
 const parseStoredAuthSession = (value: unknown): StoredAuthSession | null => {
   if (!isRecord(value)) {
@@ -20,21 +51,18 @@ const parseStoredAuthSession = (value: unknown): StoredAuthSession | null => {
     return null;
   }
 
-  if (value.refreshToken !== null && typeof value.refreshToken !== "string") {
+  const refreshToken = readNullableString(value.refreshToken);
+  if (refreshToken === undefined) {
     return null;
   }
 
-  if (value.expiresAt !== null && typeof value.expiresAt !== "string") {
+  const expiresAt = readNullableString(value.expiresAt);
+  if (expiresAt === undefined) {
     return null;
   }
 
-  const { user } = value;
-  if (
-    user !== null &&
-    (!isRecord(user) ||
-      typeof user.id !== "string" ||
-      (user.email !== null && typeof user.email !== "string"))
-  ) {
+  const user = parseStoredSessionUser(value.user);
+  if (user === undefined) {
     return null;
   }
 
@@ -42,20 +70,12 @@ const parseStoredAuthSession = (value: unknown): StoredAuthSession | null => {
     return null;
   }
 
-  const parsedUser =
-    user === null || !isRecord(user)
-      ? null
-      : {
-          email: (user.email as string | null) ?? null,
-          id: user.id as string,
-        };
-
   return {
     accessToken: value.accessToken,
     createdAt: value.createdAt,
-    expiresAt: (value.expiresAt as string | null) ?? null,
-    refreshToken: (value.refreshToken as string | null) ?? null,
-    user: parsedUser,
+    expiresAt,
+    refreshToken,
+    user,
   };
 };
 
@@ -71,23 +91,60 @@ const parseApiKeyCredentials = (value: unknown): ApiKeyCredentials | null => {
   return { apiKey: value.apiKey, type: "api-key" };
 };
 
+const createInvalidCredentialsError = (detail?: string): CliError =>
+  new CliError(
+    detail
+      ? `Invalid credentials format in ${CREDENTIALS_FILE}: ${detail}`
+      : `Invalid credentials format in ${CREDENTIALS_FILE}`,
+    EXIT_CODES.ERROR
+  );
+
+const parseAuthFile = (raw: string): AuthFileData => {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    throw new CliError(
+      `Invalid credentials JSON in ${CREDENTIALS_FILE}`,
+      EXIT_CODES.ERROR
+    );
+  }
+
+  if (!isRecord(parsed) || parsed.version !== 1) {
+    throw createInvalidCredentialsError();
+  }
+
+  const hasSession = Object.hasOwn(parsed, "session");
+  const hasApiKey = Object.hasOwn(parsed, "apiKey");
+  const session =
+    hasSession && parsed.session !== undefined
+      ? parseStoredAuthSession(parsed.session)
+      : undefined;
+  const apiKey =
+    hasApiKey && parsed.apiKey !== undefined
+      ? parseApiKeyCredentials(parsed.apiKey)
+      : undefined;
+
+  if (hasSession && parsed.session !== undefined && !session) {
+    throw createInvalidCredentialsError("stored session is malformed.");
+  }
+
+  if (hasApiKey && parsed.apiKey !== undefined && !apiKey) {
+    throw createInvalidCredentialsError("stored API key is malformed.");
+  }
+
+  return {
+    apiKey: apiKey ?? undefined,
+    session: session ?? undefined,
+    version: 1,
+  };
+};
+
 export const readAuthFile = async (): Promise<AuthFileData | null> => {
   try {
     const raw = await readFile(CREDENTIALS_FILE, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-
-    if (!isRecord(parsed) || parsed.version !== 1) {
-      throw new CliError(
-        `Invalid credentials format in ${CREDENTIALS_FILE}`,
-        EXIT_CODES.ERROR
-      );
-    }
-
-    return {
-      apiKey: parseApiKeyCredentials(parsed.apiKey) ?? undefined,
-      session: parseStoredAuthSession(parsed.session) ?? undefined,
-      version: 1,
-    };
+    return parseAuthFile(raw);
   } catch (error) {
     if (isRecord(error) && error.code === "ENOENT") {
       return null;
@@ -97,7 +154,10 @@ export const readAuthFile = async (): Promise<AuthFileData | null> => {
       throw error;
     }
 
-    return null;
+    throw new CliError(
+      `Failed to read credentials file at ${CREDENTIALS_FILE}`,
+      EXIT_CODES.ERROR
+    );
   }
 };
 

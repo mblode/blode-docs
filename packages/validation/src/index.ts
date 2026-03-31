@@ -1,12 +1,12 @@
 import {
+  DocsConfigSchema,
   FrontmatterSchemaByType,
-  MintlifyDocsConfigSchema,
   SiteConfigSchema,
 } from "@repo/models";
 import type {
   ContentType,
+  DocsConfig,
   FrontmatterByType,
-  MintlifyDocsConfig,
   SiteConfig,
 } from "@repo/models";
 
@@ -34,8 +34,8 @@ export const validateSiteConfig = (
 
 export const validateDocsConfig = (
   input: unknown
-): ValidationResult<MintlifyDocsConfig> => {
-  const result = MintlifyDocsConfigSchema.safeParse(input);
+): ValidationResult<DocsConfig> => {
+  const result = DocsConfigSchema.safeParse(input);
   if (result.success) {
     return { data: result.data, success: true };
   }

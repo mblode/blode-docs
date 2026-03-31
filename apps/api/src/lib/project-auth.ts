@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import { authenticateApiKey } from "./api-key-auth";
 import { adminApiToken } from "./config";
 import { apiKeyDao, projectDao } from "./db";
+import { constantTimeEquals, getHeaderToken } from "./header-auth";
 import { authenticateUser } from "./user-auth";
 
 const getHeadersRecord = (c: Context): Record<string, string> =>
@@ -13,9 +14,12 @@ const hasAdminAccess = (headers: Record<string, unknown>) => {
   if (!adminApiToken) {
     return false;
   }
-  const token = headers["x-admin-token"];
-  return typeof token === "string" && token.trim() === adminApiToken;
+  const token = getHeaderToken(headers, "x-admin-token");
+  return token ? constantTimeEquals(token, adminApiToken) : false;
 };
+
+export const authorizeAdminRequest = (c: Context): boolean =>
+  hasAdminAccess(getHeadersRecord(c));
 
 export const authorizeProjectRequest = async (
   c: Context,
@@ -46,15 +50,7 @@ export const authorizeProjectRequest = async (
     const user = await authenticateUser(headers);
     if (user) {
       const project = await projectDao.getById(projectId);
-      if (project) {
-        if (project.userId === user.id) {
-          return true;
-        }
-        if (!project.userId) {
-          await projectDao.update(project.id, { userId: user.id });
-          return true;
-        }
-      }
+      return project?.userId === user.id;
     }
   }
 

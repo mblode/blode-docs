@@ -27,13 +27,21 @@ import { themeStylesFromConfig } from "@/lib/theme";
 import type { TocItem } from "@/lib/toc";
 import { cn } from "@/lib/utils";
 
-const renderScripts = (
-  scripts?: string[],
-  strategy: "afterInteractive" | "lazyOnload" = "afterInteractive"
-) =>
-  scripts?.map((script) => (
+const DocScripts = ({
+  scripts,
+  strategy = "afterInteractive",
+}: {
+  scripts?: string[];
+  strategy?: "afterInteractive" | "lazyOnload";
+}) => {
+  if (!scripts?.length) {
+    return null;
+  }
+
+  return scripts.map((script) => (
     <Script key={script} src={script} strategy={strategy} />
-  )) ?? null;
+  ));
+};
 
 const Breadcrumbs = ({
   basePath,
@@ -134,9 +142,10 @@ export const DocShell = ({
     (toc.length > 0 || (contextual && contextualDisplay === "toc"));
 
   const contextualTocItems =
-    contextual && contextualDisplay === "toc" && rawContent !== undefined ? (
+    contextual && contextualDisplay === "toc" ? (
       <ContextualTocItems
         content={rawContent}
+        key={`toc-${currentPath}`}
         options={contextual.options}
         pagePath={currentPath}
         title={pageTitle}
@@ -144,9 +153,10 @@ export const DocShell = ({
     ) : null;
 
   const headerContextualMenu =
-    contextual && contextualDisplay === "header" && rawContent !== undefined ? (
+    contextual && contextualDisplay === "header" ? (
       <ContextualMenu
         content={rawContent}
+        key={`header-${currentPath}`}
         options={contextual.options}
         pagePath={currentPath}
         title={pageTitle}
@@ -188,8 +198,9 @@ export const DocShell = ({
                     (rawContent === undefined &&
                     markdownHref === undefined ? null : (
                       <CopyPageMenu
-                        content={rawContent}
+                        content={markdownHref ? undefined : rawContent}
                         contentUrl={markdownHref}
+                        key={`copy-${currentPath}`}
                         title={pageTitle}
                       />
                     ))}
@@ -275,7 +286,7 @@ export const DocShell = ({
       >
         Skip to content
       </a>
-      {renderScripts(config.scripts?.head)}
+      <DocScripts scripts={config.scripts?.head} />
       <DocHeader
         activeTabIndex={activeTabIndex}
         basePath={basePath}
@@ -307,7 +318,7 @@ export const DocShell = ({
           </div>
         )}
       </div>
-      {renderScripts(config.scripts?.body, "lazyOnload")}
+      <DocScripts scripts={config.scripts?.body} strategy="lazyOnload" />
     </div>
   );
 };

@@ -56,11 +56,11 @@ blodemd dev --no-open
 
 The dev server watches your content directory and reloads automatically when files change.
 
-| Change type         | Behavior                                                     |
-| ------------------- | ------------------------------------------------------------ |
-| MDX content edit    | Incremental update. Only the affected page is re-rendered.   |
-| `docs.json` edit    | Full reload. Navigation, theming, and all pages are rebuilt. |
-| New or deleted file | Incremental update. Navigation is refreshed automatically.   |
+| Change type         | Behavior                                                      |
+| ------------------- | ------------------------------------------------------------- |
+| MDX content edit    | Incremental update. Only the affected page is re-rendered.    |
+| `docs.json` edit    | Full reload. Navigation, branding, and all pages are rebuilt. |
+| New or deleted file | Incremental update. Navigation is refreshed automatically.    |
 
 <Callout type="info">
   File changes are debounced with a 100ms delay to batch rapid edits into a

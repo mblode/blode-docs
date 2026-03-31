@@ -19,9 +19,13 @@ const methodColors: Record<string, string> = {
 export const ApiReference = ({
   entry,
   proxyEnabled,
+  proxyPath,
+  tenantSlug,
 }: {
   entry: OpenApiEntry;
   proxyEnabled: boolean;
+  proxyPath?: string;
+  tenantSlug?: string;
 }) => {
   const { operation } = entry;
   const parameters = operation.parameters ?? [];
@@ -115,7 +119,13 @@ export const ApiReference = ({
         </section>
       ) : null}
 
-      <ApiPlayground entry={entry} proxyEnabled={proxyEnabled} />
+      <ApiPlayground
+        entry={entry}
+        key={`${entry.identifier}:${operation.method}:${operation.path}`}
+        proxyEnabled={proxyEnabled}
+        proxyPath={proxyPath}
+        tenantSlug={tenantSlug}
+      />
     </div>
   );
 };

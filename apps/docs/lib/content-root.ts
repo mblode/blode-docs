@@ -21,6 +21,7 @@ const getTenantDocsPathCandidates = (slug: string): string[] =>
 
 export const getTenantDocsPath = (slug: string): string => {
   const candidates = getTenantDocsPathCandidates(slug);
+  const defaultLocalPath = path.join(process.cwd(), "apps/docs/content", slug);
 
   for (const candidate of candidates) {
     if (fs.existsSync(path.join(candidate, DOCS_CONFIG_FILE))) {
@@ -28,5 +29,5 @@ export const getTenantDocsPath = (slug: string): string => {
     }
   }
 
-  return candidates[0] ?? path.join(process.cwd(), "apps/docs/content", slug);
+  return defaultLocalPath;
 };

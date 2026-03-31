@@ -37,9 +37,12 @@ const EXCLUDE_DIRS = new Set([
   "node_modules",
   ".next",
   ".turbo",
+  ".vercel",
   "next-env.d.ts",
 ]);
-const TEST_FILE_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
+const EXCLUDE_FILENAMES = new Set([".gitignore", ".npmignore"]);
+const isTestArtifact = (filename) =>
+  filename.includes(".test.") || filename.includes(".spec.");
 
 const createCopyFilter = (sourceRoot) => (source) => {
   const relative = path.relative(sourceRoot, source);
@@ -48,11 +51,16 @@ const createCopyFilter = (sourceRoot) => (source) => {
   }
 
   const topSegment = relative.split(path.sep)[0] ?? "";
-  if (EXCLUDE_DIRS.has(topSegment)) {
+  if (EXCLUDE_DIRS.has(topSegment) || topSegment.startsWith(".")) {
     return false;
   }
 
-  return !TEST_FILE_PATTERN.test(path.basename(source));
+  const filename = path.basename(source);
+  if (EXCLUDE_FILENAMES.has(filename)) {
+    return false;
+  }
+
+  return !isTestArtifact(filename);
 };
 
 // Clean previous artifacts
@@ -91,6 +99,7 @@ const standaloneTsConfig = {
     paths: {
       "@/*": ["../docs/*"],
       "@dev/*": ["./*"],
+      "@repo/*": ["../packages/@repo/*/src/index.ts"],
     },
     plugins: [{ name: "next" }],
     resolveJsonModule: true,
@@ -138,26 +147,10 @@ cpSync(
   }
 );
 
-const DOCS_LIB_FILES = [
-  "contextual-options.ts",
-  "docs-collection.ts",
-  "mdx.ts",
-  "navigation.ts",
-  "openapi.ts",
-  "routes.ts",
-  "server-cache.ts",
-  "shiki.ts",
-  "theme.ts",
-  "toc.ts",
-  "utils.ts",
-];
-mkdirSync(path.join(cliRoot, "docs/lib"), { recursive: true });
-for (const lib of DOCS_LIB_FILES) {
-  cpSync(
-    path.join(repoRoot, `apps/docs/lib/${lib}`),
-    path.join(cliRoot, `docs/lib/${lib}`)
-  );
-}
+cpSync(path.join(repoRoot, "apps/docs/lib"), path.join(cliRoot, "docs/lib"), {
+  filter: createCopyFilter(path.join(repoRoot, "apps/docs/lib")),
+  recursive: true,
+});
 
 // Copy globals.css (imported by dev-server/app/globals.css)
 mkdirSync(path.join(cliRoot, "docs/app"), { recursive: true });
@@ -181,6 +174,7 @@ for (const pkg of REPO_PACKAGES) {
     path.join(dest, "package.json")
   );
   cpSync(path.join(repoRoot, `packages/${pkg}/dist`), path.join(dest, "dist"), {
+    filter: createCopyFilter(path.join(repoRoot, `packages/${pkg}/dist`)),
     recursive: true,
   });
   cpSync(path.join(repoRoot, `packages/${pkg}/src`), path.join(dest, "src"), {

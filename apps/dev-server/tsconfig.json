@@ -6,6 +6,8 @@
         "name": "next"
       }
     ],
+    // Keep @repo/* on package-root resolution. Pointing at packages/*/src/index.ts
+    // bypasses package exports and breaks Turbopack module resolution.
     "paths": {
       "@/*": ["../docs/*"],
       "@dev/*": ["./*"]

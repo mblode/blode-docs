@@ -3,8 +3,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { resolveCorsOrigin } from "./lib/cors";
 import { logError } from "./lib/logger";
-import { notFound } from "./lib/responses";
+import { internalServerError, notFound } from "./lib/responses";
 import { apiKeys } from "./routes/api-keys";
 import { auth } from "./routes/auth";
 import { deployments } from "./routes/deployments";
@@ -19,14 +20,14 @@ app.use(
   "*",
   cors({
     credentials: true,
-    origin: (origin) => origin || "*",
+    origin: (origin) => resolveCorsOrigin(origin),
   })
 );
 
 // oxlint-disable-next-line eslint-plugin-promise/prefer-await-to-callbacks
 app.onError((error, c) => {
   logError("Unhandled API error", error);
-  return c.text("Internal Server Error", 500);
+  return internalServerError(c);
 });
 
 app.notFound((c) => notFound(c));

@@ -98,6 +98,7 @@ const PreviewPage = async ({
       <ApiReference
         entry={shell.openApiEntry}
         proxyEnabled={shell.openapiProxyEnabled}
+        proxyPath="/blodemd-internal/proxy"
       />
     );
     rawContent = shell.openApiEntry.operation.description ?? "";

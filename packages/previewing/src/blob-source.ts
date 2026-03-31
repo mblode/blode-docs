@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { normalizePath } from "@repo/common";
+import { normalizePath, shouldIgnoreRootDocsFile } from "@repo/common";
 
 import type { CompiledMdxResult, ContentSource } from "./content-source.js";
 
@@ -116,9 +116,12 @@ export class BlobContentSource implements ContentSource {
     const manifest = await this.loadManifest();
     const prefix = normalizeDirectory(directory);
 
-    const files = [...manifest.keys()].filter((file) =>
-      prefix ? file.startsWith(prefix) : true
-    );
+    const files = [...manifest.keys()].filter((file) => {
+      if (shouldIgnoreRootDocsFile(file)) {
+        return false;
+      }
+      return prefix ? file.startsWith(prefix) : true;
+    });
     // oxlint-disable-next-line eslint-plugin-unicorn/no-array-sort
     files.sort();
     return files;

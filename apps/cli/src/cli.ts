@@ -8,10 +8,13 @@ import {
   isCancel,
   log,
   password,
+  select,
   spinner,
+  text,
 } from "@clack/prompts";
+import { shouldIgnoreRootDocsFile } from "@repo/common";
 import chalk from "chalk";
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import open from "open";
 
 import { resolveAuthToken, resolveTokenStatus } from "./auth-session.js";
@@ -19,6 +22,7 @@ import {
   BLODE_API_URL_ENV,
   BLODE_BRANCH_ENV,
   BLODE_COMMIT_MESSAGE_ENV,
+  CREDENTIALS_FILE,
   BLODE_PROJECT_ENV,
   DEFAULT_API_URL,
   DEFAULT_OAUTH_CALLBACK_PATH,
@@ -28,7 +32,20 @@ import {
 } from "./constants.js";
 import { devCommand } from "./dev/command.js";
 import { resolveDocsRoot } from "./dev/resolve-root.js";
-import { CliError, EXIT_CODES, toCliError } from "./errors.js";
+import { toCliError } from "./errors.js";
+import {
+  findExistingPaths,
+  writeFileIfMissing,
+  writeSymlinkIfMissing,
+} from "./fs-utils.js";
+import {
+  CANCEL_SCAFFOLD,
+  CREATE_IN_SUBDIRECTORY,
+  resolveDirectoryFromAction,
+  resolveInitialDirectory,
+  SCAFFOLD_CURRENT_DIRECTORY,
+} from "./new-flow.js";
+import type { NoArgInteractiveAction } from "./new-flow.js";
 import { waitForOAuthCode } from "./oauth-callback.js";
 import { exchangeAuthorizationCode } from "./oauth-token.js";
 import {
@@ -37,6 +54,16 @@ import {
   createOAuthState,
 } from "./pkce.js";
 import { assertSupportedNodeVersion, readCliVersion } from "./runtime.js";
+import {
+  DEFAULT_SCAFFOLD_DIRECTORY,
+  deriveDefaultProjectSlug,
+  getScaffoldFiles,
+  isScaffoldTemplate,
+  resolveScaffoldDirectory,
+  SCAFFOLD_TEMPLATES,
+  validateProjectSlug,
+} from "./scaffold.js";
+import type { ScaffoldTemplate } from "./scaffold.js";
 import { loadValidatedSiteConfig } from "./site-config.js";
 import {
   clearStoredCredentials,
@@ -50,31 +77,12 @@ import {
   tokenResponseToStoredSession,
 } from "./supabase.js";
 import type { DeploymentResponse } from "./types.js";
+import { createUploadBatches } from "./upload.js";
+import { parsePort, parsePositiveInteger } from "./validation.js";
 
 const CONFIG_FILE = "docs.json";
 
-const TEXT_CONTENT_TYPES: Record<string, string> = {
-  ".css": "text/css; charset=utf-8",
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".md": "text/markdown; charset=utf-8",
-  ".mdx": "text/markdown; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".txt": "text/plain; charset=utf-8",
-  ".yaml": "application/yaml; charset=utf-8",
-  ".yml": "application/yaml; charset=utf-8",
-};
-
 // --- File helpers ---
-
-const ensureFile = async (filePath: string, content: string): Promise<void> => {
-  try {
-    await fs.writeFile(filePath, content, { flag: "wx" });
-  } catch {
-    // File already exists
-  }
-};
 
 const readGitValue = (gitArgs: string[]): string | undefined => {
   const result = spawnSync("git", gitArgs, {
@@ -90,14 +98,14 @@ const readGitValue = (gitArgs: string[]): string | undefined => {
   return value || undefined;
 };
 
-const normalizeRelativePath = (root: string, filePath: string): string =>
-  path.relative(root, filePath).split(path.sep).join("/");
-
 const shouldSkipEntry = (name: string): boolean =>
   name.startsWith(".") || name === "node_modules";
 
-const collectFiles = async (root: string): Promise<string[]> => {
-  const entries = await fs.readdir(root, { withFileTypes: true });
+const collectFiles = async (
+  root: string,
+  directory = root
+): Promise<string[]> => {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
   const files: string[] = [];
 
   for (const entry of entries) {
@@ -105,13 +113,20 @@ const collectFiles = async (root: string): Promise<string[]> => {
       continue;
     }
 
-    const absolutePath = path.join(root, entry.name);
+    const absolutePath = path.join(directory, entry.name);
+    const relativePath = path
+      .relative(root, absolutePath)
+      .split(path.sep)
+      .join("/");
     if (entry.isDirectory()) {
-      files.push(...(await collectFiles(absolutePath)));
+      files.push(...(await collectFiles(root, absolutePath)));
       continue;
     }
 
     if (entry.isFile()) {
+      if (shouldIgnoreRootDocsFile(relativePath)) {
+        continue;
+      }
       files.push(absolutePath);
     }
   }
@@ -119,20 +134,16 @@ const collectFiles = async (root: string): Promise<string[]> => {
   return files.toSorted((left, right) => left.localeCompare(right));
 };
 
-const getContentType = (filePath: string): string =>
-  TEXT_CONTENT_TYPES[path.extname(filePath).toLowerCase()] ??
-  "application/octet-stream";
-
 const readJson = async (response: Response): Promise<unknown> => {
-  const text = await response.text();
-  if (!text) {
+  const responseText = await response.text();
+  if (!responseText) {
     return null;
   }
 
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(responseText) as unknown;
   } catch {
-    return text;
+    return responseText;
   }
 };
 
@@ -152,19 +163,6 @@ const requestJson = async <T>(
   return data as T;
 };
 
-const parsePositiveInteger = (value: string, label: string): number => {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new CliError(
-      `${label} must be a positive integer.`,
-      EXIT_CODES.VALIDATION
-    );
-  }
-
-  return parsed;
-};
-
 const reportCommandError = (prefix: string, error: unknown): void => {
   const cliError = toCliError(error);
 
@@ -174,6 +172,242 @@ const reportCommandError = (prefix: string, error: unknown): void => {
   }
   log.info("Failed");
   process.exitCode = cliError.exitCode;
+};
+
+const parseScaffoldTemplate = (value: string): ScaffoldTemplate => {
+  if (isScaffoldTemplate(value)) {
+    return value;
+  }
+
+  throw new InvalidArgumentError(
+    `Expected one of: ${SCAFFOLD_TEMPLATES.join(", ")}.`
+  );
+};
+
+const parseProjectSlug = (value: string): string => {
+  const validationError = validateProjectSlug(value);
+
+  if (validationError) {
+    throw new InvalidArgumentError(validationError);
+  }
+
+  return value.trim();
+};
+
+const isInteractiveTerminal = () =>
+  process.stdin.isTTY === true && process.stdout.isTTY === true;
+
+const promptForNoArgDirectoryAction = async (): Promise<
+  NoArgInteractiveAction | undefined
+> => {
+  const directoryAction = await select<NoArgInteractiveAction>({
+    initialValue: CREATE_IN_SUBDIRECTORY,
+    message: "Directory . is not empty. What would you like to do?",
+    options: [
+      {
+        hint: "recommended",
+        label: "Create in a subdirectory",
+        value: CREATE_IN_SUBDIRECTORY,
+      },
+      {
+        hint: "scaffold here",
+        label: "Scaffold current directory",
+        value: SCAFFOLD_CURRENT_DIRECTORY,
+      },
+      {
+        label: "Cancel",
+        value: CANCEL_SCAFFOLD,
+      },
+    ],
+  });
+
+  if (isCancel(directoryAction)) {
+    return;
+  }
+
+  return directoryAction;
+};
+
+const promptForSubdirectoryName = async (): Promise<string | undefined> => {
+  const subdirectory = await text({
+    initialValue: DEFAULT_SCAFFOLD_DIRECTORY,
+    message: "Subdirectory name",
+    placeholder: DEFAULT_SCAFFOLD_DIRECTORY,
+    validate: (value) => {
+      if (!value?.trim()) {
+        return "Subdirectory name is required.";
+      }
+    },
+  });
+
+  if (isCancel(subdirectory)) {
+    return;
+  }
+
+  return subdirectory.trim();
+};
+
+const promptForProjectSlug = async (
+  initialValue: string
+): Promise<string | undefined> => {
+  const projectSlug = await text({
+    initialValue,
+    message: "Project slug",
+    placeholder: initialValue,
+    validate: validateProjectSlug,
+  });
+
+  if (isCancel(projectSlug)) {
+    return;
+  }
+
+  return projectSlug.trim();
+};
+
+const resolveRequestedDirectory = async (
+  directory: string | undefined,
+  shouldPrompt: boolean
+): Promise<
+  | {
+      directory: string;
+      skipNonEmptyConfirmation?: boolean;
+    }
+  | undefined
+> => {
+  let currentDirectoryEntries: string[] = [];
+
+  if (!directory && shouldPrompt) {
+    currentDirectoryEntries = await fs.readdir(process.cwd());
+  }
+
+  const initialResolution = resolveInitialDirectory({
+    currentDirectoryEntries,
+    directory,
+    interactive: shouldPrompt,
+  });
+
+  if (initialResolution.kind === "target") {
+    return { directory: initialResolution.directory };
+  }
+
+  const directoryAction = await promptForNoArgDirectoryAction();
+
+  if (!directoryAction || directoryAction === CANCEL_SCAFFOLD) {
+    return;
+  }
+
+  const subdirectory =
+    directoryAction === CREATE_IN_SUBDIRECTORY
+      ? await promptForSubdirectoryName()
+      : undefined;
+  const resolvedDirectory = resolveDirectoryFromAction(
+    directoryAction,
+    subdirectory
+  );
+
+  if (!resolvedDirectory) {
+    return;
+  }
+
+  return {
+    directory: resolvedDirectory,
+    skipNonEmptyConfirmation: directoryAction === SCAFFOLD_CURRENT_DIRECTORY,
+  };
+};
+
+const confirmScaffoldTarget = async (
+  root: string,
+  template: ScaffoldTemplate,
+  shouldPrompt: boolean,
+  options?: {
+    skipNonEmptyConfirmation?: boolean;
+  }
+): Promise<boolean> => {
+  const existingTarget = await fs.lstat(root).catch(() => null);
+
+  if (existingTarget && !existingTarget.isDirectory()) {
+    throw new Error(
+      `Target path already exists and is not a directory: ${root}`
+    );
+  }
+
+  if (!existingTarget?.isDirectory()) {
+    return true;
+  }
+
+  const existingScaffoldPaths = await findExistingPaths(
+    root,
+    getScaffoldFiles(template).map((file) => file.path)
+  );
+
+  if (existingScaffoldPaths.length > 0) {
+    throw new Error(
+      `Target directory already contains scaffold files: ${existingScaffoldPaths.join(", ")}. Use a different directory or remove those files first.`
+    );
+  }
+
+  const directoryEntries = await fs.readdir(root);
+  const existingEntries = directoryEntries.toSorted((left, right) =>
+    left.localeCompare(right)
+  );
+
+  if (existingEntries.length === 0) {
+    return true;
+  }
+
+  if (options?.skipNonEmptyConfirmation) {
+    return true;
+  }
+
+  if (!shouldPrompt) {
+    throw new Error(
+      `Target directory is not empty: ${root}. Choose an empty directory or run this command in an interactive terminal to confirm scaffolding there.`
+    );
+  }
+
+  const shouldContinue = await confirm({
+    message: `Scaffold into the non-empty directory ${root}? Existing files will be left untouched.`,
+  });
+
+  return !isCancel(shouldContinue) && shouldContinue;
+};
+
+const resolveProjectSlug = async (
+  providedName: string | undefined,
+  directory: string,
+  shouldPrompt: boolean
+): Promise<string | undefined> => {
+  const defaultProjectSlug = deriveDefaultProjectSlug(directory, process.cwd());
+
+  if (providedName) {
+    return providedName;
+  }
+
+  if (!shouldPrompt) {
+    return defaultProjectSlug;
+  }
+
+  return await promptForProjectSlug(defaultProjectSlug);
+};
+
+const writeScaffoldFiles = async (
+  root: string,
+  template: ScaffoldTemplate,
+  projectSlug: string
+) => {
+  for (const file of getScaffoldFiles(template, { projectSlug })) {
+    const filePath = path.join(root, file.path);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+    if (file.type === "symlink") {
+      await writeSymlinkIfMissing(filePath, file.target, {
+        fallbackContent: file.fallbackContent,
+      });
+      continue;
+    }
+
+    await writeFileIfMissing(filePath, file.content);
+  }
 };
 
 // --- Auth helpers ---
@@ -285,6 +519,75 @@ const autoCreateProject = async (
   return true;
 };
 
+const scaffoldDocsSite = async (
+  directory: string | undefined,
+  options?: {
+    deprecatedCommand?: string;
+    name?: string;
+    template?: ScaffoldTemplate;
+    yes?: boolean;
+  }
+) => {
+  intro(chalk.bold("blodemd new"));
+
+  if (options?.deprecatedCommand) {
+    log.warn(
+      `"${options.deprecatedCommand}" is deprecated. Use ${chalk.cyan("blodemd new")} instead.`
+    );
+  }
+
+  try {
+    const template = options?.template ?? "minimal";
+    const shouldPrompt = isInteractiveTerminal() && !options?.yes;
+    const selectedDirectory = await resolveRequestedDirectory(
+      directory,
+      shouldPrompt
+    );
+
+    if (!selectedDirectory) {
+      log.warn("Cancelled");
+      return;
+    }
+
+    const resolvedDirectory = resolveScaffoldDirectory(
+      selectedDirectory.directory
+    );
+    const root = path.resolve(process.cwd(), resolvedDirectory);
+
+    if (
+      !(await confirmScaffoldTarget(root, template, shouldPrompt, {
+        skipNonEmptyConfirmation: selectedDirectory.skipNonEmptyConfirmation,
+      }))
+    ) {
+      log.warn("Cancelled");
+      return;
+    }
+
+    const projectSlug = await resolveProjectSlug(
+      options?.name,
+      resolvedDirectory,
+      shouldPrompt
+    );
+
+    if (!projectSlug) {
+      log.warn("Cancelled");
+      return;
+    }
+
+    await fs.mkdir(root, { recursive: true });
+    await writeScaffoldFiles(root, template, projectSlug);
+
+    log.success(`Docs scaffolded in ${chalk.cyan(root)}`);
+    if (template === "starter") {
+      log.info("Starter template includes brand assets and helper files.");
+    }
+    log.info(`Project slug: ${chalk.cyan(projectSlug)}`);
+    log.info("Done");
+  } catch (error: unknown) {
+    reportCommandError("New failed", error);
+  }
+};
+
 // 4 MB limit keeps each batch well under Vercel's 4.5 MB serverless body cap
 const MAX_BATCH_BYTES = 4 * 1024 * 1024;
 
@@ -298,38 +601,12 @@ const uploadFiles = async (
 ) => {
   s.start(`Uploading ${files.length} files`);
 
-  const items = await Promise.all(
-    files.map(async (filePath) => {
-      const content = await fs.readFile(filePath);
-      return {
-        contentBase64: content.toString("base64"),
-        contentType: getContentType(filePath),
-        path: normalizeRelativePath(root, filePath),
-      };
-    })
-  );
-
-  // Split into size-bounded batches
-  const batches: (typeof items)[] = [];
-  let current: typeof items = [];
-  let currentBytes = 0;
-
-  for (const item of items) {
-    const itemBytes = item.contentBase64.length + item.path.length + 64;
-    if (current.length > 0 && currentBytes + itemBytes > MAX_BATCH_BYTES) {
-      batches.push(current);
-      current = [];
-      currentBytes = 0;
-    }
-    current.push(item);
-    currentBytes += itemBytes;
-  }
-  if (current.length > 0) {
-    batches.push(current);
-  }
-
   let uploaded = 0;
-  for (const batch of batches) {
+  for await (const batch of createUploadBatches({
+    files,
+    maxBatchBytes: MAX_BATCH_BYTES,
+    root,
+  })) {
     await requestJson(
       apiPath(`/${deploymentId}/files/batch`),
       {
@@ -411,7 +688,7 @@ program
         const { authorizeUrl, tokenUrl } = buildOAuthUrls(config);
         const clientId = OAUTH_CLIENT_ID;
 
-        const port = parsePositiveInteger(options.port, "Port");
+        const port = parsePort(options.port);
         const timeoutSeconds = parsePositiveInteger(options.timeout, "Timeout");
         const redirectUrl = new URL(
           `http://127.0.0.1:${port}${DEFAULT_OAUTH_CALLBACK_PATH}`
@@ -488,10 +765,17 @@ program
     intro(chalk.bold("blodemd logout"));
 
     try {
-      const existing = await readAuthFile();
+      let existing = false;
+      try {
+        await fs.access(CREDENTIALS_FILE);
+        existing = true;
+      } catch {
+        existing = false;
+      }
+
       await clearStoredCredentials();
 
-      if (existing?.session || existing?.apiKey) {
+      if (existing) {
         log.success("Credentials removed.");
       } else {
         log.info("No stored credentials found.");
@@ -554,45 +838,65 @@ program
     }
   });
 
-// init
+// new
 
 program
-  .command("init")
-  .description("Scaffold a docs folder")
-  .argument("[dir]", "target directory", "docs")
-  .action(async (dir: string) => {
-    intro(chalk.bold("blodemd init"));
-
-    try {
-      const root = path.resolve(process.cwd(), dir);
-      await fs.mkdir(root, { recursive: true });
-
-      const docsJson = {
-        $schema: "https://docs.blode.md/docs.json",
-        colors: { primary: "#0D9373" },
-        name: "my-project",
-        navigation: {
-          groups: [{ group: "Getting Started", pages: ["index"] }],
-        },
-        theme: "mint",
-      };
-
-      await ensureFile(
-        path.join(root, CONFIG_FILE),
-        `${JSON.stringify(docsJson, null, 2)}\n`
-      );
-      await ensureFile(
-        path.join(root, "index.mdx"),
-        "---\ntitle: Welcome\n---\n\nStart writing your docs here.\n"
-      );
-
-      log.success(`Docs scaffolded in ${chalk.cyan(root)}`);
-      log.info(`Set ${chalk.cyan("name")} in docs.json to your project slug.`);
-      log.info("Done");
-    } catch (error: unknown) {
-      reportCommandError("Init failed", error);
+  .command("new")
+  .description("Create a new blode.md documentation site")
+  .argument("[directory]", "target directory")
+  .option("--name <slug>", "project slug for docs.json", parseProjectSlug)
+  .option(
+    "-t, --template <template>",
+    `scaffold template (${SCAFFOLD_TEMPLATES.join(", ")})`,
+    parseScaffoldTemplate,
+    "minimal"
+  )
+  .option("-y, --yes", "accept defaults without prompting")
+  .action(
+    async (
+      directory: string | undefined,
+      options: {
+        name?: string;
+        template: ScaffoldTemplate;
+        yes?: boolean;
+      }
+    ) => {
+      await scaffoldDocsSite(directory, {
+        name: options.name,
+        template: options.template,
+        yes: options.yes,
+      });
     }
-  });
+  );
+
+program
+  .command("init", { hidden: true })
+  .argument("[directory]", "target directory")
+  .option("--name <slug>", "project slug for docs.json", parseProjectSlug)
+  .option(
+    "-t, --template <template>",
+    `scaffold template (${SCAFFOLD_TEMPLATES.join(", ")})`,
+    parseScaffoldTemplate,
+    "minimal"
+  )
+  .option("-y, --yes", "accept defaults without prompting")
+  .action(
+    async (
+      directory: string | undefined,
+      options: {
+        name?: string;
+        template: ScaffoldTemplate;
+        yes?: boolean;
+      }
+    ) => {
+      await scaffoldDocsSite(directory, {
+        deprecatedCommand: "blodemd init",
+        name: options.name,
+        template: options.template,
+        yes: options.yes,
+      });
+    }
+  );
 
 // validate
 

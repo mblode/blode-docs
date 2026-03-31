@@ -56,7 +56,7 @@ describe("loadSiteConfig", () => {
       ),
       "docs.json": JSON.stringify(
         {
-          $schema: "https://docs.blode.md/docs.json",
+          $schema: "https://blode.md/docs.json",
           api: {
             openapi: "openapi.yaml",
             playground: {
@@ -66,11 +66,10 @@ describe("loadSiteConfig", () => {
           appearance: {
             strict: true,
           },
-          colors: {
-            primary: "#171717",
-          },
-          fonts: {
-            family: "Inter",
+          logo: {
+            dark: "/logo-dark.svg",
+            href: "https://example.com",
+            light: "/logo-light.svg",
           },
           name: "Example Docs",
           navbar: {
@@ -79,7 +78,6 @@ describe("loadSiteConfig", () => {
           navigation: {
             $ref: "./config/navigation.json",
           },
-          theme: "mint",
         },
         null,
         2
@@ -104,9 +102,13 @@ describe("loadSiteConfig", () => {
     expect(result.config.navigation?.global?.links).toEqual([
       { href: "https://example.com", label: "Website" },
     ]);
+    expect(result.config.logo).toEqual({
+      dark: "/logo-dark.svg",
+      href: "https://example.com",
+      light: "/logo-light.svg",
+    });
     expect(result.config.features?.themeToggle).toBe(false);
     expect(result.config.openapiProxy?.enabled).toBe(true);
-    expect(result.config.fonts?.cssUrl).toContain("Inter");
   });
 
   it("errors when docs.json is missing", async () => {
@@ -187,18 +189,12 @@ describe("buildUtilityIndex", () => {
     const root = await createTempContentRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://docs.blode.md/docs.json",
+          $schema: "https://blode.md/docs.json",
           api: {
             openapi: "openapi.yaml",
           },
           appearance: {
             strict: true,
-          },
-          colors: {
-            primary: "#171717",
-          },
-          fonts: {
-            family: "Inter",
           },
           name: "Example Docs",
           navbar: {
@@ -207,7 +203,6 @@ describe("buildUtilityIndex", () => {
           navigation: {
             groups: [{ group: "Docs", pages: ["index", "guide"] }],
           },
-          theme: "mint",
         },
         null,
         2

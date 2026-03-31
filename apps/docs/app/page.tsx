@@ -75,7 +75,7 @@ export default function HomePage() {
                 </p>
                 <p className="mt-4 max-w-sm text-muted-foreground">
                   The same workflow you use for code works for docs. Login,
-                  init, push. Three verbs. One tool.
+                  create, push. Three verbs. One tool.
                 </p>
               </div>
               <div className="rounded-xl bg-surface p-6 font-mono text-sm shadow-xs md:p-8">
@@ -93,7 +93,7 @@ export default function HomePage() {
                     </p>
                     <p>
                       <span className="text-muted-foreground">$</span> blodemd
-                      init docs
+                      new docs
                     </p>
                   </div>
                   <div>

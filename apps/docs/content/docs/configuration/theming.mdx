@@ -1,79 +1,28 @@
 ---
-title: Theming and branding
-description: Customize colors, logos, fonts, and appearance for your documentation site.
+title: Appearance and branding
+description: Configure your logo, favicon, and light/dark mode behavior in docs.json.
 ---
 
-You control the visual identity of your docs through the `colors`, `logo`, `favicon`, `fonts`, and `appearance` fields in `docs.json`. This page covers each theming option in detail.
-
-## Colors
-
-The `colors` object defines your brand palette. Only `primary` is required -- all other values are derived automatically if omitted.
-
-```json title="docs.json"
-{
-  "colors": {
-    "primary": "#0D9373",
-    "light": "#CFF6EE",
-    "dark": "#0C3A33"
-  }
-}
-```
-
-<TypeTable
-  type={{
-    primary: {
-      description:
-        "Primary brand color used for links, buttons, and accents. Must be a hex value.",
-      type: "string",
-      required: true,
-    },
-    light: {
-      description:
-        "Light variant used for light-mode backgrounds and highlights.",
-      type: "string",
-    },
-    dark: {
-      description: "Dark variant used for dark-mode accents.",
-      type: "string",
-    },
-    background: {
-      description: "Page background color override.",
-      type: "string",
-    },
-    border: {
-      description:
-        "Border color override for cards, dividers, and other elements.",
-      type: "string",
-    },
-    muted: {
-      description: "Muted text and secondary element color.",
-      type: "string",
-    },
-    surface: {
-      description:
-        "Surface color for cards, code blocks, and elevated elements.",
-      type: "string",
-    },
-  }}
-/>
+Blode.md keeps site branding intentionally narrow. Use `logo`, `favicon`, and `appearance` in `docs.json` to control the parts of the visual identity that are currently supported. The `logo` and `favicon` shapes follow Mintlify's light and dark asset pattern, and Blode.md also accepts `logo.alt` for accessible text.
 
 <Callout type="info">
-  All color values should be hex codes (e.g., `#0D9373`). The derived colors
-  work well for most brands, so start with just `primary` and customize from
-  there.
+  Blode.md does not support Mintlify's `theme`, `colors`, `fonts`, `icons`,
+  `background`, or `styling` fields.
 </Callout>
 
 ## Logo
 
-The `logo` field sets the image displayed in the navbar. You can provide a single URL or separate light/dark variants.
+Use `logo` to show a single mark everywhere or separate assets for light and dark mode.
 
 <Tabs items={["Light and dark variants", "Single logo"]}>
   <Tab value="Light and dark variants">
     ```json title="docs.json"
     {
       "logo": {
-        "light": "/images/logo-light.svg",
-        "dark": "/images/logo-dark.svg"
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg",
+        "alt": "Example Co. logo",
+        "href": "https://example.com"
       }
     }
     ```
@@ -81,7 +30,7 @@ The `logo` field sets the image displayed in the navbar. You can provide a singl
   <Tab value="Single logo">
     ```json title="docs.json"
     {
-      "logo": "/images/logo.svg"
+      "logo": "/logo/logo.svg"
     }
     ```
   </Tab>
@@ -97,171 +46,49 @@ The `logo` field sets the image displayed in the navbar. You can provide a singl
       description: "Logo image path or URL for dark mode.",
       type: "string",
     },
-    alt: {
-      description: "Alt text for the logo image.",
-      type: "string",
-    },
     href: {
       description:
-        "URL the logo links to when clicked. Defaults to your docs homepage.",
+        "Optional destination when someone clicks the logo. Defaults to your docs homepage.",
+      type: "string",
+    },
+    alt: {
+      description: "Accessible alt text for the logo image.",
       type: "string",
     },
   }}
 />
 
-<Callout type="info">
-  Use SVG logos for the best quality at all screen sizes. Place logo files in
-  your docs directory and reference them with a relative path like
-  `/images/logo.svg`.
-</Callout>
-
 ## Favicon
 
-The `favicon` field sets the browser tab icon. Like logos, you can provide a single path or light/dark variants.
+Use `favicon` for the browser tab icon.
 
 <CodeGroup>
 ```json title="Single favicon"
 {
-  "favicon": "/images/favicon.svg"
+  "favicon": "/favicon.svg"
 }
 ```
 
 ```json title="Light and dark variants"
 {
   "favicon": {
-    "light": "/images/favicon-light.svg",
-    "dark": "/images/favicon-dark.svg"
+    "light": "/favicon-light.svg",
+    "dark": "/favicon-dark.svg"
   }
 }
 ```
 
 </CodeGroup>
 
-## Fonts
-
-The `fonts` object controls typography across your site. You can set separate families for headings, body text, and monospace code.
-
-```json title="docs.json"
-{
-  "fonts": {
-    "heading": "Inter",
-    "body": "Inter",
-    "mono": "JetBrains Mono",
-    "provider": "google"
-  }
-}
-```
-
-<TypeTable
-  type={{
-    heading: {
-      description: "Font family for headings (h1-h6).",
-      type: "string",
-    },
-    body: {
-      description: "Font family for body text and paragraphs.",
-      type: "string",
-    },
-    mono: {
-      description: "Font family for inline code and code blocks.",
-      type: "string",
-    },
-    provider: {
-      description:
-        "Font loading strategy. `google` loads from Google Fonts, `local` uses self-hosted files, `custom` uses a CSS URL.",
-      type: "'google' | 'local' | 'custom'",
-    },
-    cssUrl: {
-      description:
-        "URL to a custom CSS file that defines `@font-face` rules. Use with `provider: 'custom'`.",
-      type: "string",
-    },
-  }}
-/>
-
-### Advanced font objects
-
-For fine-grained control, you can use font objects instead of strings. This is useful for self-hosted fonts or when you need specific weights.
-
-```json title="docs.json"
-{
-  "fonts": {
-    "heading": {
-      "family": "Cal Sans",
-      "source": "/fonts/CalSans-SemiBold.woff2",
-      "format": "woff2",
-      "weight": 600
-    },
-    "body": {
-      "family": "Inter",
-      "source": "/fonts/Inter-Regular.woff2",
-      "format": "woff2",
-      "weight": 400
-    }
-  }
-}
-```
-
-<TypeTable
-  type={{
-    family: {
-      description: "CSS font-family name.",
-      type: "string",
-      required: true,
-    },
-    source: {
-      description: "Path or URL to the font file.",
-      type: "string",
-    },
-    format: {
-      description: "Font file format hint for the browser.",
-      type: "'woff' | 'woff2'",
-    },
-    weight: {
-      description: "Numeric font weight (e.g., 400 for regular, 700 for bold).",
-      type: "number",
-    },
-  }}
-/>
-
-### Using Google Fonts
-
-Set `provider` to `google` and specify font family names. Blode.md automatically loads the fonts from Google Fonts CDN.
-
-```json title="docs.json"
-{
-  "fonts": {
-    "heading": "Poppins",
-    "body": "Open Sans",
-    "provider": "google"
-  }
-}
-```
-
-### Using a custom CSS URL
-
-If you host your own font CSS (or use a service like Adobe Fonts), set `provider` to `custom` and provide the `cssUrl`.
-
-```json title="docs.json"
-{
-  "fonts": {
-    "heading": "MyCustomFont",
-    "body": "MyCustomFont",
-    "provider": "custom",
-    "cssUrl": "https://fonts.example.com/my-custom-font.css"
-  }
-}
-```
-
 ## Appearance
 
-The `appearance` object controls dark/light mode behavior.
+Use `appearance` to control the initial light or dark mode and whether readers can switch modes.
 
 ```json title="docs.json"
 {
   "appearance": {
-    "default": "system",
-    "strict": false
+    "default": "dark",
+    "strict": true
   }
 }
 ```
@@ -269,61 +96,37 @@ The `appearance` object controls dark/light mode behavior.
 <TypeTable
   type={{
     default: {
-      description: "Initial color mode when a visitor first loads the site.",
-      type: "'dark' | 'light' | 'system'",
-      default: "'system'",
+      description: "Default color mode. Choose `system`, `light`, or `dark`.",
+      type: "'system' | 'light' | 'dark'",
     },
     strict: {
       description:
-        "When `true`, locks the site to the `default` mode and hides the theme toggle. Useful for brand-specific designs.",
+        "When `true`, locks the site to the default mode and hides the theme toggle.",
       type: "boolean",
-      default: "false",
     },
   }}
 />
 
-## Theme
-
-The top-level `theme` field selects the overall visual template for your docs. Set it to a theme name like `mint`.
+## Example
 
 ```json title="docs.json"
 {
-  "theme": "mint"
-}
-```
-
-## Complete example
-
-Here is a fully themed `docs.json`:
-
-```json title="docs.json"
-{
-  "$schema": "https://docs.blode.md/docs.json",
-  "name": "my-project",
-  "theme": "mint",
-  "colors": {
-    "primary": "#6366F1",
-    "light": "#E0E7FF",
-    "dark": "#312E81",
-    "background": "#FAFAFA",
-    "surface": "#F3F4F6"
-  },
+  "$schema": "https://blode.md/docs.json",
+  "name": "example-docs",
   "logo": {
-    "light": "/images/logo-light.svg",
-    "dark": "/images/logo-dark.svg"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "alt": "Example Co. logo",
+    "href": "https://example.com"
   },
-  "favicon": "/images/favicon.svg",
-  "fonts": {
-    "heading": "Inter",
-    "body": "Inter",
-    "mono": "JetBrains Mono",
-    "provider": "google"
-  },
+  "favicon": "/favicon.svg",
   "appearance": {
     "default": "system"
   },
   "navigation": {
-    "groups": [{ "group": "Guides", "pages": ["index"] }]
+    "groups": [{ "group": "Getting started", "pages": ["index"] }]
   }
 }
 ```
+
+Blode.md uses its built-in visual system for layout, typography, and component styling. Branding today is about the assets and mode behavior you provide here, not per-site theme tokens.

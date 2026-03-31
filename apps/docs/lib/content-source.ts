@@ -33,26 +33,38 @@ export const getTenantContentSource = (tenant: Tenant): ContentSource => {
 export const resolveSiteConfigAssets = async (
   config: SiteConfig,
   source: ContentSource
-): Promise<SiteConfig> => ({
-  ...config,
-  favicon: await resolveAssetUrl(source, config.favicon),
-  fonts: config.fonts
-    ? {
-        ...config.fonts,
-        cssUrl: await resolveAssetUrl(source, config.fonts.cssUrl),
-      }
-    : config.fonts,
-  logo: config.logo
-    ? {
-        ...config.logo,
-        dark: await resolveAssetUrl(source, config.logo.dark),
-        light: await resolveAssetUrl(source, config.logo.light),
-      }
-    : config.logo,
-  metadata: config.metadata
-    ? {
-        ...config.metadata,
-        ogImage: await resolveAssetUrl(source, config.metadata.ogImage),
-      }
-    : config.metadata,
-});
+): Promise<SiteConfig> => {
+  const [favicon, fontCssUrl, darkLogo, lightLogo, ogImage] = await Promise.all(
+    [
+      resolveAssetUrl(source, config.favicon),
+      resolveAssetUrl(source, config.fonts?.cssUrl),
+      resolveAssetUrl(source, config.logo?.dark),
+      resolveAssetUrl(source, config.logo?.light),
+      resolveAssetUrl(source, config.metadata?.ogImage),
+    ]
+  );
+
+  return {
+    ...config,
+    favicon,
+    fonts: config.fonts
+      ? {
+          ...config.fonts,
+          cssUrl: fontCssUrl,
+        }
+      : config.fonts,
+    logo: config.logo
+      ? {
+          ...config.logo,
+          dark: darkLogo,
+          light: lightLogo,
+        }
+      : config.logo,
+    metadata: config.metadata
+      ? {
+          ...config.metadata,
+          ogImage,
+        }
+      : config.metadata,
+  };
+};

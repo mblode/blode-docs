@@ -29,7 +29,8 @@ describe("tenancy helpers", () => {
   });
 
   it("treats internal and root static paths as reserved without blocking docs api routes", () => {
-    expect(isReservedPath("/blodemd-internal/proxy")).toBe(true);
+    expect(isReservedPath("/_internal/proxy")).toBe(true);
+    expect(isReservedPath("/docs.json")).toBe(true);
     expect(isReservedPath("/robots.txt")).toBe(true);
     expect(isReservedPath("/logos/example-mark-dark.svg")).toBe(true);
     expect(isReservedPath("/oauth/consent")).toBe(true);
@@ -40,16 +41,17 @@ describe("tenancy helpers", () => {
   it("identifies the runtime root hosts", () => {
     expect(isRootRuntimeHost("blode.md")).toBe(true);
     expect(isRootRuntimeHost("localhost")).toBe(true);
+    expect(isRootRuntimeHost("docs.localhost")).toBe(true);
     expect(isRootRuntimeHost("example.blode.md")).toBe(false);
     expect(isRootRuntimeHost("example.localhost")).toBe(false);
   });
 
   it("treats the configured portless host as a runtime root host", () => {
     const previousPortlessUrl = process.env.PORTLESS_URL;
-    process.env.PORTLESS_URL = "http://docs.localhost:3001";
+    process.env.PORTLESS_URL = "http://preview.localhost:3001";
 
     try {
-      expect(isRootRuntimeHost("docs.localhost")).toBe(true);
+      expect(isRootRuntimeHost("preview.localhost")).toBe(true);
       expect(isRootRuntimeHost("example.localhost")).toBe(false);
     } finally {
       if (previousPortlessUrl === undefined) {

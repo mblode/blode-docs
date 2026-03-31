@@ -10,6 +10,14 @@ export interface ValidatedSiteConfigResult {
   warnings: string[];
 }
 
+const getSiteConfigHint = (errors: string[]): string => {
+  if (errors.includes(`${CONFIG_FILE} not found.`)) {
+    return `Make sure ${CONFIG_FILE} exists in the selected docs directory or pass the docs directory explicitly.`;
+  }
+
+  return `Fix the ${CONFIG_FILE} errors above and try again.`;
+};
+
 export const loadValidatedSiteConfig = async (
   root: string
 ): Promise<ValidatedSiteConfigResult> => {
@@ -19,7 +27,7 @@ export const loadValidatedSiteConfig = async (
     throw new CliError(
       result.errors.join("\n"),
       EXIT_CODES.VALIDATION,
-      `Make sure ${CONFIG_FILE} exists and is valid JSON.`
+      getSiteConfigHint(result.errors)
     );
   }
 

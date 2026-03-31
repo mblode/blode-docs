@@ -40,6 +40,7 @@ Use this when recreating the live Vercel setup from scratch.
 ### `blodemd-api`
 
 - `DATABASE_URL`
+- `DOCS_APP_URL`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `BLOB_READ_WRITE_TOKEN`
@@ -49,6 +50,7 @@ Use this when recreating the live Vercel setup from scratch.
 - optional `VERCEL_TEAM_ID`
 - optional `VERCEL_TEAM_SLUG`
 - optional `VERCEL_EDGE_CONFIG_ID` if you want Edge Config sync
+- optional `CORS_ALLOWED_ORIGINS` for extra browser origins beyond the defaults
 
 ## Important Routing Note
 

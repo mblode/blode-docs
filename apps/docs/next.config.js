@@ -1,9 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 const cleanEnv = (value) => {
   if (typeof value !== "string") {
     return "";
   }
   return value.trim();
 };
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.join(appDir, "..", "..");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -56,6 +62,10 @@ const nextConfig = {
       ...assetRewrite,
       {
         destination: "/sites/:tenant/llms.mdx/:path*",
+        source: "/sites/:tenant/:path*.md",
+      },
+      {
+        destination: "/sites/:tenant/llms.mdx/:path*",
         source: "/sites/:tenant/:path*.mdx",
       },
     ];
@@ -68,6 +78,9 @@ const nextConfig = {
     "@repo/previewing",
     "@repo/validation",
   ],
+  turbopack: {
+    root: monorepoRoot,
+  },
 };
 
 export default nextConfig;

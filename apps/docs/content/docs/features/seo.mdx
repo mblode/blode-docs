@@ -28,9 +28,9 @@ Every deployed site includes these files at their standard paths:
       description: "Complete documentation content in plaintext format.",
       type: "Auto-generated",
     },
-    "/llms.mdx/{slug}": {
+    "/{page}.md": {
       description:
-        "Individual pages in raw MDX format for programmatic access.",
+        "Individual pages in Markdown format for programmatic access.",
       type: "Auto-generated",
     },
   }}
@@ -41,6 +41,9 @@ Every deployed site includes these files at their standard paths:
   standard](https://llmstxt.org) for making documentation accessible to large
   language models.
 </Callout>
+
+Append `.md` to any page URL to get its Markdown export. For example,
+`/docs/quickstart` becomes `/docs/quickstart.md`.
 
 ## Indexing mode
 

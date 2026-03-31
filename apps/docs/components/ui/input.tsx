@@ -72,7 +72,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 clearClassName
               )}
               onClick={onClear}
-              tabIndex={-1}
               type="button"
             >
               <CircleXFilledIcon className="size-5 text-muted-foreground/50" />

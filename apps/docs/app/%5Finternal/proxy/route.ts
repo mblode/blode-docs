@@ -1,11 +1,8 @@
-import type { SiteConfig, Tenant } from "@repo/models";
-import { loadSiteConfig } from "@repo/previewing";
 import { NextResponse } from "next/server";
 
-import { getTenantContentSource } from "@/lib/content-source";
-import { getDocsCollectionWithNavigation } from "@/lib/docs-collection";
-import { loadOpenApiRegistry } from "@/lib/openapi";
+import { loadOpenApiProxyConfig } from "@/lib/openapi-proxy";
 import { getRequestHost, resolveTenant } from "@/lib/tenancy";
+import { TENANT_HEADERS } from "@/lib/tenant-headers";
 import { getTenantBySlug } from "@/lib/tenants";
 
 interface ProxyPayload {
@@ -31,7 +28,17 @@ const getTenantPathFromReferer = (request: Request) => {
 const jsonError = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
 
+const getTenantSlugFromHeaders = (headerSource: Pick<Headers, "get">) => {
+  const slug = headerSource.get(TENANT_HEADERS.SLUG)?.trim();
+  return slug || null;
+};
+
 const loadResolvedTenant = async (request: Request) => {
+  const tenantSlug = getTenantSlugFromHeaders(request.headers);
+  if (tenantSlug) {
+    return await getTenantBySlug(tenantSlug);
+  }
+
   const host = getRequestHost(request.headers);
   const resolution = host
     ? await resolveTenant(host, getTenantPathFromReferer(request))
@@ -42,29 +49,6 @@ const loadResolvedTenant = async (request: Request) => {
   }
 
   return getTenantBySlug(resolution.tenant.slug);
-};
-
-const resolveAllowedHosts = async (config: SiteConfig, tenant: Tenant) => {
-  const configuredHosts = config.openapiProxy?.allowedHosts ?? [];
-  if (configuredHosts.length || !tenant) {
-    return configuredHosts;
-  }
-
-  const registry = await loadOpenApiRegistry(
-    getDocsCollectionWithNavigation(config),
-    getTenantContentSource(tenant)
-  );
-  const derivedHosts = registry.entries.flatMap((entry) =>
-    (entry.spec.servers ?? []).flatMap((server) => {
-      try {
-        return [new URL(server.url).hostname];
-      } catch {
-        return [];
-      }
-    })
-  );
-
-  return [...new Set(derivedHosts)];
 };
 
 export const POST = async (request: Request) => {
@@ -79,13 +63,12 @@ export const POST = async (request: Request) => {
     return jsonError("Unknown tenant", 400);
   }
 
-  const configResult = await loadSiteConfig(getTenantContentSource(tenant));
-  if (!configResult.ok) {
+  const proxyConfig = await loadOpenApiProxyConfig(tenant);
+  if (!proxyConfig) {
     return jsonError("Invalid site config", 400);
   }
 
-  const { config } = configResult;
-  if (!config.openapiProxy?.enabled) {
+  if (!proxyConfig.enabled) {
     return jsonError("Proxy disabled", 403);
   }
 
@@ -94,14 +77,14 @@ export const POST = async (request: Request) => {
     return jsonError("Invalid protocol", 400);
   }
 
-  const allowedHosts = await resolveAllowedHosts(config, tenant);
+  const { allowedHosts } = proxyConfig;
   if (!allowedHosts.length) {
     return jsonError(
       "No proxy allowlist is configured for this docs.json.",
       403
     );
   }
-  if (!allowedHosts.includes(url.hostname)) {
+  if (!allowedHosts.includes(url.hostname.toLowerCase())) {
     return jsonError("Host not allowed", 403);
   }
 

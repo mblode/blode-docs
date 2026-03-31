@@ -37,13 +37,11 @@ describe("loadValidatedSiteConfig", () => {
     const root = await createDocsRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://docs.blode.md/docs.json",
-          colors: { primary: "#0D9373" },
+          $schema: "https://blode.md/docs.json",
           name: "example-docs",
           navigation: {
             groups: [{ group: "Getting Started", pages: ["index"] }],
           },
-          theme: "mint",
         },
         null,
         2
@@ -64,6 +62,31 @@ describe("loadValidatedSiteConfig", () => {
 
     await expect(loadValidatedSiteConfig(root)).rejects.toBeInstanceOf(
       CliError
+    );
+    await expect(loadValidatedSiteConfig(root)).rejects.toMatchObject(
+      expect.objectContaining({
+        hint: expect.stringMatching(/selected docs directory/),
+      })
+    );
+  });
+
+  it("uses a config-specific hint for invalid docs.json content", async () => {
+    const root = await createDocsRoot({
+      "docs.json": JSON.stringify(
+        {
+          $schema: "https://blode.md/docs.json",
+          name: "example-docs",
+        },
+        null,
+        2
+      ),
+      "index.mdx": "---\ntitle: Welcome\n---\n\nHello\n",
+    });
+
+    await expect(loadValidatedSiteConfig(root)).rejects.toMatchObject(
+      expect.objectContaining({
+        hint: expect.stringMatching(/Fix the docs\.json errors above/),
+      })
     );
   });
 });

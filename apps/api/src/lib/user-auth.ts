@@ -1,25 +1,24 @@
 import type { UserRecord } from "@repo/db";
 
 import { userDao } from "./db";
+import { getBearerToken } from "./header-auth";
 import { getSupabaseClient } from "./supabase";
 
-const getTokenFromHeaders = (headers: Record<string, unknown>) => {
-  const { authorization } = headers;
-  if (typeof authorization === "string") {
-    const [scheme, token] = authorization.split(/\s+/, 2);
-    if (scheme?.toLowerCase() === "bearer" && token) {
-      return token.trim();
-    }
-  }
-  return null;
-};
-
 const isJwt = (token: string): boolean => token.startsWith("eyJ");
+
+const getUserEmail = (user: { email?: string | null; id: string }) => {
+  const email = user.email?.trim().toLowerCase();
+  if (email) {
+    return email;
+  }
+
+  return `${user.id}@users.blode.invalid`;
+};
 
 export const authenticateUser = async (
   headers: Record<string, unknown>
 ): Promise<UserRecord | null> => {
-  const token = getTokenFromHeaders(headers);
+  const token = getBearerToken(headers);
   if (!token || !isJwt(token)) {
     return null;
   }
@@ -40,7 +39,7 @@ export const authenticateUser = async (
 
   return userDao.upsertByAuthId({
     authId: user.id,
-    email: user.email ?? "",
+    email: getUserEmail(user),
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
   });
 };

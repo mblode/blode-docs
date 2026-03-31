@@ -11,11 +11,19 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 interface CopyPageMenuProps {
   content?: string;
   contentUrl?: string;
   title: string;
 }
+
+type CopyStatus = "copied" | "error" | "idle";
 
 const LEADING_H1_REGEX = /^#\s+([^\r\n]+)(?:\r?\n(?:\r?\n)?)?/;
 
@@ -43,6 +51,37 @@ const formatMarkdownForCopy = (source: string, title: string) => {
   return `# ${title}\n\n${content}`;
 };
 
+const getCopyLabel = (copyStatus: CopyStatus) => {
+  switch (copyStatus) {
+    case "copied": {
+      return "Copied";
+    }
+    case "error": {
+      return "Copy failed";
+    }
+    default: {
+      return "Copy page";
+    }
+  }
+};
+
+const getCopyDescription = (copyStatus: CopyStatus) => {
+  switch (copyStatus) {
+    case "copied": {
+      return "Copied page markdown to clipboard";
+    }
+    case "error": {
+      return "Clipboard access was blocked or the page markdown could not be loaded";
+    }
+    default: {
+      return "Copy page as Markdown for LLMs";
+    }
+  }
+};
+
+const getCopyIcon = (copyStatus: CopyStatus) =>
+  copyStatus === "copied" ? Checkmark1Icon : CopySimpleIcon;
+
 const MenuItem = ({
   children,
   href,
@@ -50,11 +89,11 @@ const MenuItem = ({
 }: {
   children: React.ReactNode;
   href?: string;
-  onSelect?: () => void;
+  onSelect?: () => Promise<void> | void;
 }) =>
   href ? (
     <a
-      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-secondary/25"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-secondary/25 focus-visible:bg-secondary/25 focus-visible:outline-none"
       href={href}
       onClick={onSelect}
       rel="noopener noreferrer"
@@ -64,7 +103,7 @@ const MenuItem = ({
     </a>
   ) : (
     <button
-      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-secondary/25"
+      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-secondary/25 focus-visible:bg-secondary/25 focus-visible:outline-none"
       onClick={onSelect}
       type="button"
     >
@@ -98,47 +137,48 @@ export const CopyPageMenu = ({
   contentUrl,
   title,
 }: CopyPageMenuProps) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [copied, setCopied] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const [fetchedContent, setFetchedContent] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pageUrl, setPageUrl] = useState("");
-  const [resolvedContent, setResolvedContent] = useState(content ?? "");
 
-  useEffect(() => {
-    setPageUrl(window.location.href);
-  }, []);
-
-  useEffect(() => {
-    if (content !== undefined) {
-      setResolvedContent(content);
-    }
-  }, [content]);
-
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (menuRef.current?.contains(event.target as Node)) {
-        return;
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
       }
-      setMenuOpen(false);
-    };
+    },
+    []
+  );
 
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [menuOpen]);
+  useEffect(() => {
+    setPageUrl(
+      new URL(contentUrl ?? window.location.href, window.location.href).href
+    );
+  }, [contentUrl]);
 
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
   }, []);
 
-  const toggleMenu = useCallback(() => {
-    setMenuOpen((current) => !current);
-  }, []);
+  const setTemporaryCopyStatus = useCallback(
+    (nextStatus: "copied" | "error") => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+
+      setCopyStatus(nextStatus);
+      resetTimerRef.current = window.setTimeout(() => {
+        setCopyStatus("idle");
+        resetTimerRef.current = null;
+      }, 2000);
+    },
+    []
+  );
 
   const getContent = useCallback(async () => {
+    const resolvedContent = content ?? fetchedContent;
     if (resolvedContent) {
       return resolvedContent;
     }
@@ -157,68 +197,73 @@ export const CopyPageMenu = ({
     }
 
     const nextContent = await response.text();
-    setResolvedContent(nextContent);
+    setFetchedContent(nextContent);
     return nextContent;
-  }, [contentUrl, resolvedContent]);
+  }, [content, contentUrl, fetchedContent]);
 
   const handleCopy = useCallback(async () => {
-    const nextContent = await getContent();
-    const markdown = formatMarkdownForCopy(nextContent, title);
-    await navigator.clipboard.writeText(markdown);
-    setCopied(true);
-    closeMenu();
-    setTimeout(() => setCopied(false), 2000);
-  }, [closeMenu, getContent, title]);
+    try {
+      const nextContent = await getContent();
+      const markdown = formatMarkdownForCopy(nextContent, title);
+      await navigator.clipboard.writeText(markdown);
+      setTemporaryCopyStatus("copied");
+      closeMenu();
+    } catch {
+      setTemporaryCopyStatus("error");
+    }
+  }, [closeMenu, getContent, setTemporaryCopyStatus, title]);
 
   const chatgptUrl = pageUrl
     ? `https://chatgpt.com/?hints=search&q=${encodeURIComponent(`Read from ${pageUrl} so I can ask questions about it.`)}`
-    : "#";
+    : undefined;
   const claudeUrl = pageUrl
     ? `https://claude.ai/new?q=${encodeURIComponent(`Read from ${pageUrl} so I can ask questions about it.`)}`
-    : "#";
+    : undefined;
+  const copyLabel = getCopyLabel(copyStatus);
+  const copyDescription = getCopyDescription(copyStatus);
+  const CopyIcon = getCopyIcon(copyStatus);
 
   return (
-    <div className="relative flex shrink-0 items-center" ref={menuRef}>
-      <button
-        className="inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/25"
-        onClick={handleCopy}
-        type="button"
-      >
-        {copied ? (
-          <Checkmark1Icon aria-hidden="true" className="size-[18px]" />
-        ) : (
-          <CopySimpleIcon aria-hidden="true" className="size-[18px]" />
-        )}
-        <span>{copied ? "Copied" : "Copy page"}</span>
-      </button>
+    <Popover onOpenChange={setMenuOpen} open={menuOpen}>
+      <div className="flex shrink-0 items-center">
+        <button
+          className="inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/25"
+          onClick={handleCopy}
+          type="button"
+        >
+          <CopyIcon aria-hidden="true" className="size-[18px]" />
+          <span>{copyLabel}</span>
+        </button>
 
-      <button
-        aria-expanded={menuOpen}
-        aria-label="More actions"
-        className="inline-flex items-center self-stretch rounded-r-xl border border-border px-2 transition-colors hover:bg-secondary/25"
-        onClick={toggleMenu}
-        type="button"
-      >
-        <ChevronDownSmallIcon
-          aria-hidden="true"
-          className="size-[18px] text-muted-foreground"
-        />
-      </button>
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={menuOpen}
+            aria-label="More actions"
+            className="inline-flex items-center self-stretch rounded-r-xl border border-border px-2 transition-colors hover:bg-secondary/25"
+            type="button"
+          >
+            <ChevronDownSmallIcon
+              aria-hidden="true"
+              className="size-[18px] text-muted-foreground"
+            />
+          </button>
+        </PopoverTrigger>
+      </div>
 
-      {menuOpen ? (
-        <div className="absolute right-0 top-[calc(100%+0.25rem)] z-50 min-w-[280px] rounded-xl border border-border bg-background p-1 shadow-lg">
-          <MenuItem onSelect={handleCopy}>
-            <MenuIcon>
-              <CopySimpleIcon aria-hidden="true" className="size-[18px]" />
-            </MenuIcon>
-            <div>
-              <div className="font-medium">Copy page</div>
-              <div className="text-xs text-muted-foreground">
-                Copy page as Markdown for LLMs
-              </div>
+      <PopoverContent align="end" className="w-[280px] rounded-xl p-1">
+        <MenuItem onSelect={handleCopy}>
+          <MenuIcon>
+            <CopyIcon aria-hidden="true" className="size-[18px]" />
+          </MenuIcon>
+          <div>
+            <div className="font-medium">{copyLabel}</div>
+            <div className="text-xs text-muted-foreground">
+              {copyDescription}
             </div>
-          </MenuItem>
+          </div>
+        </MenuItem>
 
+        {chatgptUrl ? (
           <MenuItem href={chatgptUrl} onSelect={closeMenu}>
             <MenuIcon>
               <OpenaiIcon aria-hidden="true" className="size-[18px]" />
@@ -233,7 +278,9 @@ export const CopyPageMenu = ({
               </div>
             </div>
           </MenuItem>
+        ) : null}
 
+        {claudeUrl ? (
           <MenuItem href={claudeUrl} onSelect={closeMenu}>
             <MenuIcon>
               <ClaudeaiIcon aria-hidden="true" className="size-[18px]" />
@@ -248,8 +295,8 @@ export const CopyPageMenu = ({
               </div>
             </div>
           </MenuItem>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </PopoverContent>
+    </Popover>
   );
 };

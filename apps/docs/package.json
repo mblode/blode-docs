@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "portless run next dev",
-    "build": "next build",
+    "dev:e2e": "next dev --hostname 127.0.0.1 --port 3001",
+    "build": "npx turbo run build --filter=@repo/common --filter=@repo/contracts --filter=@repo/models --filter=@repo/prebuild --filter=@repo/validation --filter=@repo/previewing && next build",
     "start": "next start",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",

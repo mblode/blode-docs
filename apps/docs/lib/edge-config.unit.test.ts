@@ -1,3 +1,9 @@
+import {
+  getLegacyTenantEdgeHostKey,
+  getLegacyTenantEdgeSlugKey,
+  getTenantEdgeHostKey,
+  getTenantEdgeSlugKey,
+} from "@repo/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const edgeConfigClientMock = vi.hoisted(() => ({
@@ -20,6 +26,10 @@ const tenant = {
 };
 
 const previousEdgeConfig = process.env.EDGE_CONFIG;
+
+const expectLookupOrder = (calls: string[], expectedKeys: string[]) => {
+  expect(calls).toEqual(expectedKeys);
+};
 
 describe("edge-config legacy fallback", () => {
   beforeEach(() => {
@@ -60,13 +70,12 @@ describe("edge-config legacy fallback", () => {
       host: "docs.example.com",
       strategy: "custom-domain",
     });
-    expect(edgeConfigClientMock.get).toHaveBeenNthCalledWith(
-      1,
-      "th_docs_example_com"
-    );
-    expect(edgeConfigClientMock.get).toHaveBeenNthCalledWith(
-      2,
-      "tenant:host:docs.example.com"
+    expectLookupOrder(
+      edgeConfigClientMock.get.mock.calls.map(([key]) => key),
+      [
+        getTenantEdgeHostKey("docs.example.com"),
+        getLegacyTenantEdgeHostKey("docs.example.com"),
+      ]
     );
   });
 
@@ -88,10 +97,9 @@ describe("edge-config legacy fallback", () => {
     await expect(getTenantEdgeSlugRecord("example")).resolves.toMatchObject({
       slug: "example",
     });
-    expect(edgeConfigClientMock.get).toHaveBeenNthCalledWith(1, "ts_example");
-    expect(edgeConfigClientMock.get).toHaveBeenNthCalledWith(
-      2,
-      "tenant:slug:example"
+    expectLookupOrder(
+      edgeConfigClientMock.get.mock.calls.map(([key]) => key),
+      [getTenantEdgeSlugKey("example"), getLegacyTenantEdgeSlugKey("example")]
     );
   });
 });

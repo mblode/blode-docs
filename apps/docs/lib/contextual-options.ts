@@ -1,6 +1,7 @@
 import type {
   ContextualBuiltinOption,
   ContextualCustomOption,
+  ContextualOption,
 } from "@repo/models";
 
 interface BuiltinOptionDefinition {
@@ -113,10 +114,29 @@ interface UrlContext {
   mcpServerUrl?: string;
 }
 
+const PAGE_PLACEHOLDER = "$page";
+const BUILTIN_OPTIONS_REQUIRING_PAGE_CONTENT = new Set<ContextualBuiltinOption>(
+  ["assistant", "copy"]
+);
+
 const askPrompt = (url: string) =>
   `Read from ${url} so I can ask questions about it.`;
 
 const encoded = (text: string) => encodeURIComponent(text);
+
+const customHrefUsesPageContent = (href: ContextualCustomOption["href"]) =>
+  typeof href === "string"
+    ? href.includes(PAGE_PLACEHOLDER)
+    : href.query.some((item) => item.value.includes(PAGE_PLACEHOLDER));
+
+export const contextualOptionsRequirePageContent = (
+  options: ContextualOption[]
+) =>
+  options.some((option) =>
+    typeof option === "string"
+      ? BUILTIN_OPTIONS_REQUIRING_PAGE_CONTENT.has(option)
+      : customHrefUsesPageContent(option.href)
+  );
 
 export const buildBuiltinUrl = (
   id: ContextualBuiltinOption,

@@ -4,9 +4,9 @@ import { ensureArray, normalizePath, slugify } from "@repo/common";
 import type {
   CollectionConfig,
   ContentType,
+  DocsConfig,
   DocsOpenApiSource,
   FrontmatterByType,
-  MintlifyDocsConfig,
   PageMode,
   SiteConfig,
 } from "@repo/models";
@@ -239,47 +239,8 @@ const defaultLinkLabel = (input: {
   }
 };
 
-const buildGoogleFontsCssUrl = (
-  fonts: MintlifyDocsConfig["fonts"]
-): string | undefined => {
-  if (!fonts) {
-    return undefined;
-  }
-
-  const fontEntries: { family: string; source?: string }[] = [];
-  if (fonts.family) {
-    fontEntries.push({ family: fonts.family, source: fonts.source });
-  }
-  if (fonts.body) {
-    fontEntries.push({
-      family: fonts.body.family,
-      source: fonts.body.source,
-    });
-  }
-  if (fonts.heading) {
-    fontEntries.push({
-      family: fonts.heading.family,
-      source: fonts.heading.source,
-    });
-  }
-
-  const googleFamilies = [
-    ...new Set(
-      fontEntries.filter((entry) => !entry.source).map((entry) => entry.family)
-    ),
-  ];
-  if (!googleFamilies.length) {
-    return undefined;
-  }
-
-  const params = googleFamilies.map(
-    (family) => `family=${encodeURIComponent(family).replaceAll("%20", "+")}`
-  );
-  return `https://fonts.googleapis.com/css2?${params.join("&")}&display=swap`;
-};
-
 // oxlint-disable-next-line eslint/complexity
-const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
+const mapDocsConfig = (docs: DocsConfig): SiteConfig => {
   const navigation = {
     global:
       docs.navbar?.links?.length || docs.navigation.global?.anchors?.length
@@ -334,17 +295,6 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
     })),
   } satisfies SiteConfig["navigation"];
 
-  const baseFontFamily = docs.fonts?.family;
-  const fonts =
-    docs.fonts && (baseFontFamily || docs.fonts.body || docs.fonts.heading)
-      ? {
-          body: docs.fonts.body?.family ?? baseFontFamily,
-          cssUrl: buildGoogleFontsCssUrl(docs.fonts),
-          heading: docs.fonts.heading?.family ?? baseFontFamily,
-          provider: "google" as const,
-        }
-      : undefined;
-
   return {
     collections: [
       {
@@ -355,7 +305,6 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
         type: "docs",
       },
     ],
-    colors: docs.colors,
     contextual: docs.contextual,
     description: docs.description,
     favicon:
@@ -366,10 +315,10 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
       themeToggle: docs.appearance?.strict !== true,
       toc: true,
     },
-    fonts,
     logo: docs.logo
       ? {
           dark: typeof docs.logo === "string" ? docs.logo : docs.logo.dark,
+          href: typeof docs.logo === "string" ? undefined : docs.logo.href,
           light: typeof docs.logo === "string" ? docs.logo : docs.logo.light,
         }
       : undefined,
@@ -381,7 +330,6 @@ const mapDocsConfig = (docs: MintlifyDocsConfig): SiteConfig => {
         Boolean(docs.api?.openapi || docs.api?.asyncapi),
     },
     seo: docs.seo,
-    theme: docs.theme,
   };
 };
 

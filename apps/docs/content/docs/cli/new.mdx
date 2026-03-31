@@ -1,0 +1,154 @@
+---
+title: blodemd new
+description: Create a new blode.md documentation site.
+---
+
+Create a starter documentation directory with a `docs.json` configuration file and an `index.mdx` page.
+
+```bash
+blodemd new [directory]
+```
+
+Interactive `blodemd new` inspects the current directory first:
+
+- If the current directory is empty, it scaffolds there and prompts for the project slug.
+- If the current directory is not empty, it asks whether to create the docs in a subdirectory or scaffold the current directory.
+- If prompts are skipped with `--yes` or in a non-interactive environment, it falls back to `docs/`.
+
+## What it creates
+
+If you create the docs in a `docs/` subdirectory, `blodemd new` generates the following file tree:
+
+<Tree>
+  <Tree.Folder name="docs" defaultOpen>
+    <Tree.File name="docs.json" />
+    <Tree.File name="index.mdx" />
+  </Tree.Folder>
+</Tree>
+
+### docs.json
+
+The generated configuration uses the hosted Blode.md schema and a single "Getting Started" navigation group. The `name` field comes from the slug prompt, `--name`, or a derived default:
+
+```json title="docs/docs.json"
+{
+  "$schema": "https://blode.md/docs.json",
+  "name": "my-project",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["index"]
+      }
+    ]
+  }
+}
+```
+
+### index.mdx
+
+A minimal starter page with a title and placeholder content:
+
+```mdx title="docs/index.mdx"
+---
+title: Welcome
+---
+
+Start writing your docs here.
+```
+
+## Starter template
+
+Use the starter template when you want a richer first pass with repo hygiene files, agent instructions, and branding assets:
+
+- `.gitignore`
+- `favicon.svg`
+- `README.md`
+- `AGENTS.md`
+- `CLAUDE.md`
+- `logo/light.svg` and `logo/dark.svg`
+- `images/hero-light.svg`, `images/hero-dark.svg`, and `images/checks-passed.svg`
+- `quickstart.mdx`
+- `development.mdx`
+
+```bash title="Starter template"
+blodemd new --template starter
+```
+
+`AGENTS.md` links to `CLAUDE.md` when the local filesystem supports symlinks. The default `blodemd new` output stays as the minimal two-file scaffold.
+
+<Callout type="info">
+  The starter does not generate a `LICENSE` file. Choose a license explicitly if
+  the repo will be public or open source.
+</Callout>
+
+## Options
+
+<TypeTable
+  type={{
+    "[directory]": {
+      description: "Target directory to scaffold.",
+      type: "string",
+      default:
+        '"interactive flow depends on the current directory; non-interactive defaults to docs"',
+    },
+    "--name <slug>": {
+      description:
+        "Project slug written to docs.json. If omitted, interactive mode prompts and non-interactive mode derives it from the chosen location.",
+      type: "string",
+    },
+    "--template <name>": {
+      description:
+        'Scaffold an alternate template. Use "starter" for repo hygiene, helper files, and branding assets.',
+      type: "string",
+      default: '"minimal"',
+    },
+    "--yes": {
+      description: "Accept defaults without prompting.",
+      type: "boolean",
+      default: "false",
+    },
+  }}
+/>
+
+## Examples
+
+<CodeGroup>
+```bash title="Default directory"
+blodemd new
+```
+
+```bash title="Create docs/ explicitly"
+blodemd new docs
+```
+
+```bash title="Scaffold the current directory"
+blodemd new .
+```
+
+```bash title="Set the slug explicitly"
+blodemd new --name acme-docs
+```
+
+```bash title="Custom directory"
+blodemd new my-docs
+```
+
+```bash title="Starter template"
+blodemd new --template starter
+```
+
+</CodeGroup>
+
+<Callout type="info">
+  `blodemd new` stops with an error if the target directory already contains any
+  scaffolded files. It also refuses to scaffold into a non-empty directory
+  unless you confirm that interactively.
+</Callout>
+
+## Next steps
+
+1. Review `docs.json` and change `name` if you want a different project slug. This determines the default `{name}.blode.md` subdomain.
+2. If you used the starter template, replace the generated helper files and brand assets with project-specific content.
+3. Add more `.mdx` pages and update the `navigation` array.
+4. Run `blodemd push` to deploy.

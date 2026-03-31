@@ -7,7 +7,7 @@ import {
 import { getTenantRequestContextFromUrl } from "@/lib/tenant-utility-context";
 import { getTenantBySlug } from "@/lib/tenants";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const preferredRegion = "home";
 export const revalidate = 3600;
 

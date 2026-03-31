@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import schema from "../../../../packages/validation/src/mintlify-docs-schema.json";
+import schema from "../../../../packages/validation/src/blodemd-docs-schema.json";
 
 export const dynamic = "force-static";
 export const preferredRegion = "home";

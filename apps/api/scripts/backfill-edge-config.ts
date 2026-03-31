@@ -1,5 +1,4 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { webcrypto } from "node:crypto";
 
 import {
   TENANT_EDGE_HOST_KEY_PREFIX,
@@ -10,8 +9,6 @@ import { readTrimmedEnv } from "../src/lib/env";
 
 const VERCEL_API_BASE = "https://api.vercel.com";
 const DEFAULT_SAMPLE_KEYS = ["greeting"];
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const apiRoot = path.resolve(__dirname, "..");
 
 interface EdgeConfigItem {
   key: string;
@@ -24,20 +21,16 @@ interface VercelEdgeConfigEnv {
   token: string;
 }
 
-const loadOptionalEnvFile = (filePath: string) => {
-  try {
-    process.loadEnvFile(filePath);
-  } catch (error) {
-    const envError = error as NodeJS.ErrnoException;
-    if (envError.code !== "ENOENT") {
-      throw error;
-    }
+const ensureWebCrypto = () => {
+  if (globalThis.crypto) {
+    return;
   }
-};
 
-const loadBackfillEnv = () => {
-  loadOptionalEnvFile(path.join(apiRoot, ".env.local"));
-  loadOptionalEnvFile(path.join(apiRoot, ".env"));
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    enumerable: true,
+    value: webcrypto,
+  });
 };
 
 const getEdgeConfigEnv = (): VercelEdgeConfigEnv => {
@@ -137,7 +130,7 @@ const normalizeDatabaseUrl = () => {
 };
 
 const main = async () => {
-  loadBackfillEnv();
+  ensureWebCrypto();
   normalizeDatabaseUrl();
 
   const env = getEdgeConfigEnv();

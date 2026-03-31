@@ -2,6 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
+  getMarkdownExportSlug,
+  getMarkdownExportSourcePath,
+  stripBasePath,
+  toMarkdownDocHref,
+} from "./lib/routes";
+import {
   getRequestHost,
   isReservedPath,
   isRootRuntimeHost,
@@ -12,19 +18,6 @@ import { applyTenantUtilityContextSearchParams } from "./lib/tenant-utility-cont
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
-
-const stripBasePath = (value: string, basePath: string) => {
-  if (!basePath) {
-    return value;
-  }
-  if (value === basePath) {
-    return "/";
-  }
-  if (value.startsWith(`${basePath}/`)) {
-    return value.slice(basePath.length) || "/";
-  }
-  return value;
 };
 
 const TENANT_UTILITY_SUFFIXES = [
@@ -60,12 +53,30 @@ const getTenantUtilityRewritePath = (
   return `/sites/${tenantSlug}${utilityPath}`;
 };
 
+const getRedirectPathname = (
+  pathname: string,
+  currentBasePath: string,
+  targetBasePath: string,
+  markdownSourcePath: string | null
+) => {
+  if (!markdownSourcePath) {
+    const relativePath = stripBasePath(pathname, currentBasePath);
+    return `${targetBasePath}${relativePath}`.replaceAll(/\/+/g, "/");
+  }
+
+  const relativePath = stripBasePath(markdownSourcePath, currentBasePath);
+  const relativeSlug = relativePath === "/" ? "index" : relativePath.slice(1);
+
+  return toMarkdownDocHref(relativeSlug, targetBasePath);
+};
+
 // oxlint-disable-next-line eslint/complexity
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
+  const markdownSourcePath = getMarkdownExportSourcePath(pathname);
 
   if (pathname.startsWith("/sites")) {
-    return NextResponse.next();
+    return new NextResponse("Not Found", { status: 404 });
   }
 
   const host = getRequestHost(request.headers);
@@ -80,7 +91,7 @@ export const proxy = async (request: NextRequest) => {
     return NextResponse.next();
   }
 
-  const resolution = await resolveTenant(host, pathname);
+  const resolution = await resolveTenant(host, markdownSourcePath ?? pathname);
 
   if (!resolution) {
     if (pathname === "/" && isRootRuntimeHost(host)) {
@@ -99,13 +110,13 @@ export const proxy = async (request: NextRequest) => {
     const [targetHost] = resolution.tenant.customDomains;
     if (targetHost) {
       const redirectUrl = new URL(request.url);
-      const normalizedPath = stripBasePath(pathname, resolution.basePath);
       redirectUrl.hostname = targetHost;
-      redirectUrl.pathname =
-        `${resolution.tenant.pathPrefix ?? ""}${normalizedPath}`.replaceAll(
-          /\/+/g,
-          "/"
-        );
+      redirectUrl.pathname = getRedirectPathname(
+        pathname,
+        resolution.basePath,
+        resolution.tenant.pathPrefix ?? "",
+        markdownSourcePath
+      );
       return NextResponse.redirect(redirectUrl, 308);
     }
   }
@@ -118,14 +129,13 @@ export const proxy = async (request: NextRequest) => {
     resolution.host !== resolution.tenant.primaryDomain
   ) {
     const redirectUrl = new URL(request.url);
-    const normalizedPath = stripBasePath(pathname, resolution.basePath);
     redirectUrl.hostname = resolution.tenant.primaryDomain;
-    redirectUrl.pathname = preferCustomDomain
-      ? `${resolution.tenant.pathPrefix ?? ""}${normalizedPath}`.replaceAll(
-          /\/+/g,
-          "/"
-        )
-      : normalizedPath;
+    redirectUrl.pathname = getRedirectPathname(
+      pathname,
+      resolution.basePath,
+      preferCustomDomain ? (resolution.tenant.pathPrefix ?? "") : "",
+      markdownSourcePath
+    );
     return NextResponse.redirect(redirectUrl, 308);
   }
 
@@ -173,13 +183,11 @@ export const proxy = async (request: NextRequest) => {
     resolution.basePath,
     resolution.tenant.slug
   );
+  const markdownSlug = getMarkdownExportSlug(pathname, resolution.basePath);
 
-  if (pathname.endsWith(".mdx") && !pathname.includes("/llms.mdx/")) {
-    const stripped = pathname.slice(0, -4);
-    const normalizedPath = stripBasePath(stripped, resolution.basePath);
-    const slug = normalizedPath === "/" ? "" : normalizedPath.slice(1);
+  if (markdownSlug !== null && !pathname.includes("/llms.mdx/")) {
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
-    url.pathname = `${tenantPrefix}/llms.mdx/${slug}`;
+    url.pathname = `${tenantPrefix}/llms.mdx/${markdownSlug}`;
   } else if (utilityRewritePath) {
     url.pathname = utilityRewritePath;
   } else {

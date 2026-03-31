@@ -7,6 +7,7 @@ import {
   buildPageMetadataMap,
   getPrebuiltUtilityLlmPagePath,
   loadContentSource,
+  loadPrebuiltContentIndex,
   loadPrebuiltUtilityIndex,
   loadSiteConfig,
   PREBUILT_UTILITY_LLMS_FULL_PATH,
@@ -33,8 +34,48 @@ import {
 import type { OpenApiEntry } from "@/lib/openapi";
 import { loadOpenApiRegistry } from "@/lib/openapi";
 import { toDocHref } from "@/lib/routes";
+import { createTimedPromiseCache } from "@/lib/server-cache";
 import { getRequestProtocol } from "@/lib/tenancy";
 import type { TenantRequestContext } from "@/lib/tenant-utility-context";
+
+const TENANT_STATIC_CACHE_TTL_MS = 30 * 60 * 1000;
+
+const getTenantStaticCacheKey = (tenant: Tenant) =>
+  [
+    tenant.id,
+    tenant.slug,
+    tenant.activeDeploymentId ?? "",
+    tenant.activeDeploymentManifestUrl ?? "",
+    tenant.docsPath ?? "",
+    tenant.pathPrefix ?? "",
+    tenant.primaryDomain,
+  ].join(":");
+
+const tenantUrlDataCache = createTimedPromiseCache<
+  string,
+  Awaited<ReturnType<typeof buildTenantUrlData>>
+>({
+  maxEntries: 512,
+  ttlMs: TENANT_STATIC_CACHE_TTL_MS,
+});
+
+const tenantUtilityIndexCache = createTimedPromiseCache<string, UtilityIndex>({
+  maxEntries: 512,
+  ttlMs: TENANT_STATIC_CACHE_TTL_MS,
+});
+
+const isMissingContentFileError = (error: unknown) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ENOENT"
+  ) {
+    return true;
+  }
+
+  return error instanceof Error && error.message.includes("not found");
+};
 
 const getCanonicalHost = (
   tenant: Tenant,
@@ -108,7 +149,7 @@ const renderUtilityTemplate = (
     )}`
   );
 
-const loadTenantUrlData = async (tenant: Tenant) => {
+const buildTenantUrlData = async (tenant: Tenant) => {
   const contentSource = getTenantContentSource(tenant);
   const configResult = await loadSiteConfig(contentSource);
   if (!configResult.ok) {
@@ -119,7 +160,9 @@ const loadTenantUrlData = async (tenant: Tenant) => {
     configResult.config,
     contentSource
   );
-  const contentIndex = await buildContentIndex(contentSource, config);
+  const contentIndex =
+    (await loadPrebuiltContentIndex(contentSource)) ??
+    (await buildContentIndex(contentSource, config));
   if (contentIndex.errors.length) {
     throw new Error("Invalid content");
   }
@@ -166,6 +209,12 @@ const loadTenantUrlData = async (tenant: Tenant) => {
     registry,
   };
 };
+
+const loadTenantUrlData = async (tenant: Tenant) =>
+  await tenantUrlDataCache.getOrCreate(
+    getTenantStaticCacheKey(tenant),
+    async () => await buildTenantUrlData(tenant)
+  );
 
 const formatOpenApiPageText = (entry: OpenApiEntry): string => {
   const parts = [
@@ -327,23 +376,42 @@ const buildRuntimeUtilityIndex = async (
   };
 };
 
-const loadTenantUtilityIndex = async (tenant: Tenant) => {
-  const prebuilt = await loadPrebuiltUtilityIndex(
-    getTenantContentSource(tenant)
-  );
-  if (prebuilt) {
-    return prebuilt;
-  }
+const loadTenantUtilityIndex = async (tenant: Tenant) =>
+  await tenantUtilityIndexCache.getOrCreate(
+    getTenantStaticCacheKey(tenant),
+    async () => {
+      const prebuilt = await loadPrebuiltUtilityIndex(
+        getTenantContentSource(tenant)
+      );
+      if (prebuilt) {
+        return prebuilt;
+      }
 
-  return await buildRuntimeUtilityIndex(tenant);
-};
+      return await buildRuntimeUtilityIndex(tenant);
+    }
+  );
 
 const loadTenantUtilityTemplate = async (tenant: Tenant, path: string) => {
   const contentSource = getTenantContentSource(tenant);
-  if (!(await contentSource.exists(path))) {
-    return null;
+  try {
+    return await contentSource.readFile(path);
+  } catch (error) {
+    if (isMissingContentFileError(error)) {
+      return null;
+    }
+
+    throw error;
   }
-  return await contentSource.readFile(path);
+};
+
+export const clearTenantStaticCaches = () => {
+  tenantUrlDataCache.clear();
+  tenantUtilityIndexCache.clear();
+};
+
+export const clearTenantStaticCachesForTenant = (tenantId: string) => {
+  tenantUrlDataCache.deleteByPrefix(tenantId);
+  tenantUtilityIndexCache.deleteByPrefix(tenantId);
 };
 
 export const buildTenantSitemapXml = async (
@@ -384,7 +452,7 @@ Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 # LLM-friendly content
 # ${origin}${toDocHref("llms.txt", basePath)} - Index of all documentation pages
 # ${origin}${toDocHref("llms-full.txt", basePath)} - Full documentation content
-# Append .mdx to any page URL for raw markdown`;
+# Append .md to any page URL for raw markdown`;
 };
 
 export const buildTenantLlmsTxt = async (

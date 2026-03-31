@@ -13,6 +13,7 @@ import open from "open";
 
 import { CONFIG_DIR } from "../constants.js";
 import { CliError, EXIT_CODES, toCliError } from "../errors.js";
+import { parsePort } from "../validation.js";
 import { resolveDocsRoot, validateDocsRoot } from "./resolve-root.js";
 import { createDevWatcher } from "./watcher.js";
 
@@ -22,19 +23,9 @@ const DEV_PORT_SCAN_LIMIT = 10;
 const DEV_SHUTDOWN_TIMEOUT_MS = 5000;
 const LOCALHOST = "127.0.0.1";
 const RUNTIME_EXCLUDE_DIRS = new Set([".next", ".turbo", "node_modules"]);
-
-const parsePositiveInteger = (value: string, label: string): number => {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new CliError(
-      `${label} must be a positive integer.`,
-      EXIT_CODES.VALIDATION
-    );
-  }
-
-  return parsed;
-};
+const STANDALONE_RUNTIME_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const STANDALONE_RUNTIME_PREFIX = "standalone-runtime-";
+const TURBOPACK_ARGS = ["dev", "--turbopack"] as const;
 
 const fileExists = async (filePath: string): Promise<boolean> => {
   try {
@@ -43,6 +34,71 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   } catch {
     return false;
   }
+};
+
+const resolveCommonAncestor = (pathsToCompare: string[]): string => {
+  const [firstPath, ...restPaths] = pathsToCompare;
+  if (!firstPath) {
+    return path.sep;
+  }
+
+  const first = path.resolve(firstPath);
+  const { root } = path.parse(first);
+  const firstSegments = first
+    .slice(root.length)
+    .split(path.sep)
+    .filter(Boolean);
+  const sharedSegments: string[] = [];
+
+  for (const [index, segment] of firstSegments.entries()) {
+    const isShared = restPaths.every((candidatePath) => {
+      const candidate = path.resolve(candidatePath);
+      if (path.parse(candidate).root !== root) {
+        return false;
+      }
+
+      const candidateSegments = candidate
+        .slice(root.length)
+        .split(path.sep)
+        .filter(Boolean);
+      return candidateSegments[index] === segment;
+    });
+
+    if (!isShared) {
+      break;
+    }
+
+    sharedSegments.push(segment);
+  }
+
+  return path.join(root, ...sharedSegments);
+};
+
+const cleanupStandaloneRuntimeRoots = async (
+  configDir: string,
+  maxAgeMs: number = STANDALONE_RUNTIME_MAX_AGE_MS
+): Promise<void> => {
+  const cutoff = Date.now() - maxAgeMs;
+  const entries = await fs.readdir(configDir, { withFileTypes: true });
+
+  await Promise.all(
+    entries
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          entry.name.startsWith(STANDALONE_RUNTIME_PREFIX)
+      )
+      .map(async (entry) => {
+        const entryPath = path.join(configDir, entry.name);
+        const stats = await fs.stat(entryPath);
+
+        if (stats.mtimeMs >= cutoff) {
+          return;
+        }
+
+        await fs.rm(entryPath, { force: true, recursive: true });
+      })
+  );
 };
 
 type PortAvailabilityProbe = (port: number) => Promise<boolean>;
@@ -144,7 +200,7 @@ interface StandaloneServer {
   mode: "standalone";
   devServerDir: string;
   nextPackageRoot: string;
-  packagesDir: string;
+  runtimeRoot: string;
 }
 
 interface MonorepoServer {
@@ -190,60 +246,81 @@ const isStandaloneCliInstall = async (
   }
 };
 
+export const createStandaloneRuntimeRoot = async (
+  configDir: string = CONFIG_DIR
+): Promise<string> => {
+  await fs.mkdir(configDir, { recursive: true });
+  await cleanupStandaloneRuntimeRoots(configDir);
+  return await fs.mkdtemp(path.join(configDir, STANDALONE_RUNTIME_PREFIX));
+};
+
 const materializeStandaloneRuntime = async (
   cliPackageRoot: string
-): Promise<{ devServerDir: string; packagesDir: string }> => {
-  const runtimeRoot = path.join(CONFIG_DIR, "standalone-runtime");
-  await fs.rm(runtimeRoot, { force: true, recursive: true });
-  await fs.mkdir(runtimeRoot, { recursive: true });
+): Promise<{
+  devServerDir: string;
+  runtimeRoot: string;
+}> => {
+  const runtimeRoot = await createStandaloneRuntimeRoot();
 
-  for (const dir of ["dev-server", "docs", "packages"]) {
-    await copyStandaloneTree(
-      path.join(cliPackageRoot, dir),
-      path.join(runtimeRoot, dir)
+  try {
+    for (const dir of ["dev-server", "docs", "packages"]) {
+      await copyStandaloneTree(
+        path.join(cliPackageRoot, dir),
+        path.join(runtimeRoot, dir)
+      );
+    }
+
+    await fs.symlink(
+      path.join(cliPackageRoot, "node_modules"),
+      path.join(runtimeRoot, "node_modules"),
+      process.platform === "win32" ? "junction" : "dir"
     );
+    await fs.mkdir(path.join(runtimeRoot, "dev-server", "node_modules"), {
+      recursive: true,
+    });
+    await fs.symlink(
+      path.join(runtimeRoot, "packages", "@repo"),
+      path.join(runtimeRoot, "dev-server", "node_modules", "@repo"),
+      process.platform === "win32" ? "junction" : "dir"
+    );
+
+    await fs.writeFile(
+      path.join(runtimeRoot, "dev-server", "package.json"),
+      `${JSON.stringify(
+        {
+          dependencies: {
+            next: "16.2.1",
+            react: "^19.2.0",
+            "react-dom": "^19.2.0",
+          },
+          devDependencies: {
+            "@types/node": "^22.19.15",
+            "@types/react": "19.2.14",
+            "@types/react-dom": "19.2.3",
+            typescript: "6.0.2",
+          },
+          name: "blodemd-dev-server",
+          private: true,
+          type: "module",
+        },
+        null,
+        2
+      )}\n`
+    );
+
+    return {
+      devServerDir: path.join(runtimeRoot, "dev-server"),
+      runtimeRoot,
+    };
+  } catch (error) {
+    await fs.rm(runtimeRoot, { force: true, recursive: true });
+    throw error;
   }
-
-  await fs.symlink(
-    path.join(cliPackageRoot, "node_modules"),
-    path.join(runtimeRoot, "node_modules"),
-    process.platform === "win32" ? "junction" : "dir"
-  );
-
-  await fs.writeFile(
-    path.join(runtimeRoot, "dev-server", "package.json"),
-    `${JSON.stringify(
-      {
-        dependencies: {
-          next: "16.2.1",
-          react: "^19.2.0",
-          "react-dom": "^19.2.0",
-        },
-        devDependencies: {
-          "@types/node": "^22.19.15",
-          "@types/react": "19.2.14",
-          "@types/react-dom": "19.2.3",
-          typescript: "6.0.2",
-        },
-        name: "blodemd-dev-server",
-        private: true,
-        type: "module",
-      },
-      null,
-      2
-    )}\n`
-  );
-
-  return {
-    devServerDir: path.join(runtimeRoot, "dev-server"),
-    packagesDir: path.join(runtimeRoot, "packages"),
-  };
 };
 
 /**
- * Check if a shipped dev-server exists alongside the CLI (npm-installed mode).
- * Verifies both the dev-server directory AND that `next` is resolvable
- * (it's a dependency when npm-installed, but not in the monorepo).
+ * Check if a shipped dev-server exists alongside an installed CLI package.
+ * We only use standalone mode when the package root lives under `node_modules`.
  */
 const findStandaloneDevServer = async (
   cliPackageRoot: string
@@ -273,7 +350,7 @@ const findStandaloneDevServer = async (
     devServerDir: runtime.devServerDir,
     mode: "standalone",
     nextPackageRoot: cliPackageRoot,
-    packagesDir: runtime.packagesDir,
+    runtimeRoot: runtime.runtimeRoot,
   };
 };
 
@@ -331,41 +408,79 @@ const resolveDevServer = async (
   return { mode: "monorepo", repoRoot };
 };
 
-const spawnDevServer = (
+interface DevServerLaunch {
+  args: string[];
+  command: string;
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+}
+
+export const buildDevServerLaunch = (
   server: DevServerResolution,
   { root, port }: { root: string; port: number }
-): ReturnType<typeof spawn> => {
+): DevServerLaunch => {
   if (server.mode === "standalone") {
     const nextBin = resolveNextBin(server.nextPackageRoot);
 
-    return spawn(process.execPath, [nextBin, "dev", "--webpack"], {
+    return {
+      args: [nextBin, ...TURBOPACK_ARGS],
+      command: process.execPath,
       cwd: server.devServerDir,
       env: {
         ...process.env,
-        BLODEMD_PACKAGES_DIR: server.packagesDir,
+        BLODEMD_PACKAGES_DIR: path.join(server.runtimeRoot, "packages"),
+        BLODEMD_TURBOPACK_ROOT: resolveCommonAncestor([
+          server.nextPackageRoot,
+          server.runtimeRoot,
+        ]),
         DOCS_ROOT: root,
-        // NODE_PATH lets require.resolve (used by Next.js transpilePackages)
-        // find @repo/* packages from our shipped packages/ directory.
-        NODE_PATH: [server.packagesDir, process.env.NODE_PATH]
-          .filter(Boolean)
-          .join(path.delimiter),
         PORT: String(port),
       },
-      stdio: "inherit",
-    });
+    };
   }
 
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
-  return spawn(npmCommand, ["run", "dev", "--workspace=dev-server"], {
+  return {
+    args: ["run", "dev", "--workspace=dev-server"],
+    command: npmCommand,
     cwd: server.repoRoot,
     env: {
       ...process.env,
       DOCS_ROOT: root,
       PORT: String(port),
     },
+  };
+};
+
+const spawnDevServer = (
+  server: DevServerResolution,
+  options: { root: string; port: number }
+): ReturnType<typeof spawn> => {
+  const launch = buildDevServerLaunch(server, options);
+
+  return spawn(launch.command, launch.args, {
+    cwd: launch.cwd,
+    env: launch.env,
     stdio: "inherit",
   });
 };
+
+interface DevCommandDependencies {
+  createWatcher: typeof createDevWatcher;
+  getCliFilePath: () => string;
+  getIntro: typeof intro;
+  getOpen: typeof open;
+  getLog: typeof log;
+  parsePortValue: typeof parsePort;
+  removeDirectory: typeof fs.rm;
+  resolveDevPortValue: typeof resolveDevPort;
+  resolveDocsRootValue: typeof resolveDocsRoot;
+  resolveServer: typeof resolveDevServer;
+  shutdownChild: typeof shutdownChildProcess;
+  spawnServer: typeof spawnDevServer;
+  validateDocsRootValue: typeof validateDocsRoot;
+  waitForServerReady: typeof waitForServer;
+}
 
 // --- Server readiness ---
 
@@ -411,32 +526,57 @@ const waitForServer = async ({
   );
 };
 
+const defaultDevCommandDependencies: DevCommandDependencies = {
+  createWatcher: createDevWatcher,
+  getCliFilePath: () => fileURLToPath(import.meta.url),
+  getIntro: intro,
+  getLog: log,
+  getOpen: open,
+  parsePortValue: parsePort,
+  removeDirectory: fs.rm,
+  resolveDevPortValue: resolveDevPort,
+  resolveDocsRootValue: resolveDocsRoot,
+  resolveServer: resolveDevServer,
+  shutdownChild: shutdownChildProcess,
+  spawnServer: spawnDevServer,
+  validateDocsRootValue: validateDocsRoot,
+  waitForServerReady: waitForServer,
+};
+
 // --- Main command ---
 
-export const devCommand = async ({
-  dir,
-  openBrowser,
-  port: portValue,
-}: {
-  dir?: string;
-  openBrowser: boolean;
-  port: string;
-}) => {
-  intro(chalk.bold("blodemd dev"));
+export const devCommand = async (
+  {
+    dir,
+    openBrowser,
+    port: portValue,
+  }: {
+    dir?: string;
+    openBrowser: boolean;
+    port: string;
+  },
+  dependencies: DevCommandDependencies = defaultDevCommandDependencies
+) => {
+  const cliLog = dependencies.getLog;
+
+  dependencies.getIntro(chalk.bold("blodemd dev"));
 
   try {
-    const port = parsePositiveInteger(portValue, "Port");
-    const resolvedPort = await resolveDevPort(port);
-    const root = await resolveDocsRoot(dir);
-    await validateDocsRoot(root);
+    const port = dependencies.parsePortValue(portValue);
+    const resolvedPort = await dependencies.resolveDevPortValue(port);
+    const root = await dependencies.resolveDocsRootValue(dir);
+    await dependencies.validateDocsRootValue(root);
 
-    const cliFilePath = fileURLToPath(import.meta.url);
-    const server = await resolveDevServer(cliFilePath);
+    const cliFilePath = dependencies.getCliFilePath();
+    const server = await dependencies.resolveServer(cliFilePath);
     const localUrl = `http://localhost:${resolvedPort}`;
 
-    log.info(`Docs root: ${chalk.cyan(root)}`);
+    cliLog.info(`Docs root: ${chalk.cyan(root)}`);
 
-    const child = spawnDevServer(server, { port: resolvedPort, root });
+    const child = dependencies.spawnServer(server, {
+      port: resolvedPort,
+      root,
+    });
 
     let watcher: Awaited<ReturnType<typeof createDevWatcher>> | null = null;
     let shuttingDown = false;
@@ -452,20 +592,27 @@ export const devCommand = async ({
         watcher = null;
       }
 
-      await shutdownChildProcess(child);
+      await dependencies.shutdownChild(child);
+
+      if (server.mode === "standalone") {
+        await dependencies.removeDirectory(server.runtimeRoot, {
+          force: true,
+          recursive: true,
+        });
+      }
     };
 
     process.once("SIGINT", closeAll);
     process.once("SIGTERM", closeAll);
 
     try {
-      await waitForServer({ child, port: resolvedPort });
+      await dependencies.waitForServerReady({ child, port: resolvedPort });
 
-      watcher = await createDevWatcher({ port: resolvedPort, root });
-      log.success(`Dev server running at ${chalk.cyan(localUrl)}`);
+      watcher = await dependencies.createWatcher({ port: resolvedPort, root });
+      cliLog.success(`Dev server running at ${chalk.cyan(localUrl)}`);
 
       if (openBrowser) {
-        await open(localUrl);
+        await dependencies.getOpen(localUrl);
       }
 
       const [code, signal] = (await once(child, "exit")) as [
@@ -491,9 +638,9 @@ export const devCommand = async ({
   } catch (error) {
     const cliError = toCliError(error);
 
-    log.error(cliError.message);
+    cliLog.error(cliError.message);
     if (cliError.hint) {
-      log.info(cliError.hint);
+      cliLog.info(cliError.hint);
     }
 
     process.exitCode = cliError.exitCode;

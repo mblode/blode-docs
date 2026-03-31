@@ -8,7 +8,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev --workspace=apps/docs",
+    command: "npm run dev:e2e --workspace=apps/docs",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     url: "http://localhost:3001",

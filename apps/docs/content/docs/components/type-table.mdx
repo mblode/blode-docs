@@ -78,9 +78,9 @@ When any field includes a `default` property, a Default column appears automatic
 ```mdx
 <TypeTable
   type={{
-    theme: {
-      description: "Color theme for the site.",
-      type: '"light" | "dark" | "system"',
+    appearance: {
+      description: "Initial color mode for the site.",
+      type: '"system" | "light" | "dark"',
       default: '"system"',
       required: false,
     },
@@ -102,9 +102,9 @@ When any field includes a `default` property, a Default column appears automatic
 
 <TypeTable
   type={{
-    theme: {
-      description: "Color theme for the site.",
-      type: '"light" | "dark" | "system"',
+    appearance: {
+      description: "Initial color mode for the site.",
+      type: '"system" | "light" | "dark"',
       default: '"system"',
       required: false,
     },

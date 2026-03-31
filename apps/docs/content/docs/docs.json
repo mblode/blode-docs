@@ -1,13 +1,7 @@
 {
-  "$schema": "https://docs.blode.md/docs.json",
-  "theme": "mint",
+  "$schema": "https://blode.md/docs.json",
   "name": "docs",
   "description": "Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.",
-  "colors": {
-    "primary": "#0D9373",
-    "light": "#CFF6EE",
-    "dark": "#0C3A33"
-  },
   "contextual": {
     "options": [
       "copy",
@@ -70,6 +64,10 @@
               "features/collections",
               "features/dev-server"
             ]
+          },
+          {
+            "group": "API",
+            "pages": ["api/overview"]
           }
         ]
       },
@@ -113,7 +111,9 @@
             "pages": [
               "cli/overview",
               "cli/login",
-              "cli/init",
+              "cli/logout",
+              "cli/whoami",
+              "cli/new",
               "cli/push",
               "cli/dev",
               "cli/validate"

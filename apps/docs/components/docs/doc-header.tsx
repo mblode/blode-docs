@@ -9,6 +9,8 @@ import type { NavEntry, NavTab } from "@/lib/navigation";
 import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
+const EMPTY_NAV: NavEntry[] = [];
+
 const Dropdown = ({
   label,
   items,
@@ -102,7 +104,7 @@ export const DocHeader = ({
   basePath,
   tabs,
   activeTabIndex,
-  nav = [],
+  nav = EMPTY_NAV,
 }: {
   config: SiteConfig;
   basePath: string;
@@ -117,6 +119,10 @@ export const DocHeader = ({
   const [primaryLanguage] = languages;
   const searchDisabled = config.features?.search === false;
   const themeToggleDisabled = config.features?.themeToggle === false;
+  const logoHref = config.logo?.href ?? toDocHref("index", basePath);
+  const logoIsExternal = Boolean(
+    config.logo?.href && isExternalHref(config.logo.href)
+  );
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background">
@@ -132,7 +138,9 @@ export const DocHeader = ({
           />
           <Link
             className="flex items-center gap-2.5"
-            href={toDocHref("index", basePath)}
+            href={logoHref}
+            rel={logoIsExternal ? "noopener noreferrer" : undefined}
+            target={logoIsExternal ? "_blank" : undefined}
           >
             {config.logo?.light ? (
               <Image
@@ -186,7 +194,9 @@ export const DocHeader = ({
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
-            {searchDisabled ? null : <Search basePath={basePath} />}
+            {searchDisabled ? null : (
+              <Search basePath={basePath} key={basePath} />
+            )}
             {primaryVersion ? (
               <Dropdown
                 basePath={basePath}
