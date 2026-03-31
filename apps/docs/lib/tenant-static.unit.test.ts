@@ -98,6 +98,34 @@ describe("tenant static LLM helpers", () => {
     );
   });
 
+  it("preserves custom-domain docs path prefixes in static helper URLs", async () => {
+    const prefixedTenant = {
+      ...tenant,
+      customDomains: ["donebear.com"],
+      pathPrefix: "/docs",
+      primaryDomain: "donebear.com",
+    };
+    const context = {
+      basePath: "/docs",
+      requestedHost: "donebear.com",
+      strategy: "custom-domain" as const,
+    };
+
+    const llms = await buildTenantLlmsTxt(prefixedTenant, context);
+    const robots = buildTenantRobotsTxt(prefixedTenant, context);
+    const sitemap = await buildTenantSitemapXml(prefixedTenant, context);
+
+    expect(llms).toContain("Sitemap: https://donebear.com/docs/sitemap.xml");
+    expect(llms).toContain(
+      "[List projects](https://donebear.com/docs/api/get-projects)"
+    );
+    expect(robots).toContain("Sitemap: https://donebear.com/docs/sitemap.xml");
+    expect(robots).toContain("# https://donebear.com/docs/llms.txt");
+    expect(sitemap).toContain(
+      "<loc>https://donebear.com/docs/api/get-projects</loc>"
+    );
+  });
+
   it("prefers published utility artifacts when they exist", async () => {
     const docsPath = await createTempUtilityRoot({
       "_utility/llms-full.txt":

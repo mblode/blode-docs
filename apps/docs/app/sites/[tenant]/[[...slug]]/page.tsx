@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { DocShell } from "@/components/docs/doc-shell";
 import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
 import { toDocHref } from "@/lib/routes";
+import {
+  getCanonicalDocBasePath,
+  getCanonicalOrigin,
+  getTenantRequestContextFromHeaders,
+} from "@/lib/tenant-static";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
-
-const getTenantBasePath = (pathPrefix?: string) => pathPrefix ?? "";
 
 const DocContentFallback = () => (
   <div className="grid gap-4">
@@ -73,14 +77,19 @@ export const generateMetadata = async ({
   const baseTitle = config?.name ?? "Docs";
   const titleTemplate = `%s · ${baseTitle}`;
   const title = pageTitle ? titleTemplate.replace("%s", pageTitle) : baseTitle;
+  const headerStore = await headers();
+  const requestContext = getTenantRequestContextFromHeaders(
+    tenant,
+    headerStore
+  );
 
-  const canonicalBasePath = getTenantBasePath(tenant.pathPrefix);
+  const canonicalBasePath = getCanonicalDocBasePath(tenant, requestContext);
   const canonicalPath = slugKey ? `/${slugKey}` : "/";
   const fullCanonical = `${canonicalBasePath}${canonicalPath}`.replaceAll(
     /\/+/g,
     "/"
   );
-  const canonicalOrigin = `https://${tenant.primaryDomain}`;
+  const canonicalOrigin = getCanonicalOrigin(tenant, requestContext);
   const ogImage = config?.metadata?.ogImage;
   const favicon = config?.favicon;
   const noindex = pageNoindex || (hidden && config.seo?.indexing !== "all");
@@ -146,7 +155,12 @@ const DocPage = async ({
     );
   }
 
-  const basePath = getTenantBasePath(shell.tenant.pathPrefix);
+  const headerStore = await headers();
+  const requestContext = getTenantRequestContextFromHeaders(
+    shell.tenant,
+    headerStore
+  );
+  const basePath = getCanonicalDocBasePath(shell.tenant, requestContext);
 
   let content: React.ReactNode;
   let rawContent: string | undefined;

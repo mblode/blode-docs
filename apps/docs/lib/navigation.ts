@@ -3,7 +3,7 @@ import type { DocsNavigation } from "@repo/models";
 import type { PageMetadata } from "@repo/previewing";
 
 import type { OpenApiRegistry } from "./openapi";
-import { toDocHref } from "./routes";
+import { resolveHref, toDocHref } from "./routes";
 
 export interface NavPage {
   type: "page";
@@ -35,7 +35,7 @@ export const getNavPageTitle = (page: NavPage): string =>
   page.sidebarTitle ?? page.title;
 
 export const getNavPageHref = (page: NavPage, basePath: string): string =>
-  page.url ?? toDocHref(page.path, basePath);
+  page.url ? resolveHref(page.url, basePath) : toDocHref(page.path, basePath);
 
 const titleFromSlug = (slug: string) => {
   const clean = slug.replaceAll("-", " ").split("/").pop() ?? slug;

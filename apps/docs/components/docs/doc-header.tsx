@@ -6,15 +6,17 @@ import { MobileNav } from "@/components/docs/mobile-nav";
 import { Search } from "@/components/ui/search";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { NavEntry, NavTab } from "@/lib/navigation";
-import { toDocHref } from "@/lib/routes";
+import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const Dropdown = ({
   label,
   items,
+  basePath,
 }: {
   label: string;
   items: { label: string; url: string }[];
+  basePath: string;
 }) => {
   if (!items.length) {
     return null;
@@ -25,15 +27,22 @@ const Dropdown = ({
         {label}
       </summary>
       <div className="absolute right-0 top-11 z-20 grid min-w-36 overflow-hidden rounded-xl border border-border bg-popover shadow-popover">
-        {items.map((item) => (
-          <Link
-            className="px-3 py-2 hover:bg-accent"
-            href={item.url}
-            key={item.label}
-          >
-            {item.label}
-          </Link>
-        ))}
+        {items.map((item) => {
+          const href = resolveHref(item.url, basePath);
+          const isExternal = isExternalHref(item.url);
+
+          return (
+            <Link
+              className="px-3 py-2 hover:bg-accent"
+              href={href}
+              key={item.label}
+              rel={isExternal ? "noopener noreferrer" : undefined}
+              target={isExternal ? "_blank" : undefined}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
     </details>
   );
@@ -55,14 +64,14 @@ const HeaderTabs = ({
     {tabs.map((tab, index) => {
       const isActive = index === activeTabIndex;
       const href =
-        tab.href ??
+        (tab.href ? resolveHref(tab.href, basePath) : undefined) ??
         (tab.slugPrefix ? toDocHref(tab.slugPrefix, basePath) : undefined);
 
       if (!href) {
         return null;
       }
 
-      const isExternal = tab.href?.startsWith("http");
+      const isExternal = Boolean(tab.href && isExternalHref(tab.href));
 
       return (
         <Link
@@ -178,10 +187,18 @@ export const DocHeader = ({
           <div className="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
             {searchDisabled ? null : <Search basePath={basePath} />}
             {primaryVersion ? (
-              <Dropdown items={versions} label={primaryVersion.label} />
+              <Dropdown
+                basePath={basePath}
+                items={versions}
+                label={primaryVersion.label}
+              />
             ) : null}
             {primaryLanguage ? (
-              <Dropdown items={languages} label={primaryLanguage.label} />
+              <Dropdown
+                basePath={basePath}
+                items={languages}
+                label={primaryLanguage.label}
+              />
             ) : null}
             {themeToggleDisabled ? null : <ThemeToggle />}
           </div>

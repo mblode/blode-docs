@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 import { getNavPageHref, getNavPageTitle } from "@/lib/navigation";
 import type { NavEntry, NavPage, NavTab } from "@/lib/navigation";
-import { toDocHref } from "@/lib/routes";
+import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const MobileLink = ({
@@ -72,7 +72,7 @@ export const MobileNav = ({
 
   const renderPageLink = (page: NavPage) => {
     const href = getNavPageHref(page, basePath);
-    const isExternal = Boolean(page.url);
+    const isExternal = Boolean(page.url && isExternalHref(page.url));
 
     return (
       <MobileLink
@@ -131,7 +131,9 @@ export const MobileNav = ({
                   <div className="flex flex-col gap-3">
                     {tabs.map((tab, index) => {
                       const href =
-                        tab.href ??
+                        (tab.href
+                          ? resolveHref(tab.href, basePath)
+                          : undefined) ??
                         (tab.slugPrefix
                           ? toDocHref(tab.slugPrefix, basePath)
                           : undefined);
@@ -147,12 +149,14 @@ export const MobileNav = ({
                           key={tab.label}
                           onClose={handleClose}
                           rel={
-                            tab.href?.startsWith("http")
+                            tab.href && isExternalHref(tab.href)
                               ? "noopener noreferrer"
                               : undefined
                           }
                           target={
-                            tab.href?.startsWith("http") ? "_blank" : undefined
+                            tab.href && isExternalHref(tab.href)
+                              ? "_blank"
+                              : undefined
                           }
                         >
                           {tab.label}

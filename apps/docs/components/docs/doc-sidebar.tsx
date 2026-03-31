@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { getNavPageHref, getNavPageTitle } from "@/lib/navigation";
 import type { NavEntry, NavPage } from "@/lib/navigation";
-import { toDocHref } from "@/lib/routes";
+import { isExternalHref, toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const MENU_BUTTON_CLASS =
@@ -41,6 +41,8 @@ const NavPageLink = ({
   isActive: boolean;
 }) => {
   const displayTitle = getNavPageTitle(item);
+  const href = getNavPageHref(item, basePath);
+  const isExternal = Boolean(item.url && isExternalHref(item.url));
 
   const linkContent = (
     <>
@@ -58,7 +60,7 @@ const NavPageLink = ({
           Deprecated
         </span>
       ) : null}
-      {item.url ? (
+      {isExternal ? (
         <ArrowUpRightIcon
           aria-hidden="true"
           className="ml-auto size-3 shrink-0 text-muted-foreground"
@@ -72,11 +74,11 @@ const NavPageLink = ({
     isActive && "border-accent bg-accent text-foreground"
   );
 
-  if (item.url) {
+  if (isExternal) {
     return (
       <a
         className={className}
-        href={item.url}
+        href={href}
         rel="noopener noreferrer"
         target="_blank"
       >
@@ -86,7 +88,7 @@ const NavPageLink = ({
   }
 
   return (
-    <Link className={className} href={getNavPageHref(item, basePath)}>
+    <Link className={className} href={href}>
       {linkContent}
     </Link>
   );
