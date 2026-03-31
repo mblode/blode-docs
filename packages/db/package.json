@@ -28,6 +28,7 @@
     "db:sync-auth-users": "node ./scripts/apply-auth-user-sync.mjs",
     "db:local:push": "node ./scripts/local-db.mjs push --force",
     "db:local:push:init": "node ./scripts/local-db.mjs push --init --force",
+    "db:local:seed": "node ./scripts/local-db.mjs seed",
     "db:local:url": "node ./scripts/local-db.mjs print-url"
   },
   "dependencies": {

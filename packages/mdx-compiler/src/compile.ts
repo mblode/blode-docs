@@ -4,7 +4,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 
-import { getHighlighter } from "./shiki.js";
+import { getHighlighter, SHIKI_THEME_PAIR } from "./shiki.js";
 
 const FRONTMATTER_REGEX = /^---\s*\n([\s\S]*?)\n---\s*\n?/;
 
@@ -26,10 +26,7 @@ export const compileContent = async (source: string): Promise<CompiledMdx> => {
   const highlighter = await getHighlighter();
   const shikiTransformer = rehypeShikiFromHighlighter(highlighter, {
     defaultColor: false,
-    themes: {
-      dark: "github-dark",
-      light: "github-light",
-    },
+    themes: SHIKI_THEME_PAIR,
   });
   const shikiPlugin = () => shikiTransformer;
 

@@ -29,6 +29,7 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:push": "npm run db:local:push --workspace=packages/db",
+    "db:seed": "npm run db:local:seed --workspace=packages/db",
     "knip": "DATABASE_URL=postgresql://localhost/dummy npx knip"
   },
   "devDependencies": {

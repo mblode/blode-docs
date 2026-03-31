@@ -394,14 +394,6 @@
     background-color: var(--color-code-highlight);
   }
 
-  .shiki {
-    --shiki-active: var(--shiki-light);
-  }
-
-  html.dark .shiki {
-    --shiki-active: var(--shiki-dark);
-  }
-
   [data-line],
   .shiki .line {
     display: inline-block;
@@ -411,11 +403,13 @@
     padding-bottom: calc(var(--spacing) * 0.5);
   }
 
-  [data-line],
   [data-line] span,
-  .shiki .line,
   .shiki .line span {
-    color: var(--shiki-active) !important;
+    color: var(--shiki-light);
+
+    @variant dark {
+      color: var(--shiki-dark) !important;
+    }
   }
 
   [data-highlighted-line],

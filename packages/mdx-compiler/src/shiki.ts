@@ -20,7 +20,12 @@ const COMMON_LANGS = [
   "yaml",
 ] as const;
 
-const THEMES = ["github-dark", "github-light"] as const;
+export const SHIKI_THEME_PAIR = {
+  dark: "github-dark",
+  light: "github-light",
+} as const;
+
+const THEMES = [SHIKI_THEME_PAIR.dark, SHIKI_THEME_PAIR.light] as const;
 
 let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
 

@@ -10,7 +10,7 @@ import remarkGfm from "remark-gfm";
 
 import { mdxComponents } from "@/components/mdx";
 
-import { getHighlighter } from "./shiki";
+import { getHighlighter, SHIKI_THEME_PAIR } from "./shiki";
 
 const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
 
@@ -49,10 +49,7 @@ export const renderMdx = async (source: string) => {
   const highlighter = await getHighlighter();
   const shikiTransformer = rehypeShikiFromHighlighter(highlighter, {
     defaultColor: false,
-    themes: {
-      dark: "github-dark",
-      light: "github-light",
-    },
+    themes: SHIKI_THEME_PAIR,
   });
   const shikiPlugin = () => shikiTransformer;
 

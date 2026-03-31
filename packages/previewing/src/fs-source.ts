@@ -5,14 +5,7 @@ import { normalizePath } from "@repo/common";
 
 import type { ContentSource } from "./content-source.js";
 
-const IGNORED_DIRECTORIES = new Set([
-  "app",
-  "components",
-  "content",
-  "lib",
-  "node_modules",
-  "public",
-]);
+const IGNORED_DIRECTORIES = new Set(["app", "lib", "node_modules", "public"]);
 const IGNORED_ROOT_FILES = new Set(["AGENTS.md", "README.md"]);
 
 const isNotFoundError = (error: unknown) =>

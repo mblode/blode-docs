@@ -64,4 +64,17 @@ if (command === "push") {
   process.exit(0);
 }
 
-throw new Error("Unsupported command. Use 'push' or 'print-url'.");
+if (command === "seed") {
+  const tsxBin = resolve(packageRoot, "../../node_modules/.bin/tsx");
+  const result = spawnSync(tsxBin, [resolve(packageRoot, "seed.ts")], {
+    cwd: packageRoot,
+    env: {
+      ...process.env,
+      DATABASE_URL: getLocalDatabaseUrl(),
+    },
+    stdio: "inherit",
+  });
+  process.exit(result.status ?? 1);
+}
+
+throw new Error("Unsupported command. Use 'push', 'seed', or 'print-url'.");
