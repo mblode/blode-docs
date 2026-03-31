@@ -108,9 +108,6 @@ export const MobileNav = ({
             </div>
             <span className="sr-only">Toggle Menu</span>
           </div>
-          <span className="flex h-8 items-center text-lg font-medium leading-none">
-            Menu
-          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -164,9 +161,6 @@ export const MobileNav = ({
           ) : null}
           {globalLinks.length > 0 ? (
             <div className="flex flex-col gap-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Menu
-              </div>
               <div className="flex flex-col gap-3">
                 {globalLinks.map((link) => (
                   <MobileLink
