@@ -169,7 +169,7 @@ export const DocShell = ({
         >
           <div
             className={cn(
-              "mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 px-4 py-6 text-neutral-800 md:px-0 lg:py-8 dark:text-neutral-300",
+              "mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 py-6 text-neutral-800 lg:py-8 dark:text-neutral-300",
               pageMode === "wide" ? "max-w-[60rem]" : "max-w-[40rem]"
             )}
           >
@@ -206,9 +206,14 @@ export const DocShell = ({
               {content}
             </div>
             {!hideFooterPagination && (prevPage || nextPage) ? (
-              <nav className="hidden h-16 w-full items-center gap-2 px-4 sm:flex sm:px-0">
+              <nav className="flex w-full flex-col gap-2 sm:h-16 sm:flex-row sm:items-center">
                 {prevPage ? (
-                  <Button asChild size="sm" variant="secondary">
+                  <Button
+                    asChild
+                    className="w-full justify-between sm:w-auto"
+                    size="sm"
+                    variant="secondary"
+                  >
                     <Link href={toDocHref(prevPage.path, basePath)}>
                       <ArrowLeftIcon aria-hidden="true" />
                       {prevPage.title}
@@ -218,7 +223,7 @@ export const DocShell = ({
                 {nextPage ? (
                   <Button
                     asChild
-                    className="ml-auto"
+                    className="w-full justify-between sm:ml-auto sm:w-auto"
                     size="sm"
                     variant="secondary"
                   >

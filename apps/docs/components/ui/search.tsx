@@ -17,7 +17,7 @@ import type {
   MouseEvent as ReactMouseEvent,
 } from "react";
 
-import { toDocHref } from "@/lib/routes";
+import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
 
 export interface SearchItem {
   href?: string;
@@ -134,11 +134,14 @@ export const Search = ({ basePath }: { basePath: string }) => {
   const runSelection = useCallback(
     (item: SearchItem) => {
       closeSearch();
-      if (item.href) {
-        window.open(item.href, "_blank", "noopener,noreferrer");
+      const href = item.href
+        ? resolveHref(item.href, basePath)
+        : toDocHref(item.path, basePath);
+      if (item.href && isExternalHref(item.href)) {
+        window.open(href, "_blank", "noopener,noreferrer");
         return;
       }
-      router.push(toDocHref(item.path, basePath));
+      router.push(href);
     },
     [basePath, closeSearch, router]
   );
@@ -346,6 +349,9 @@ export const Search = ({ basePath }: { basePath: string }) => {
                 <div className="grid gap-1">
                   {filteredItems.map((item, index) => {
                     const isActive = index === activeIndex;
+                    const href = item.href
+                      ? resolveHref(item.href, basePath)
+                      : toDocHref(item.path, basePath);
 
                     return (
                       <button
@@ -363,9 +369,7 @@ export const Search = ({ basePath }: { basePath: string }) => {
                         <span className="text-sm font-medium text-foreground">
                           {item.title}
                         </span>
-                        <span className="text-xs">
-                          {item.href ?? toDocHref(item.path, basePath)}
-                        </span>
+                        <span className="text-xs">{href}</span>
                       </button>
                     );
                   })}

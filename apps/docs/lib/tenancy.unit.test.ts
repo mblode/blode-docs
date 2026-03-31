@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getRequestHost, isReservedPath, isRootRuntimeHost } from "./tenancy";
 import {
+  getCanonicalDocBasePath,
   getCanonicalOrigin,
   getTenantRequestContextFromHeaders,
 } from "./tenant-static";
@@ -55,5 +56,30 @@ describe("tenancy helpers", () => {
     expect(getCanonicalOrigin(tenant, context)).toBe(
       "https://docs.example.com"
     );
+  });
+
+  it("preserves custom-domain docs base paths from tenant headers", () => {
+    const prefixedTenant = {
+      ...tenant,
+      customDomains: ["donebear.com"],
+      pathPrefix: "/docs",
+      primaryDomain: "donebear.com",
+    };
+    const headerStore = new Headers({
+      "x-forwarded-proto": "https",
+      "x-tenant-base-path": "/docs",
+      "x-tenant-domain": "donebear.com",
+      "x-tenant-strategy": "custom-domain",
+    });
+
+    const context = getTenantRequestContextFromHeaders(
+      prefixedTenant,
+      headerStore
+    );
+
+    expect(getCanonicalOrigin(prefixedTenant, context)).toBe(
+      "https://donebear.com"
+    );
+    expect(getCanonicalDocBasePath(prefixedTenant, context)).toBe("/docs");
   });
 });
