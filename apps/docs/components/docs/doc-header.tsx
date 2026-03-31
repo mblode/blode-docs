@@ -121,7 +121,7 @@ export const DocHeader = ({
   return (
     <header className="sticky top-0 z-50 w-full bg-background">
       <div className="container-wrapper px-4 lg:px-8">
-        <div className="flex h-(--header-height) items-center">
+        <div className="flex h-(--header-height) items-center gap-2">
           <MobileNav
             activeTabIndex={activeTabIndex}
             basePath={basePath}
@@ -171,7 +171,7 @@ export const DocHeader = ({
           ) : null}
           <nav
             aria-label="External links"
-            className="hidden items-center gap-0 text-sm text-muted-foreground lg:flex"
+            className="ml-1 hidden items-center gap-0 text-sm text-muted-foreground lg:flex"
           >
             {globalLinks.map((link) => (
               <a
