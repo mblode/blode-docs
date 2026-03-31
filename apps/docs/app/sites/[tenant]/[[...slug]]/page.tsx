@@ -58,7 +58,7 @@ export const generateMetadata = async ({
   const { slug = [], tenant: tenantSlug } = await params;
   const slugKey = slug.join("/");
   const data = await getDocShellData(tenantSlug, slugKey);
-  if (!data || "configErrors" in data) {
+  if (!data || "configErrors" in data || "emptyState" in data) {
     return {
       description: "Documentation",
       title: "Docs",
@@ -128,6 +128,45 @@ const DocPage = async ({
   const shell = await getDocShellData(tenantSlug, slugKey);
   if (!shell) {
     return notFound();
+  }
+
+  if ("emptyState" in shell) {
+    if (slugKey) {
+      return notFound();
+    }
+
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center gap-6 px-6 py-16">
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Unpublished Project
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            {shell.tenant.name} has no docs deployment yet.
+          </h1>
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            This project exists, but Blode.md could not find a published
+            deployment or a local docs root with a <code>docs.json</code> file.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-muted/30 p-6">
+          <p className="text-sm font-medium">Expected local docs path</p>
+          <p className="mt-2 break-all font-mono text-sm text-muted-foreground">
+            {shell.tenant.docsPath}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-background p-6">
+          <p className="text-sm font-medium">Next step</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Create a docs directory with <code>docs.json</code> and publish it
+            with <code>blodemd push</code>, or place the local docs source at
+            the path above for local development.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if ("configErrors" in shell) {

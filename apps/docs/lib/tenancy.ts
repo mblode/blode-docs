@@ -44,6 +44,19 @@ const ROOT_TENANT_UTILITY_PATHS = new Set([
 const normalizeHost = (host: string) =>
   host.trim().toLowerCase().replace(/:\d+$/, "");
 
+const getPortlessHost = () => {
+  const portlessUrl = process.env.PORTLESS_URL?.trim();
+  if (!portlessUrl) {
+    return null;
+  }
+
+  try {
+    return normalizeHost(new URL(portlessUrl).host);
+  } catch {
+    return normalizeHost(portlessUrl);
+  }
+};
+
 const slugifyPath = (value: string) => {
   const trimmed = value
     .replace(BACKSLASH_TO_SLASH_REGEX, "/")
@@ -95,7 +108,8 @@ export const isRootRuntimeHost = (host: string) => {
   const normalizedHost = normalizeHost(host);
   return (
     normalizedHost === platformConfig.rootDomain ||
-    LOCAL_ROOT_HOSTS.has(normalizedHost)
+    LOCAL_ROOT_HOSTS.has(normalizedHost) ||
+    normalizedHost === getPortlessHost()
   );
 };
 

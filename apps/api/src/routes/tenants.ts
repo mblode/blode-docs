@@ -22,6 +22,11 @@ const ROOT_TENANT_UTILITY_PATHS = new Set([
   "/robots.txt",
   "/sitemap.xml",
 ]);
+const LOCAL_SUBDOMAIN_SUFFIXES = ["localhost", "127.0.0.1"];
+const LOCAL_ROOT_HOSTS = new Set([
+  ...LOCAL_SUBDOMAIN_SUFFIXES,
+  "docs.localhost",
+]);
 
 const resolveSubdomainBasePath = (pathname: string): string => {
   const normalizedPath = slugifyPath(pathname);
@@ -132,10 +137,9 @@ tenants.get(
       }
     }
 
-    const localSuffixes = ["localhost", "127.0.0.1"];
-    const localSuffix = localSuffixes.find((suffix) =>
-      host.endsWith(`.${suffix}`)
-    );
+    const localSuffix = LOCAL_ROOT_HOSTS.has(host)
+      ? null
+      : LOCAL_SUBDOMAIN_SUFFIXES.find((suffix) => host.endsWith(`.${suffix}`));
     if (localSuffix) {
       const subdomain = host.slice(0, -1 * (localSuffix.length + 1));
       if (subdomain) {
@@ -179,7 +183,7 @@ tenants.get(
       }
     }
 
-    if (host === rootDomain || localSuffixes.includes(host)) {
+    if (host === rootDomain || LOCAL_ROOT_HOSTS.has(host)) {
       const normalized = slugifyPath(pathname);
       const parts = normalized ? normalized.split("/") : [];
       const [projectSlug, ...rest] = parts;

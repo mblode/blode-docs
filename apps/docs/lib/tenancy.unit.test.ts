@@ -43,6 +43,22 @@ describe("tenancy helpers", () => {
     expect(isRootRuntimeHost("example.localhost")).toBe(false);
   });
 
+  it("treats the configured portless host as a runtime root host", () => {
+    const previousPortlessUrl = process.env.PORTLESS_URL;
+    process.env.PORTLESS_URL = "http://docs.localhost:3001";
+
+    try {
+      expect(isRootRuntimeHost("docs.localhost")).toBe(true);
+      expect(isRootRuntimeHost("example.localhost")).toBe(false);
+    } finally {
+      if (previousPortlessUrl === undefined) {
+        delete process.env.PORTLESS_URL;
+      } else {
+        process.env.PORTLESS_URL = previousPortlessUrl;
+      }
+    }
+  });
+
   it("builds canonical origin from tenant headers", () => {
     const headerStore = new Headers({
       "x-forwarded-proto": "https",

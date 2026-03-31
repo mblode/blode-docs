@@ -125,6 +125,7 @@ export const DocHeader = ({
           <MobileNav
             activeTabIndex={activeTabIndex}
             basePath={basePath}
+            className="flex lg:hidden"
             entries={nav}
             globalLinks={globalLinks}
             tabs={tabs}

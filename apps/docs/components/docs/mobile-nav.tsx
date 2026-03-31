@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { getNavPageHref, getNavPageTitle } from "@/lib/navigation";
 import type { NavEntry, NavPage, NavTab } from "@/lib/navigation";
 import { isExternalHref, resolveHref, toDocHref } from "@/lib/routes";
@@ -11,25 +17,35 @@ import { cn } from "@/lib/utils";
 
 const MobileLink = ({
   href,
-  onClose,
+  onOpenChange,
   className,
   children,
+  onClick,
   ...props
-}: {
-  href: string;
-  onClose: () => void;
-  className?: string;
+}: React.ComponentProps<typeof Link> & {
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
-} & Omit<React.ComponentProps<typeof Link>, "href" | "onClick">) => (
-  <Link
-    className={cn("flex items-center gap-2 text-2xl font-medium", className)}
-    href={href}
-    onClick={onClose}
-    {...props}
-  >
-    {children}
-  </Link>
-);
+  className?: string;
+}) => {
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      onClick?.(event);
+      onOpenChange?.(false);
+    },
+    [onClick, onOpenChange]
+  );
+
+  return (
+    <Link
+      className={cn("flex items-center gap-2 text-2xl font-medium", className)}
+      href={href}
+      onClick={handleClick}
+      {...props}
+    >
+      {children}
+    </Link>
+  );
+};
 
 export const MobileNav = ({
   entries,
@@ -37,38 +53,16 @@ export const MobileNav = ({
   basePath,
   tabs,
   activeTabIndex,
+  className,
 }: {
   entries: NavEntry[];
   globalLinks: { label: string; href: string }[];
   basePath: string;
   tabs?: NavTab[] | null;
   activeTabIndex?: number;
+  className?: string;
 }) => {
   const [open, setOpen] = useState(false);
-  const handleClose = useCallback(() => setOpen(false), []);
-  const handleOpen = useCallback(() => setOpen(true), []);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeydown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeydown);
-    };
-  }, [open]);
 
   const renderPageLink = (page: NavPage) => {
     const href = getNavPageHref(page, basePath);
@@ -78,7 +72,7 @@ export const MobileNav = ({
       <MobileLink
         href={href}
         key={page.path}
-        onClose={handleClose}
+        onOpenChange={setOpen}
         rel={isExternal ? "noopener noreferrer" : undefined}
         target={isExternal ? "_blank" : undefined}
       >
@@ -88,124 +82,124 @@ export const MobileNav = ({
   };
 
   return (
-    <>
-      <button
-        aria-label="Toggle menu"
-        className="inline-flex size-8 items-center justify-center gap-2.5 rounded-md hover:bg-accent lg:hidden"
-        onClick={handleOpen}
-        type="button"
-      >
-        <div className="relative size-4">
-          <span className="absolute left-0 top-1 block h-0.5 w-4 bg-foreground" />
-          <span className="absolute left-0 top-2.5 block h-0.5 w-4 bg-foreground" />
-        </div>
-      </button>
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            aria-label="Close menu"
-            className="absolute inset-0 bg-background/90 backdrop-blur-sm"
-            onClick={handleClose}
-            type="button"
-          />
-          <div className="relative flex h-full flex-col overflow-y-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Navigation
-              </span>
-              <button
-                aria-label="Close menu"
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border text-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-                onClick={handleClose}
-                type="button"
-              >
-                X
-              </button>
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <Button
+          className={cn(
+            "extend-touch-target !p-0 h-8 touch-manipulation items-center justify-start gap-2.5 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
+            className
+          )}
+          variant="ghost"
+        >
+          <div className="relative flex h-8 w-4 items-center justify-center">
+            <div className="relative size-4">
+              <span
+                className={cn(
+                  "absolute left-0 block h-0.5 w-4 bg-foreground transition-all duration-100",
+                  open ? "top-[0.4rem] -rotate-45" : "top-1"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute left-0 block h-0.5 w-4 bg-foreground transition-all duration-100",
+                  open ? "top-[0.4rem] rotate-45" : "top-2.5"
+                )}
+              />
             </div>
-            <div className="mt-8 flex flex-col gap-12">
-              {tabs?.length ? (
-                <div className="flex flex-col gap-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Sections
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {tabs.map((tab, index) => {
-                      const href =
-                        (tab.href
-                          ? resolveHref(tab.href, basePath)
-                          : undefined) ??
-                        (tab.slugPrefix
-                          ? toDocHref(tab.slugPrefix, basePath)
-                          : undefined);
-                      if (!href) {
-                        return null;
-                      }
-                      const isActive = index === activeTabIndex;
-
-                      return (
-                        <MobileLink
-                          className={isActive ? "text-primary" : ""}
-                          href={href}
-                          key={tab.label}
-                          onClose={handleClose}
-                          rel={
-                            tab.href && isExternalHref(tab.href)
-                              ? "noopener noreferrer"
-                              : undefined
-                          }
-                          target={
-                            tab.href && isExternalHref(tab.href)
-                              ? "_blank"
-                              : undefined
-                          }
-                        >
-                          {tab.label}
-                        </MobileLink>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {globalLinks.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Menu
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {globalLinks.map((link) => (
-                      <MobileLink
-                        href={link.href}
-                        key={link.label}
-                        onClose={handleClose}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        {link.label}
-                      </MobileLink>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {entries.map((entry) => {
-                if (entry.type === "page") {
-                  return renderPageLink(entry);
-                }
-
-                return (
-                  <div className="flex flex-col gap-4" key={entry.title}>
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {entry.title}
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {entry.items.map((item) => renderPageLink(item))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <span className="sr-only">Toggle Menu</span>
           </div>
+          <span className="flex h-8 items-center text-lg font-medium leading-none">
+            Menu
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        alignOffset={-16}
+        className="no-scrollbar h-(--available-height) w-(--available-width) overflow-y-auto rounded-none border-none bg-background/90 p-0 shadow-none backdrop-blur duration-100 data-open:animate-none!"
+        side="bottom"
+        sideOffset={14}
+      >
+        <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
+          {tabs?.length ? (
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-medium text-muted-foreground">
+                Sections
+              </div>
+              <div className="flex flex-col gap-3">
+                {tabs.map((tab, index) => {
+                  const href =
+                    (tab.href ? resolveHref(tab.href, basePath) : undefined) ??
+                    (tab.slugPrefix
+                      ? toDocHref(tab.slugPrefix, basePath)
+                      : undefined);
+                  if (!href) {
+                    return null;
+                  }
+                  const isActive = index === activeTabIndex;
+
+                  return (
+                    <MobileLink
+                      className={isActive ? "text-primary" : ""}
+                      href={href}
+                      key={tab.label}
+                      onOpenChange={setOpen}
+                      rel={
+                        tab.href && isExternalHref(tab.href)
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                      target={
+                        tab.href && isExternalHref(tab.href)
+                          ? "_blank"
+                          : undefined
+                      }
+                    >
+                      {tab.label}
+                    </MobileLink>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+          {globalLinks.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-medium text-muted-foreground">
+                Menu
+              </div>
+              <div className="flex flex-col gap-3">
+                {globalLinks.map((link) => (
+                  <MobileLink
+                    href={link.href}
+                    key={link.label}
+                    onOpenChange={setOpen}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {link.label}
+                  </MobileLink>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {entries.map((entry) => {
+            if (entry.type === "page") {
+              return renderPageLink(entry);
+            }
+
+            return (
+              <div className="flex flex-col gap-4" key={entry.title}>
+                <div className="text-sm font-medium text-muted-foreground">
+                  {entry.title}
+                </div>
+                <div className="flex flex-col gap-3">
+                  {entry.items.map((item) => renderPageLink(item))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ) : null}
-    </>
+      </PopoverContent>
+    </Popover>
   );
 };

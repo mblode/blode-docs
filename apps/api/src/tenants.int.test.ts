@@ -144,4 +144,20 @@ describe("tenants resolve", () => {
 
     await cleanupProjectFixture(dbModule, fixture);
   });
+
+  it("resolves a path-based tenant on docs.localhost in local dev", async () => {
+    const projectSlug = `project-${randomUUID().slice(0, 8)}`;
+    const fixture = await createProjectFixture(dbModule, { slug: projectSlug });
+
+    const response = await request(
+      `/tenants/resolve?host=docs.localhost&path=/${projectSlug}/guides/intro`
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.strategy).toBe("path");
+    expect(body.rewrittenPath).toBe(`/sites/${projectSlug}/guides/intro`);
+
+    await cleanupProjectFixture(dbModule, fixture);
+  });
 });

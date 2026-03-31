@@ -18,7 +18,11 @@ import {
   vi,
 } from "vitest";
 
-import type { getTenantSearchItems as GetTenantSearchItems } from "./docs-runtime";
+import type {
+  clearDocsRuntimeCaches as ClearDocsRuntimeCaches,
+  getDocShellData as GetDocShellData,
+  getTenantSearchItems as GetTenantSearchItems,
+} from "./docs-runtime";
 
 const tenantMocks = vi.hoisted(() => ({
   getTenantBySlug: vi.fn(),
@@ -51,14 +55,18 @@ const createDocsRoot = async (files: Record<string, string>) => {
 };
 
 let getTenantSearchItems: typeof GetTenantSearchItems;
+let getDocShellData: typeof GetDocShellData;
+let clearDocsRuntimeCaches: typeof ClearDocsRuntimeCaches;
 
 describe("getTenantSearchItems", () => {
   beforeAll(async () => {
-    ({ getTenantSearchItems } = await import("./docs-runtime"));
+    ({ clearDocsRuntimeCaches, getDocShellData, getTenantSearchItems } =
+      await import("./docs-runtime"));
   });
 
   beforeEach(() => {
     tenantMocks.getTenantBySlug.mockReset();
+    clearDocsRuntimeCaches();
   });
 
   afterEach(async () => {
@@ -157,5 +165,40 @@ paths:
         }),
       ])
     );
+  });
+});
+
+describe("getDocShellData", () => {
+  beforeEach(() => {
+    tenantMocks.getTenantBySlug.mockReset();
+    clearDocsRuntimeCaches();
+  });
+
+  it("returns an unpublished state for tenants with no deployment and no local docs.json", async () => {
+    const docsPath = await createDocsRoot({
+      "README.md": "# Not a docs root\n",
+    });
+
+    tenantMocks.getTenantBySlug.mockResolvedValue({
+      customDomains: [],
+      docsPath,
+      id: "tenant-id",
+      name: "Atlas",
+      primaryDomain: "atlas.blode.md",
+      slug: "atlas",
+      status: "active",
+      subdomain: "atlas",
+    });
+
+    const result = await getDocShellData("atlas", "");
+
+    expect(result).toEqual({
+      emptyState: "unpublished",
+      tenant: expect.objectContaining({
+        docsPath,
+        name: "Atlas",
+        slug: "atlas",
+      }),
+    });
   });
 });

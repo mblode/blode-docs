@@ -54,6 +54,11 @@ interface ConfigErrorResult {
   tenant: Tenant;
 }
 
+interface UnpublishedTenantResult {
+  emptyState: "unpublished";
+  tenant: Tenant;
+}
+
 interface RenderedPageData {
   content: Awaited<ReturnType<typeof renderMdx>>["content"];
   frontmatter: Awaited<ReturnType<typeof renderMdx>>["frontmatter"];
@@ -76,7 +81,11 @@ interface TenantArtifacts {
   visibleNav: NavEntry[];
 }
 
-type TenantArtifactsResult = ConfigErrorResult | TenantArtifacts | null;
+type TenantArtifactsResult =
+  | ConfigErrorResult
+  | TenantArtifacts
+  | UnpublishedTenantResult
+  | null;
 
 const ARTIFACT_CACHE_TTL_MS = 30 * 60 * 1000;
 const PAGE_RENDER_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
@@ -99,6 +108,10 @@ const renderedPageCache = createTimedPromiseCache<string, RenderedPageData>({
 const isConfigErrorResult = (
   value: TenantArtifactsResult
 ): value is ConfigErrorResult => Boolean(value && "configErrors" in value);
+
+const isUnpublishedTenantResult = (
+  value: TenantArtifactsResult
+): value is UnpublishedTenantResult => Boolean(value && "emptyState" in value);
 
 const getTenantArtifactsCacheKey = (tenant: Tenant) =>
   [
@@ -171,6 +184,17 @@ const getTenantArtifacts = async (tenantSlug: string) => {
     const contentSource = getTenantContentSource(tenant);
     const configResult = await loadSiteConfig(contentSource);
     if (!configResult.ok) {
+      if (
+        !tenant.activeDeploymentManifestUrl &&
+        configResult.errors.length === 1 &&
+        configResult.errors[0] === "docs.json not found."
+      ) {
+        return {
+          emptyState: "unpublished" as const,
+          tenant,
+        };
+      }
+
       return {
         configErrors: configResult.errors,
         configWarnings: [],
@@ -259,7 +283,11 @@ const getTenantArtifacts = async (tenantSlug: string) => {
 
 export const getTenantSearchItems = cache(async (tenantSlug: string) => {
   const artifacts = await getTenantArtifacts(tenantSlug);
-  if (!artifacts || isConfigErrorResult(artifacts)) {
+  if (
+    !artifacts ||
+    isConfigErrorResult(artifacts) ||
+    isUnpublishedTenantResult(artifacts)
+  ) {
     return null;
   }
 
@@ -369,7 +397,11 @@ export const getDocShellData = cache(
   // oxlint-disable-next-line eslint/complexity
   async (tenantSlug: string, slugKey: string) => {
     const artifacts = await getTenantArtifacts(tenantSlug);
-    if (!artifacts || isConfigErrorResult(artifacts)) {
+    if (
+      !artifacts ||
+      isConfigErrorResult(artifacts) ||
+      isUnpublishedTenantResult(artifacts)
+    ) {
       return artifacts;
     }
 
@@ -531,7 +563,11 @@ export const getDocPageContent = cache(
     toc?: TocItem[]
   ) => {
     const artifacts = await getTenantArtifacts(tenantSlug);
-    if (!artifacts || isConfigErrorResult(artifacts)) {
+    if (
+      !artifacts ||
+      isConfigErrorResult(artifacts) ||
+      isUnpublishedTenantResult(artifacts)
+    ) {
       return null;
     }
 
