@@ -1,68 +1,42 @@
-# Vercel Deployment - Final Setup Steps
+# Vercel Deployment - Current Setup
 
-## ✅ Completed:
+This file reflects the live Vercel setup as of March 31, 2026.
 
-- ✅ Created 4 Vercel projects: `web`, `dashboard`, `docs`, `api`
-- ✅ Removed unnecessary projects
-- ✅ All code pushed to GitHub
+## Active Projects
 
-## 📋 Next Steps: Connect Projects to GitHub
+| Surface       | Vercel Project | Root Directory | Build Command                          | Output Directory  | Production URL         |
+| ------------- | -------------- | -------------- | -------------------------------------- | ----------------- | ---------------------- |
+| Docs frontend | `blodemd-docs` | `.`            | `npx turbo run build --filter=docs...` | `apps/docs/.next` | `https://blode.md`     |
+| API           | `blodemd-api`  | `apps/api`     | `npx turbo run build --filter=api...`  | `dist`            | `https://api.blode.md` |
 
-Each project needs to be connected to your GitHub repository with the correct **Root Directory**. This takes about 30 seconds per project.
+## Domain Notes
 
-### 1. Web App
+- `blode.md` and `www.blode.md` point at `blodemd-docs`.
+- `*.blode.md` is covered by a wildcard DNS record and tenant routing in `apps/docs`.
+- `api.blode.md` points at `blodemd-api`.
+- Product docs are tenant content, not a special hardcoded route. Both `https://docs.blode.md` and `https://blode.md/docs` work only when the production API contains a tenant with slug `docs`.
 
-**URL:** https://vercel.com/blode/web/settings/git
+## Re-Linking A Project
 
-1. Click "Connect Git Repository"
-2. Select: **mblode/blodemd**
-3. **Root Directory**: `apps/web`
-4. Click "Save"
+If you need to relink either project in Vercel:
 
-### 2. Dashboard App
+### Docs frontend
 
-**URL:** https://vercel.com/blode/dashboard/settings/git
+1. Open `https://vercel.com/blode/blodemd-docs/settings/git`.
+2. Connect `mblode/blodemd`.
+3. Set **Root Directory** to `.`.
+4. Keep the project build settings in sync with [apps/docs/vercel.json](/Users/mblode/Code/mblode/blodemd/apps/docs/vercel.json).
 
-1. Click "Connect Git Repository"
-2. Select: **mblode/blodemd**
-3. **Root Directory**: `apps/dashboard`
-4. Click "Save"
+### API
 
-### 3. Docs App
+1. Open `https://vercel.com/blode/blodemd-api/settings/git`.
+2. Connect `mblode/blodemd`.
+3. Set **Root Directory** to `apps/api`.
+4. Keep the project build settings in sync with [apps/api/vercel.json](/Users/mblode/Code/mblode/blodemd/apps/api/vercel.json).
 
-**URL:** https://vercel.com/blode/docs/settings/git
+## Verification Checklist
 
-1. Click "Connect Git Repository"
-2. Select: **mblode/blodemd**
-3. **Root Directory**: `apps/docs`
-4. Click "Save"
-
-### 4. API App
-
-**URL:** https://vercel.com/blode/api/settings/git
-
-1. Click "Connect Git Repository"
-2. Select: **mblode/blodemd**
-3. **Root Directory**: `apps/api`
-4. Click "Save"
-
-## 🚀 After Setup:
-
-Once connected, Vercel will:
-
-- ✅ Automatically deploy on every `git push` to main
-- ✅ Build only the changed apps (thanks to Turborepo)
-- ✅ Create preview deployments for pull requests
-
-## 🌐 Your Apps:
-
-After the initial deployment completes:
-
-- **Web**: https://web-blode.vercel.app
-- **Dashboard**: https://dashboard-blode.vercel.app
-- **Docs**: https://docs-blode.vercel.app
-- **API**: https://api-blode.vercel.app
-
-## 💡 Tip:
-
-You can do all 4 in about 2 minutes total. Just open the URLs above in 4 tabs!
+- `vercel project ls` shows `blodemd-docs` and `blodemd-api`.
+- `vercel alias ls` includes `blode.md`, `docs.blode.md`, and `api.blode.md`.
+- `curl -I https://blode.md/docs` returns `200`.
+- `curl -I https://docs.blode.md` returns `200`.

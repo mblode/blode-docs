@@ -4,6 +4,7 @@ import { getRequestHost, isReservedPath, isRootRuntimeHost } from "./tenancy";
 import {
   getCanonicalDocBasePath,
   getCanonicalOrigin,
+  getStaticTenantRequestContext,
   getTenantRequestContextFromHeaders,
 } from "./tenant-static";
 
@@ -92,6 +93,22 @@ describe("tenancy helpers", () => {
       prefixedTenant,
       headerStore
     );
+
+    expect(getCanonicalOrigin(prefixedTenant, context)).toBe(
+      "https://donebear.com"
+    );
+    expect(getCanonicalDocBasePath(prefixedTenant, context)).toBe("/docs");
+  });
+
+  it("builds canonical origin from static tenant context without request headers", () => {
+    const prefixedTenant = {
+      ...tenant,
+      customDomains: ["donebear.com"],
+      pathPrefix: "/docs",
+      primaryDomain: "donebear.com",
+    };
+
+    const context = getStaticTenantRequestContext(prefixedTenant);
 
     expect(getCanonicalOrigin(prefixedTenant, context)).toBe(
       "https://donebear.com"

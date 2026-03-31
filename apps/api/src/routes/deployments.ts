@@ -12,6 +12,7 @@ import { z } from "zod";
 import { deploymentDao, projectDao } from "../lib/db";
 import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
 import { logError, logWarn } from "../lib/logger";
+import { prewarmProject } from "../lib/prewarm";
 import { authorizeProjectRequest } from "../lib/project-auth";
 import {
   finalizeDeploymentManifest,
@@ -260,6 +261,12 @@ deployments.post(
           await revalidateProject(project.slug);
         } catch (error) {
           logWarn("Failed to revalidate docs project", error);
+        }
+
+        try {
+          await prewarmProject(project.id);
+        } catch (error) {
+          logWarn("Failed to prewarm docs project", error);
         }
       }
 

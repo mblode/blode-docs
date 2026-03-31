@@ -1,62 +1,55 @@
-# Vercel Monorepo Deployment Setup
+# Vercel Project Setup
 
-Your code is ready to deploy! Follow these steps to set up each app on Vercel:
+Use this when recreating the live Vercel setup from scratch.
 
-## 1. Web App
+## 1. Docs Frontend
 
-1. Go to https://vercel.com/new
-2. Select "Import from GitHub"
-3. Choose repository: **mblode/blodemd**
-4. Configure project:
-   - **Project Name**: web
-   - **Root Directory**: apps/web
+1. Go to `https://vercel.com/new`.
+2. Import `mblode/blodemd`.
+3. Configure:
+   - **Project Name**: `blodemd-docs`
+   - **Root Directory**: `.`
    - **Framework Preset**: Next.js
-   - **Build Command**: (auto-detected from vercel.json)
-   - **Output Directory**: (auto-detected from vercel.json)
-5. Click "Deploy"
+   - **Build Command**: `npx turbo run build --filter=docs...`
+   - **Output Directory**: `apps/docs/.next`
+4. Add production aliases for `blode.md`, `www.blode.md`, and the tenant subdomains you want to expose.
 
-## 2. Dashboard App
+## 2. API
 
-1. Go to https://vercel.com/new
-2. Select "Import from GitHub"
-3. Choose repository: **mblode/blodemd**
-4. Configure project:
-   - **Project Name**: dashboard
-   - **Root Directory**: apps/dashboard
-   - **Framework Preset**: Next.js
-5. Click "Deploy"
+1. Go to `https://vercel.com/new`.
+2. Import `mblode/blodemd`.
+3. Configure:
+   - **Project Name**: `blodemd-api`
+   - **Root Directory**: `apps/api`
+   - **Framework Preset**: Hono
+   - **Build Command**: `npx turbo run build --filter=api...`
+   - **Output Directory**: `dist`
+4. Add the `api.blode.md` alias.
 
-## 3. Docs App
+## Required Environment Variables
 
-1. Go to https://vercel.com/new
-2. Select "Import from GitHub"
-3. Choose repository: **mblode/blodemd**
-4. Configure project:
-   - **Project Name**: docs
-   - **Root Directory**: apps/docs
-   - **Framework Preset**: Next.js
-5. Click "Deploy"
+### `blodemd-docs`
 
-## 4. API App
+- `DOCS_API_URL`
+- `DATABASE_URL`
+- `PLATFORM_ROOT_DOMAIN`
+- Supabase variables required by the docs app
 
-1. Go to https://vercel.com/new
-2. Select "Import from GitHub"
-3. Choose repository: **mblode/blodemd**
-4. Configure project:
-   - **Project Name**: api
-   - **Root Directory**: apps/api
-   - **Framework Preset**: Other
-5. Click "Deploy"
+### `blodemd-api`
 
-## Automatic Deployments
+- `DATABASE_URL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `BLOB_READ_WRITE_TOKEN`
+- `PLATFORM_ROOT_DOMAIN`
+- `VERCEL_CNAME_TARGET`
+- optional Cloudflare credentials if you want the API to manage DNS automatically
 
-Once set up, every push to `main` will automatically deploy all apps!
+## Important Routing Note
 
-## Deployment URLs
+The product docs are served through the tenant with slug `docs`.
 
-After setup, your apps will be available at:
+- `https://blode.md/docs`
+- `https://docs.blode.md`
 
-- Web: https://web-blode.vercel.app
-- Dashboard: https://dashboard-blode.vercel.app
-- Docs: https://docs-blode.vercel.app
-- API: https://api-blode.vercel.app
+Both routes require the production database to contain a `docs` project row.
