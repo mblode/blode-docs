@@ -108,7 +108,7 @@ export const MobileNav = ({
             onClick={handleClose}
             type="button"
           />
-          <div className="relative flex h-full flex-col overflow-y-auto px-6 py-6">
+          <div className="relative flex h-full flex-col overflow-y-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
                 Navigation

@@ -264,7 +264,7 @@ export const DocShell = ({
         nav={nav}
         tabs={tabs}
       />
-      <div className="container-wrapper flex flex-1 flex-col px-6">
+      <div className="container-wrapper flex flex-1 flex-col">
         {showSidebar ? (
           <div
             className="min-h-min flex-1 items-start px-0 [--top-spacing:0] lg:grid lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] lg:[--top-spacing:calc(var(--spacing)*4)]"
