@@ -56,7 +56,7 @@ describe("loadSiteConfig", () => {
       ),
       "docs.json": JSON.stringify(
         {
-          $schema: "https://mintlify.com/docs.json",
+          $schema: "https://docs.blode.md/docs.json",
           api: {
             openapi: "openapi.yaml",
             playground: {
@@ -128,14 +128,14 @@ describe("loadSiteConfig", () => {
     const exampleResult = await loadSiteConfig(
       createFsSource(path.resolve(process.cwd(), "apps/docs/content/example"))
     );
-    const blodeResult = await loadSiteConfig(
-      createFsSource(path.resolve(process.cwd(), "apps/docs/content/blode"))
+    const docsResult = await loadSiteConfig(
+      createFsSource(path.resolve(process.cwd(), "apps/docs/content/docs"))
     );
 
     expect(exampleResult.ok).toBe(true);
-    expect(blodeResult.ok).toBe(true);
+    expect(docsResult.ok).toBe(true);
 
-    if (!exampleResult.ok || !blodeResult.ok) {
+    if (!exampleResult.ok || !docsResult.ok) {
       return;
     }
 
@@ -144,21 +144,41 @@ describe("loadSiteConfig", () => {
       source: "openapi.yaml",
     });
     expect(exampleResult.config.openapiProxy?.enabled).toBe(true);
-    expect(blodeResult.config.navigation?.groups).toMatchObject([
-      {
-        group: "Getting Started",
-        pages: ["index", "installation"],
-      },
-      {
-        group: "Customization",
-        pages: ["typography", "theming"],
-      },
-      {
-        group: "Components",
-        pages: ["components/breadcrumb"],
-      },
-    ]);
-    expect(blodeResult.config.navigation?.groups).toHaveLength(3);
+    expect(docsResult.config.navigation?.tabs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          groups: expect.arrayContaining([
+            expect.objectContaining({
+              group: "Getting started",
+              pages: ["index", "quickstart", "how-it-works"],
+            }),
+          ]),
+          label: "Documentation",
+        }),
+        expect.objectContaining({
+          groups: expect.arrayContaining([
+            expect.objectContaining({
+              group: "Content",
+              pages: expect.arrayContaining([
+                "components/callout",
+                "components/card",
+              ]),
+            }),
+          ]),
+          label: "Components",
+        }),
+        expect.objectContaining({
+          groups: expect.arrayContaining([
+            expect.objectContaining({
+              group: "CLI",
+              pages: expect.arrayContaining(["cli/overview", "cli/login"]),
+            }),
+          ]),
+          label: "CLI reference",
+        }),
+      ])
+    );
+    expect(docsResult.config.navigation?.tabs).toHaveLength(3);
   });
 });
 
@@ -167,7 +187,7 @@ describe("buildUtilityIndex", () => {
     const root = await createTempContentRoot({
       "docs.json": JSON.stringify(
         {
-          $schema: "https://mintlify.com/docs.json",
+          $schema: "https://docs.blode.md/docs.json",
           api: {
             openapi: "openapi.yaml",
           },

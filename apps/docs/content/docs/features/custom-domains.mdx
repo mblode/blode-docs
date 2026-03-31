@@ -7,7 +7,7 @@ Every project deployed with blode.md gets a subdomain at `your-project.blode.md`
 
 ## Default subdomain
 
-When you run `blodemd push`, your docs are published to `{name}.blode.md`, where `name` is the value in your `docs.json`. No DNS configuration is required.
+When you run `blodemd push`, your docs are published to `{name}.blode.md`, where `name` is the value in your `docs.json`. No per-project DNS setup is required because the platform wildcard handles `*.blode.md`.
 
 ## Add a custom domain
 
@@ -38,17 +38,10 @@ When you run `blodemd push`, your docs are published to `{name}.blode.md`, where
     | TXT  | `_vercel.docs.example.com` | `vc-domain-verify=...` |
 
   </Step>
-  <Step title="Set the domain in your config">
-    Add the `domain` field to your `docs.json`:
-
-    ```json title="docs.json"
-    {
-      "name": "my-project",
-      "domain": "docs.example.com"
-    }
-    ```
-
-    Then redeploy with `blodemd push`.
+  <Step title="Add the domain in your project settings">
+    Configure the custom domain through Blode.md's custom-domain workflow after
+    your project has been deployed. That control plane provisions the domain on
+    Vercel and returns any verification records you need.
 
   </Step>
 </Steps>
@@ -72,17 +65,11 @@ When you run `blodemd push`, your docs are published to `{name}.blode.md`, where
 
 ## Path prefix
 
-If you want your docs mounted at a subpath rather than the domain root, set `pathPrefix` in your `docs.json`:
+If you want your docs mounted at a subpath rather than the domain root, set the
+path prefix when configuring the custom domain in the control plane.
 
-```json title="docs.json"
-{
-  "name": "my-project",
-  "domain": "docs.example.com",
-  "pathPrefix": "/docs"
-}
-```
-
-Your documentation will then be accessible at `docs.example.com/docs` instead of `docs.example.com`.
+Your documentation will then be accessible at `docs.example.com/docs` instead
+of `docs.example.com`.
 
 <Callout type="note">
   The path prefix is applied to all routes, including search, sitemaps, and API

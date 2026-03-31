@@ -52,3 +52,41 @@ export const TenantEdgeSlugRecordSchema = z.object({
   version: TenantEdgeRecordVersionSchema,
 });
 export type TenantEdgeSlugRecord = z.infer<typeof TenantEdgeSlugRecordSchema>;
+
+export const TENANT_EDGE_HOST_KEY_PREFIX = "th_";
+export const TENANT_EDGE_SLUG_KEY_PREFIX = "ts_";
+export const LEGACY_TENANT_EDGE_HOST_KEY_PREFIX = "tenant:host:";
+export const LEGACY_TENANT_EDGE_SLUG_KEY_PREFIX = "tenant:slug:";
+
+export const normalizeTenantEdgeHost = (host: string) =>
+  host.trim().toLowerCase().replace(/:\d+$/, "");
+
+export const normalizeTenantEdgeSlug = (slug: string) =>
+  slug.trim().toLowerCase();
+
+const encodeTenantEdgeHost = (host: string) =>
+  normalizeTenantEdgeHost(host).replaceAll(".", "_");
+
+const encodeTenantEdgeSlug = (slug: string) => normalizeTenantEdgeSlug(slug);
+
+export const getTenantEdgeHostKey = (host: string) =>
+  `${TENANT_EDGE_HOST_KEY_PREFIX}${encodeTenantEdgeHost(host)}`;
+
+export const getTenantEdgeSlugKey = (slug: string) =>
+  `${TENANT_EDGE_SLUG_KEY_PREFIX}${encodeTenantEdgeSlug(slug)}`;
+
+export const getLegacyTenantEdgeHostKey = (host: string) =>
+  `${LEGACY_TENANT_EDGE_HOST_KEY_PREFIX}${normalizeTenantEdgeHost(host)}`;
+
+export const getLegacyTenantEdgeSlugKey = (slug: string) =>
+  `${LEGACY_TENANT_EDGE_SLUG_KEY_PREFIX}${normalizeTenantEdgeSlug(slug)}`;
+
+export const getTenantEdgeHostKeys = (host: string) => [
+  getTenantEdgeHostKey(host),
+  getLegacyTenantEdgeHostKey(host),
+];
+
+export const getTenantEdgeSlugKeys = (slug: string) => [
+  getTenantEdgeSlugKey(slug),
+  getLegacyTenantEdgeSlugKey(slug),
+];

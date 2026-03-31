@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.7
+
+### Patch Changes
+
+- Update docs components, icons, deployment configuration, and CLI dev server improvements including db:seed script and content directory scanning fixes
+
 ## 0.0.6
 
 ### Patch Changes

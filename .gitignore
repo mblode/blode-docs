@@ -29,6 +29,10 @@ test-results/
 out/
 build
 dist
+apps/cli/dev-server
+apps/cli/docs
+apps/cli/packages
+blodemd-*.tgz
 
 
 # Debug

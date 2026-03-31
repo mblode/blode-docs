@@ -4,6 +4,7 @@ import { TenantResolutionSchema } from "@repo/contracts";
 import {
   getTenantEdgeHostRecord,
   getTenantEdgeSlugRecord,
+  isEdgeConfigEnabled,
 } from "./edge-config";
 import { docsApiBase } from "./env";
 import { platformConfig } from "./platform-config";
@@ -314,9 +315,8 @@ export const resolveTenantFromEdgeConfig = async (
 };
 
 const fetchTenantResolution = async (host: string, pathname: string) => {
-  const edgeResolution = await resolveTenantFromEdgeConfig(host, pathname);
-  if (edgeResolution) {
-    return edgeResolution;
+  if (isEdgeConfigEnabled()) {
+    return await resolveTenantFromEdgeConfig(host, pathname);
   }
 
   return await fetchTenantResolutionFromApi(host, pathname);

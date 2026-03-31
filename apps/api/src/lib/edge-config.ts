@@ -2,6 +2,10 @@ import type { Tenant } from "@repo/contracts";
 import {
   TenantEdgeHostRecordSchema,
   TenantEdgeSlugRecordSchema,
+  getTenantEdgeHostKeys,
+  getTenantEdgeHostKey,
+  getTenantEdgeSlugKeys,
+  getTenantEdgeSlugKey,
 } from "@repo/contracts";
 
 import { rootDomain, validConfiguredDomainStatus } from "./config";
@@ -10,6 +14,8 @@ import { readTrimmedEnv } from "./env";
 import { buildTenant } from "./tenant-builder";
 
 const VERCEL_API_BASE = "https://api.vercel.com";
+
+export { getTenantEdgeHostKey, getTenantEdgeSlugKey };
 
 interface VercelEdgeConfigConfig {
   edgeConfigId: string;
@@ -28,8 +34,6 @@ type EdgeConfigItemOperation =
       operation: "upsert";
       value: unknown;
     };
-
-const normalizeHost = (host: string) => host.trim().toLowerCase();
 
 const getVercelEdgeConfig = (): VercelEdgeConfigConfig | null => {
   const edgeConfigId = readTrimmedEnv("VERCEL_EDGE_CONFIG_ID");
@@ -93,11 +97,31 @@ const dedupeEdgeConfigItems = (items: EdgeConfigItemOperation[]) => {
   return [...map.values()];
 };
 
-export const getTenantEdgeHostKey = (host: string) =>
-  `tenant:host:${normalizeHost(host)}`;
+const addDeleteOperations = (
+  items: EdgeConfigItemOperation[],
+  keys: string[]
+) => {
+  for (const key of keys) {
+    items.push({
+      key,
+      operation: "delete",
+    });
+  }
+};
 
-export const getTenantEdgeSlugKey = (slug: string) =>
-  `tenant:slug:${slug.trim().toLowerCase()}`;
+const addUpsertOperations = (
+  items: EdgeConfigItemOperation[],
+  keys: string[],
+  value: unknown
+) => {
+  for (const key of keys) {
+    items.push({
+      key,
+      operation: "upsert",
+      value,
+    });
+  }
+};
 
 export const isTenantEdgeConfigSyncEnabled = () =>
   Boolean(getVercelEdgeConfig());
@@ -111,56 +135,49 @@ export const buildTenantEdgeConfigItems = (input: {
   removedHosts?: string[];
   tenant: Tenant;
 }) => {
-  const items: EdgeConfigItemOperation[] = [
-    {
-      key: getTenantEdgeSlugKey(input.tenant.slug),
-      operation: "upsert",
-      value: TenantEdgeSlugRecordSchema.parse({
-        slug: input.tenant.slug,
-        tenant: input.tenant,
-        version: 1,
-      }),
-    },
-    {
-      key: getTenantEdgeHostKey(`${input.tenant.subdomain}.${rootDomain}`),
-      operation: "upsert",
-      value: TenantEdgeHostRecordSchema.parse({
-        host: `${input.tenant.subdomain}.${rootDomain}`,
-        strategy: "subdomain",
-        tenant: input.tenant,
-        version: 1,
-      }),
-    },
-  ];
+  const items: EdgeConfigItemOperation[] = [];
+
+  addUpsertOperations(
+    items,
+    getTenantEdgeSlugKeys(input.tenant.slug),
+    TenantEdgeSlugRecordSchema.parse({
+      slug: input.tenant.slug,
+      tenant: input.tenant,
+      version: 1,
+    })
+  );
+  addUpsertOperations(
+    items,
+    getTenantEdgeHostKeys(`${input.tenant.subdomain}.${rootDomain}`),
+    TenantEdgeHostRecordSchema.parse({
+      host: `${input.tenant.subdomain}.${rootDomain}`,
+      strategy: "subdomain",
+      tenant: input.tenant,
+      version: 1,
+    })
+  );
 
   for (const domain of input.domains) {
-    const key = getTenantEdgeHostKey(domain.hostname);
     if (domain.status !== validConfiguredDomainStatus) {
-      items.push({
-        key,
-        operation: "delete",
-      });
+      addDeleteOperations(items, getTenantEdgeHostKeys(domain.hostname));
       continue;
     }
 
-    items.push({
-      key,
-      operation: "upsert",
-      value: TenantEdgeHostRecordSchema.parse({
+    addUpsertOperations(
+      items,
+      getTenantEdgeHostKeys(domain.hostname),
+      TenantEdgeHostRecordSchema.parse({
         host: domain.hostname,
         pathPrefix: domain.pathPrefix ?? undefined,
         strategy: "custom-domain",
         tenant: input.tenant,
         version: 1,
-      }),
-    });
+      })
+    );
   }
 
   for (const host of input.removedHosts ?? []) {
-    items.push({
-      key: getTenantEdgeHostKey(host),
-      operation: "delete",
-    });
+    addDeleteOperations(items, getTenantEdgeHostKeys(host));
   }
 
   return dedupeEdgeConfigItems(items);

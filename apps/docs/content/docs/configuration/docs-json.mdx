@@ -9,7 +9,7 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
 
 ```json title="docs.json"
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://docs.blode.md/docs.json",
   "name": "my-project",
   "theme": "mint",
   "colors": { "primary": "#0D9373" },
@@ -23,7 +23,7 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
 
 ```json title="docs.json"
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://docs.blode.md/docs.json",
   "name": "my-project",
   "theme": "mint",
   "description": "Documentation for my product.",
@@ -80,12 +80,12 @@ Every Blode.md project is configured through a single `docs.json` file at the ro
   type={{
     $schema: {
       description:
-        "JSON Schema URL for editor autocomplete. Use `https://mintlify.com/docs.json`.",
+        "JSON Schema URL for editor autocomplete. Use `https://docs.blode.md/docs.json`.",
       type: "string",
     },
     name: {
       description:
-        "Project slug. Determines your `*.blode.md` subdomain and acts as the project identifier.",
+        "Project slug. Determines the default `{name}.blode.md` hostname served by the platform wildcard and acts as the project identifier.",
       type: "string",
       required: true,
     },

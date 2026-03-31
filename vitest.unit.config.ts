@@ -3,8 +3,8 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  esbuild: {
-    jsx: "automatic",
+  oxc: {
+    jsx: "react-jsx",
   },
   resolve: {
     alias: {
@@ -13,7 +13,14 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "apps/cli/dev-server/**",
+      "apps/cli/docs/**",
+      "apps/cli/packages/**",
+    ],
     include: ["**/*.unit.test.ts", "**/*.unit.test.tsx"],
     passWithNoTests: false,
   },

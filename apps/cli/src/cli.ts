@@ -27,6 +27,7 @@ import {
   OAUTH_CLIENT_ID,
 } from "./constants.js";
 import { devCommand } from "./dev/command.js";
+import { resolveDocsRoot } from "./dev/resolve-root.js";
 import { CliError, EXIT_CODES, toCliError } from "./errors.js";
 import { waitForOAuthCode } from "./oauth-callback.js";
 import { exchangeAuthorizationCode } from "./oauth-token.js";
@@ -35,6 +36,8 @@ import {
   createCodeVerifier,
   createOAuthState,
 } from "./pkce.js";
+import { assertSupportedNodeVersion, readCliVersion } from "./runtime.js";
+import { loadValidatedSiteConfig } from "./site-config.js";
 import {
   clearStoredCredentials,
   readAuthFile,
@@ -71,43 +74,6 @@ const ensureFile = async (filePath: string, content: string): Promise<void> => {
   } catch {
     // File already exists
   }
-};
-
-const fileExists = async (filePath: string): Promise<boolean> => {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const readConfig = async (
-  root: string
-): Promise<{ name?: string; raw: string }> => {
-  const raw = await fs.readFile(path.join(root, CONFIG_FILE), "utf8");
-  const parsed = JSON.parse(raw) as { name?: string };
-  return { name: parsed.name, raw };
-};
-
-const resolveDocsRoot = async (dir?: string): Promise<string> => {
-  if (dir) {
-    return path.resolve(process.cwd(), dir);
-  }
-
-  const candidates = [
-    process.cwd(),
-    path.join(process.cwd(), "docs"),
-    path.join(process.cwd(), "apps/docs"),
-  ];
-
-  for (const candidate of candidates) {
-    if (await fileExists(path.join(candidate, CONFIG_FILE))) {
-      return candidate;
-    }
-  }
-
-  return process.cwd();
 };
 
 const readGitValue = (gitArgs: string[]): string | undefined => {
@@ -383,8 +349,12 @@ const uploadFiles = async (
 // --- CLI ---
 
 const program = new Command();
+const cliVersion = readCliVersion(import.meta.url);
 
-program.name("blodemd").description("Blode.md CLI").version("0.0.3");
+program.name("blodemd").description("Blode.md CLI").version(cliVersion);
+program.hook("preAction", () => {
+  assertSupportedNodeVersion();
+});
 
 // login
 
@@ -598,7 +568,7 @@ program
       await fs.mkdir(root, { recursive: true });
 
       const docsJson = {
-        $schema: "https://mintlify.com/docs.json",
+        $schema: "https://docs.blode.md/docs.json",
         colors: { primary: "#0D9373" },
         name: "my-project",
         navigation: {
@@ -635,7 +605,10 @@ program
 
     try {
       const root = await resolveDocsRoot(dir);
-      await readConfig(root);
+      const { warnings } = await loadValidatedSiteConfig(root);
+      for (const warning of warnings) {
+        log.warn(warning);
+      }
       log.success(`${chalk.cyan(CONFIG_FILE)} is valid.`);
       log.info("Done");
     } catch (error: unknown) {
@@ -672,8 +645,11 @@ program
         const root = await resolveDocsRoot(dir);
 
         s.start("Validating configuration");
-        const config = await readConfig(root);
+        const { config, warnings } = await loadValidatedSiteConfig(root);
         s.stop("Configuration valid");
+        for (const warning of warnings) {
+          log.warn(warning);
+        }
 
         const { project, apiUrl, authToken, branch, commitMessage } =
           await resolvePushConfig(config, options);

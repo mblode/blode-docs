@@ -60,12 +60,6 @@ const PROJECTS = [
     slug: "example",
   },
   {
-    description:
-      "An opinionated shadcn/ui component registry built with good taste, care, and craft.",
-    name: "Blode",
-    slug: "blode",
-  },
-  {
     description: "Blode.md product documentation.",
     name: "Docs",
     slug: "docs",

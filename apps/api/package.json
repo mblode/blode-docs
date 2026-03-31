@@ -7,6 +7,7 @@
     "dev": "portless run sh -c 'set -a && . .env && set +a && tsx watch src/index.ts'",
     "build": "tsdown",
     "start": "node dist/index.mjs",
+    "backfill:edge-config": "tsx scripts/backfill-edge-config.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt --write .",

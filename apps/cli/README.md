@@ -23,7 +23,7 @@ Or run without installing:
 npx blodemd
 ```
 
-Requires Node.js 18+.
+Requires Node.js 20.17+ and <25.
 
 ## Quick Start
 
@@ -90,7 +90,7 @@ The CLI looks for a `docs.json` file in the docs directory. Minimal example:
 
 ```json
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://docs.blode.md/docs.json",
   "name": "my-project",
   "theme": "mint",
   "colors": { "primary": "#0D9373" },
