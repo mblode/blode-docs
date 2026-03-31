@@ -1,5 +1,5 @@
 import type { PageMode, SiteConfig } from "@repo/models";
-import { ArrowLeftIcon, ArrowRightIcon } from "blode-icons-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "blode-icons-react";
 import Link from "next/link";
 import Script from "next/script";
 import { Fragment } from "react";
@@ -21,7 +21,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import type { NavEntry, NavTab } from "@/lib/navigation";
 import { toDocHref } from "@/lib/routes";
 import { themeStylesFromConfig } from "@/lib/theme";
@@ -100,7 +99,7 @@ export const DocShell = ({
   config: SiteConfig;
   nav: NavEntry[];
   prevPage?: { title: string; path: string };
-  nextPage?: { title: string; path: string };
+  nextPage?: { title: string; path: string; description?: string };
   toc: TocItem[];
   content: ReactNode;
   currentPath: string;
@@ -206,32 +205,52 @@ export const DocShell = ({
               {content}
             </div>
             {!hideFooterPagination && (prevPage || nextPage) ? (
-              <nav className="flex w-full flex-col gap-2 sm:h-16 sm:flex-row sm:items-center">
+              <nav
+                className="flex w-full rounded-2xl bg-muted/50 p-1 text-sm"
+                id="pagination"
+              >
                 {prevPage ? (
-                  <Button
-                    asChild
-                    className="w-full justify-between sm:w-auto"
-                    size="sm"
-                    variant="secondary"
+                  <Link
+                    className="group flex items-center justify-between gap-1.5 pl-3 pr-6"
+                    href={toDocHref(prevPage.path, basePath)}
                   >
-                    <Link href={toDocHref(prevPage.path, basePath)}>
-                      <ArrowLeftIcon aria-hidden="true" />
-                      {prevPage.title}
-                    </Link>
-                  </Button>
+                    <ChevronLeftIcon
+                      aria-hidden="true"
+                      className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
+                    />
+                    <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
+                      Previous
+                    </span>
+                  </Link>
                 ) : null}
                 {nextPage ? (
-                  <Button
-                    asChild
-                    className="w-full justify-between sm:ml-auto sm:w-auto"
-                    size="sm"
-                    variant="secondary"
+                  <Link
+                    className="group ml-auto flex w-full min-w-0 flex-1"
+                    href={toDocHref(nextPage.path, basePath)}
                   >
-                    <Link href={toDocHref(nextPage.path, basePath)}>
-                      {nextPage.title}
-                      <ArrowRightIcon aria-hidden="true" />
-                    </Link>
-                  </Button>
+                    <div className="flex flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border sm:h-16">
+                      <div className="flex min-w-0 flex-col items-end justify-center px-5">
+                        <span className="text-right font-semibold text-foreground/80">
+                          {nextPage.title}
+                        </span>
+                        {nextPage.description ? (
+                          <span className="hidden w-full truncate text-right text-muted-foreground lg:block lg:w-72">
+                            {nextPage.description}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="h-8 w-px bg-border/50" />
+                      <div className="flex items-center gap-1.5 pl-5 pr-3">
+                        <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
+                          Next
+                        </span>
+                        <ChevronRightIcon
+                          aria-hidden="true"
+                          className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
+                        />
+                      </div>
+                    </div>
+                  </Link>
                 ) : null}
               </nav>
             ) : null}
