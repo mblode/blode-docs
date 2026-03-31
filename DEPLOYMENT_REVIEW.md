@@ -1,151 +1,56 @@
 # Vercel Deployment Review
 
-## ✅ What's Been Completed
+This file reflects the live deployment topology as of March 31, 2026.
 
-### 1. Project Setup
+## Current State
 
-- ✅ Installed Vercel CLI
-- ✅ Logged in to Vercel
-- ✅ Created 4 Vercel projects: `web`, `dashboard`, `docs`, `api`
-- ✅ Removed unnecessary projects (`blodemd` root, `src`)
-- ✅ All code committed and pushed to GitHub
+- The repo is deployed through two Vercel projects:
+  - `blodemd-docs` at `https://blode.md`
+  - `blodemd-api` at `https://api.blode.md`
+- The docs frontend is a multi-tenant Next.js app. It serves:
+  - the marketing site on the root host
+  - tenant docs on `/<slug>` at the root host
+  - tenant docs on `<slug>.blode.md`
+- The product docs are tenant content for the slug `docs`, not a dedicated platform route.
 
-### 2. Configuration Files
+## Production Routing Facts
 
-- ✅ Created `vercel.json` for each app with:
-  - Optimized Turborepo build commands
-  - Correct output directories
-  - Framework detection
+- `https://blode.md/docs` resolves only if the production API can resolve a tenant with slug `docs`.
+- `https://docs.blode.md` resolves only if:
+  - the `docs` tenant exists in production data
+  - `docs.blode.md` is aliased to `blodemd-docs`
+  - wildcard or explicit DNS for `*.blode.md` reaches Vercel
+- The root DNS zone currently includes:
+  - an apex `ALIAS` for `blode.md`
+  - a wildcard `ALIAS` for `*.blode.md`
 
-### 3. Build Fixes
+## March 31, 2026 Incident
 
-- ✅ Fixed ESM import issues for Next.js apps
-  - Removed `.js` extensions from `packages/contracts` (exports .ts directly)
-  - Removed `.js` extensions from `packages/db` (exports .ts directly)
-- ✅ Verified builds work for:
-  - **web app** ✅ - Builds successfully
-  - **docs app** ✅ - Builds successfully
+The production issue was not a missing docs page in the app. It was a missing tenant in production data.
 
----
+- Before the fix:
+  - `https://docs.blode.md` failed externally
+  - `https://blode.md/docs` returned a tenant-resolution `404`
+  - `GET https://api.blode.md/tenants/docs` returned `404`
+- After the fix:
+  - the `docs` project exists in production
+  - `GET https://api.blode.md/tenants/docs` returns `200`
+  - `https://blode.md/docs` returns `200`
+  - `https://docs.blode.md` returns `200`
 
-## ⚠️ Known Issues
+## Drift To Watch
 
-### Dashboard App
+- Older notes in this repo referenced Vercel projects named `web`, `dashboard`, `docs`, and `api`. Those are stale and do not match the current Vercel project names.
+- Production data still contains legacy tenants like `orbit` and `atlas`.
+- Seed data expects `docs`, `blode`, and `example`; if production is recreated from scratch, verify the seed and production inventory match.
 
-**Status:** Build fails with Supabase server/client component conflict
+## Verification Commands
 
-**Error:**
-
+```sh
+vercel project ls
+vercel alias ls --limit 50
+vercel dns list blode.md
+curl -I https://blode.md/docs
+curl -I https://docs.blode.md
+curl https://api.blode.md/tenants | jq -r '.[].slug'
 ```
-You're importing a component that needs "next/headers". That only works in a Server Component
-```
-
-**Location:** `packages/supabase/src/next-server.ts`
-
-**Cause:** The Supabase package imports `next/headers` (server-only) but is being used in a client component.
-
-**Solution Options:**
-
-1. Refactor the dashboard to ensure Supabase server functions are only called from Server Components
-2. Split the Supabase package into separate server/client modules
-3. Use dynamic imports with `next/dynamic` for client-side usage
-
-### API App
-
-**Status:** Build fails with TypeScript module resolution errors
-
-**Error:**
-
-```
-Relative import paths need explicit file extensions in ECMAScript imports
-```
-
-**Cause:** The API app uses `tsc` to compile TypeScript (not Next.js), which requires `.js` extensions with NodeNext module resolution. However, the shared packages (contracts, db) were fixed to NOT have `.js` extensions for Next.js compatibility.
-
-**Conflict:**
-
-- Next.js apps (web, docs) need packages WITHOUT `.js` extensions
-- API app needs `.js` extensions for tsc compilation
-
-**Solution Options:**
-
-1. **Compile shared packages** (Recommended):
-   - Add actual build steps to contracts/db packages
-   - Export compiled `.js` files instead of `.ts` source
-   - Update package.json exports to point to dist/ folder
-
-2. **Change API tsconfig**:
-   - Switch from NodeNext to bundler module resolution
-   - This allows importing without `.js` extensions
-
-3. **Keep API separate**:
-   - API uses its own copies of types
-   - Don't share packages between Next.js apps and API
-
----
-
-## 🎯 Next Steps
-
-### Immediate (Required for Deployment)
-
-1. **Connect Projects to GitHub** (2 minutes per project)
-   - Follow instructions in `VERCEL_SETUP.md`
-   - Set Root Directory for each project:
-     - web: `apps/web`
-     - dashboard: `apps/dashboard`
-     - docs: `apps/docs`
-     - api: `apps/api`
-
-2. **Fix Dashboard Build** (if deploying dashboard)
-   - Refactor Supabase usage to separate server/client concerns
-   - OR skip dashboard deployment for now
-
-3. **Fix API Build** (if deploying API)
-   - Choose one of the solution options above
-   - Recommended: Compile shared packages to `.js`
-
-### Optional (Future Improvements)
-
-- Set up environment variables in Vercel dashboard
-- Configure custom domains
-- Set up preview deployments for PRs
-- Configure build caching for faster deployments
-
----
-
-## 📊 Build Status Summary
-
-| App           | Local Build | Vercel Ready | Notes                            |
-| ------------- | ----------- | ------------ | -------------------------------- |
-| **web**       | ✅ Pass     | ✅ Yes       | Ready to deploy                  |
-| **docs**      | ✅ Pass     | ✅ Yes       | Ready to deploy                  |
-| **dashboard** | ❌ Fail     | ⚠️ Needs Fix | Supabase server/client issue     |
-| **api**       | ❌ Fail     | ⚠️ Needs Fix | ESM/TypeScript compilation issue |
-
----
-
-## 🚀 Deploy Now
-
-You can deploy **web** and **docs** apps immediately:
-
-1. Go to [vercel.com/blode/web/settings/git](https://vercel.com/blode/web/settings/git)
-2. Connect to `mblode/blodemd`, set Root Directory: `apps/web`
-3. Go to [vercel.com/blode/docs/settings/git](https://vercel.com/blode/docs/settings/git)
-4. Connect to `mblode/blodemd`, set Root Directory: `apps/docs`
-
-Both will build successfully and deploy! 🎉
-
----
-
-## 📝 Files Created
-
-- `VERCEL_SETUP.md` - Step-by-step deployment guide
-- `setup-vercel-projects.md` - Original setup instructions
-- `configure-vercel-projects.sh` - Automated project configuration script
-- `apps/*/vercel.json` - Per-app Vercel configuration
-- `DEPLOYMENT_REVIEW.md` - This file
-
----
-
-**Last Updated:** January 14, 2026
-**Status:** 2/4 apps ready for deployment

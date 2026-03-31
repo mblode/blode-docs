@@ -1,6 +1,7 @@
 import { readTrimmedEnv } from "./env";
 
-const docsAppUrl = readTrimmedEnv("DOCS_APP_URL");
+const docsAppUrl =
+  readTrimmedEnv("DOCS_REVALIDATE_URL") ?? readTrimmedEnv("DOCS_APP_URL");
 const revalidateSecret = readTrimmedEnv("REVALIDATE_SECRET");
 
 export const revalidateProject = async (projectSlug: string) => {

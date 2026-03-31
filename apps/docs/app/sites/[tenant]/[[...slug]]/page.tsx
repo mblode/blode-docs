@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -9,10 +8,10 @@ import { toDocHref } from "@/lib/routes";
 import {
   getCanonicalDocBasePath,
   getCanonicalOrigin,
-  getTenantRequestContextFromHeaders,
+  getStaticTenantRequestContext,
 } from "@/lib/tenant-static";
 
-export const dynamic = "force-dynamic";
+export const preferredRegion = "home";
 export const revalidate = 3600;
 
 const DocContentFallback = () => (
@@ -77,11 +76,7 @@ export const generateMetadata = async ({
   const baseTitle = config?.name ?? "Docs";
   const titleTemplate = `%s · ${baseTitle}`;
   const title = pageTitle ? titleTemplate.replace("%s", pageTitle) : baseTitle;
-  const headerStore = await headers();
-  const requestContext = getTenantRequestContextFromHeaders(
-    tenant,
-    headerStore
-  );
+  const requestContext = getStaticTenantRequestContext(tenant);
 
   const canonicalBasePath = getCanonicalDocBasePath(tenant, requestContext);
   const canonicalPath = slugKey ? `/${slugKey}` : "/";
@@ -194,11 +189,7 @@ const DocPage = async ({
     );
   }
 
-  const headerStore = await headers();
-  const requestContext = getTenantRequestContextFromHeaders(
-    shell.tenant,
-    headerStore
-  );
+  const requestContext = getStaticTenantRequestContext(shell.tenant);
   const basePath = getCanonicalDocBasePath(shell.tenant, requestContext);
 
   let content: React.ReactNode;
