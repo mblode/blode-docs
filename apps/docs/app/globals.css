@@ -394,7 +394,16 @@
     background-color: var(--color-code-highlight);
   }
 
-  [data-line] {
+  .shiki {
+    --shiki-active: var(--shiki-light);
+  }
+
+  html.dark .shiki {
+    --shiki-active: var(--shiki-dark);
+  }
+
+  [data-line],
+  .shiki .line {
     display: inline-block;
     width: 100%;
     min-height: calc(var(--spacing) * 1);
@@ -402,12 +411,11 @@
     padding-bottom: calc(var(--spacing) * 0.5);
   }
 
-  [data-line] span {
-    color: var(--shiki-light);
-
-    @variant dark {
-      color: var(--shiki-dark) !important;
-    }
+  [data-line],
+  [data-line] span,
+  .shiki .line,
+  .shiki .line span {
+    color: var(--shiki-active) !important;
   }
 
   [data-highlighted-line],
