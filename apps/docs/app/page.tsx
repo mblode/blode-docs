@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/ui/site-footer";
 
 export default function HomePage() {
   return (
@@ -203,20 +204,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-8">
-        <div className="container flex items-center justify-between px-4 text-sm text-muted-foreground">
-          <span>blode.md</span>
-          <a
-            className="transition-colors hover:text-foreground"
-            href="https://github.com/mblode/blodemd"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
