@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { SiteFooter } from "@/components/ui/site-footer";
 
 export default function HomePage() {
@@ -62,7 +63,13 @@ export default function HomePage() {
                   you use for code works for docs.
                 </p>
               </div>
-              <div className="rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+              <div className="relative rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+                <CopyButton
+                  className="absolute right-4 top-4 text-muted-foreground"
+                  content={`blodemd login\nblodemd new docs\nblodemd push docs`}
+                  variant="ghost"
+                  size="sm"
+                />
                 <div className="space-y-6">
                   <div>
                     <p className="text-muted-foreground"># authenticate once</p>
@@ -170,12 +177,20 @@ export default function HomePage() {
                   alongside your code.
                 </p>
               </div>
-              <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
-                {
-                  "- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: $"
-                }
-                {"{{ secrets.BLODEMD_API_KEY }}"}
-              </pre>
+              <div className="relative">
+                <CopyButton
+                  className="absolute right-4 top-4 text-muted-foreground"
+                  content={`- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: \${{ secrets.BLODEMD_API_KEY }}`}
+                  variant="ghost"
+                  size="sm"
+                />
+                <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+                  {
+                    "- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: $"
+                  }
+                  {"{{ secrets.BLODEMD_API_KEY }}"}
+                </pre>
+              </div>
             </div>
           </div>
         </section>
