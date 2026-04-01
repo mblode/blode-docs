@@ -203,9 +203,24 @@ export const CopyPageMenu = ({
 
   const handleCopy = useCallback(async () => {
     try {
-      const nextContent = await getContent();
-      const markdown = formatMarkdownForCopy(nextContent, title);
-      await navigator.clipboard.writeText(markdown);
+      // iOS Safari loses the user gesture context after any async gap (e.g. a
+      // fetch). To keep clipboard access working, we call clipboard.write()
+      // synchronously within the gesture and pass a Promise to ClipboardItem
+      // so the content resolves later while the gesture context stays alive.
+      const blobPromise = getContent().then((nextContent) => {
+        const markdown = formatMarkdownForCopy(nextContent, title);
+        return new Blob([markdown], { type: "text/plain" });
+      });
+
+      if (typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "text/plain": blobPromise }),
+        ]);
+      } else {
+        const blob = await blobPromise;
+        await navigator.clipboard.writeText(await blob.text());
+      }
+
       setTemporaryCopyStatus("copied");
       closeMenu();
     } catch {
