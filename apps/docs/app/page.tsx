@@ -198,12 +198,6 @@ export default function HomePage() {
               >
                 docs.blode.md
               </a>
-              <a
-                className="text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-                href="https://example.blode.md"
-              >
-                example.blode.md
-              </a>
             </div>
           </div>
         </section>
