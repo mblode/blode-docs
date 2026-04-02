@@ -190,7 +190,7 @@ export default function HomePage() {
                   alongside your code
                 </p>
               </div>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <CopyButton
                   className="absolute right-4 top-4 text-muted-foreground"
                   content={`- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: \${{ secrets.BLODEMD_API_KEY }}`}
@@ -214,7 +214,7 @@ export default function HomePage() {
             <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
               Get started in a minute
             </h2>
-            <div className="mt-8 inline-flex items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
+            <div className="mt-8 inline-flex max-w-full overflow-x-auto items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
               <p>
                 <span className="text-muted-foreground">$</span> npm install -g
                 blodemd
