@@ -219,7 +219,7 @@ export default function HomePage() {
                 <span className="text-muted-foreground">$</span> npm install -g
                 blodemd
               </code>
-              <CopyButton value="npm install -g blodemd" />
+              <CopyButton content="npm install -g blodemd" />
             </div>
             <div className="mt-12">
               <Button size="lg" asChild>
