@@ -12,6 +12,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npx --yes blodemd push
+      - name: Deploy docs
+        run: npx blodemd push docs
         env:
           BLODEMD_API_KEY: ${{ secrets.BLODEMD_API_KEY }}
