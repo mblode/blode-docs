@@ -1,6 +1,6 @@
 {
   "$schema": "https://blode.md/docs.json",
-  "name": "docs",
+  "name": "Blode.md",
   "description": "Ship beautiful docs from your terminal. Write MDX locally, deploy with one command.",
   "favicon": "icon0.svg",
   "contextual": {

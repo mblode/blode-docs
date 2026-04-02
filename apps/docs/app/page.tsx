@@ -56,15 +56,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Button size="lg" asChild>
-                <a href="#get-started">Get started</a>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-primary/25"
-                asChild
-              >
-                <a href="https://docs.blode.md">Read the docs</a>
+                <a href="https://docs.blode.md">Get started</a>
               </Button>
             </div>
           </div>
@@ -222,19 +214,17 @@ export default function HomePage() {
             <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
               Get started in a minute
             </h2>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex items-center gap-2">
               <code className="rounded-lg bg-surface px-4 py-2.5 font-mono text-sm">
                 <span className="text-muted-foreground">$</span> npm install -g
                 blodemd
               </code>
+              <CopyButton value="npm install -g blodemd" />
             </div>
-            <div className="mt-12 flex flex-wrap gap-6">
-              <a
-                className="text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-                href="https://docs.blode.md"
-              >
-                docs.blode.md
-              </a>
+            <div className="mt-12">
+              <Button size="lg" asChild>
+                <a href="https://docs.blode.md">Read the docs</a>
+              </Button>
             </div>
           </div>
         </section>
