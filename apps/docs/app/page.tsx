@@ -214,12 +214,17 @@ export default function HomePage() {
             <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
               Get started in a minute
             </h2>
-            <div className="mt-8 flex items-center gap-2">
-              <code className="rounded-lg bg-surface px-4 py-2.5 font-mono text-sm">
+            <div className="mt-8 inline-flex items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
+              <p>
                 <span className="text-muted-foreground">$</span> npm install -g
                 blodemd
-              </code>
-              <CopyButton content="npm install -g blodemd" />
+              </p>
+              <CopyButton
+                className="text-muted-foreground"
+                content="npm install -g blodemd"
+                variant="ghost"
+                size="sm"
+              />
             </div>
             <div className="mt-12">
               <Button size="lg" asChild>
