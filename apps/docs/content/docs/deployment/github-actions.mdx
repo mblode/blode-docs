@@ -24,14 +24,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npx --yes blodemd push
+      - run: npx blodemd push
         env:
           BLODEMD_API_KEY: ${{ secrets.BLODEMD_API_KEY }}
 ```
-
-<Callout type="info">
-  The `--yes` flag tells npx to install the `blodemd` package without prompting.
-</Callout>
 
 ## Production workflow with branch deploys
 
@@ -55,7 +51,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npx --yes blodemd push
+      - run: npx blodemd push
         env:
           BLODEMD_API_KEY: ${{ secrets.BLODEMD_API_KEY }}
           BLODEMD_BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -159,7 +155,7 @@ If your docs are not in the default location, pass the directory path as an argu
 
 <CodeGroup>
 ```yaml title="With npx"
-- run: npx --yes blodemd push ./my-docs
+- run: npx blodemd push ./my-docs
   env:
     BLODEMD_API_KEY: ${{ secrets.BLODEMD_API_KEY }}
 ```
