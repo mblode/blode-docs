@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.11
+
+### Patch Changes
+
+- Split display name from deploy slug in project config and fix deploy workflow issues
+
 ## 0.0.10
 
 ### Patch Changes
