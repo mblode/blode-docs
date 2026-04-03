@@ -184,10 +184,18 @@ export const proxy = async (request: NextRequest) => {
     resolution.tenant.slug
   );
   const markdownSlug = getMarkdownExportSlug(pathname, resolution.basePath);
+  const acceptsMarkdown =
+    !markdownSlug &&
+    (request.headers.get("accept") ?? "").includes("text/markdown");
+  const effectiveMarkdownSlug =
+    markdownSlug ??
+    (acceptsMarkdown
+      ? getMarkdownExportSlug(`${pathname}.md`, resolution.basePath)
+      : null);
 
-  if (markdownSlug !== null && !pathname.includes("/llms.mdx/")) {
+  if (effectiveMarkdownSlug !== null && !pathname.includes("/llms.mdx/")) {
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
-    url.pathname = `${tenantPrefix}/llms.mdx/${markdownSlug}`;
+    url.pathname = `${tenantPrefix}/llms.mdx/${effectiveMarkdownSlug}`;
   } else if (utilityRewritePath) {
     url.pathname = utilityRewritePath;
   } else {
@@ -219,8 +227,8 @@ export const proxy = async (request: NextRequest) => {
     "Vercel-CDN-Cache-Control",
     "public, s-maxage=3600, stale-while-revalidate=86400"
   );
-  // Multi-tenant: same path may serve different content per Host
-  response.headers.set("Vary", "Host");
+  // Multi-tenant: same path may serve different content per Host or Accept header
+  response.headers.set("Vary", "Host, accept");
 
   return response;
 };
