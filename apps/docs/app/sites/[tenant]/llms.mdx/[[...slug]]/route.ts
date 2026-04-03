@@ -23,7 +23,14 @@ export const GET = async (
     return new NextResponse("Not found", { status: 404 });
   }
 
-  return new NextResponse(content, {
+  const basePath = tenant.pathPrefix ? `/${tenant.pathPrefix}` : "";
+  const llmsTxtUrl = `https://${tenant.primaryDomain}${basePath}/llms.txt`;
+  const blockquote =
+    `> ## Documentation Index\n` +
+    `> Fetch the complete documentation index at: ${llmsTxtUrl}\n` +
+    `> Use this file to discover all available pages before exploring further.\n\n`;
+
+  return new NextResponse(blockquote + content, {
     headers: {
       "CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",
@@ -32,6 +39,7 @@ export const GET = async (
       "Vary": "accept",
       "Vercel-CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",
+      "X-Robots-Tag": "noindex, nofollow",
     },
   });
 };

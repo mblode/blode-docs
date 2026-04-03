@@ -230,5 +230,13 @@ export const proxy = async (request: NextRequest) => {
   // Multi-tenant: same path may serve different content per Host or Accept header
   response.headers.set("Vary", "Host, accept");
 
+  // Advertise the llms.txt index to AI agents via standard HTTP headers
+  const llmsBasePath = resolution.basePath ? `/${resolution.basePath}` : "";
+  response.headers.set(
+    "Link",
+    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt"`
+  );
+  response.headers.set("X-Llms-Txt", `${llmsBasePath}/llms.txt`);
+
   return response;
 };
