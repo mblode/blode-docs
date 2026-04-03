@@ -223,42 +223,15 @@ export const CopyPageMenu = ({
 
   const handleCopy = useCallback(async () => {
     try {
-      // When content is already cached, call writeText() before any await so
-      // iOS Safari's gesture-context check fires with the user gesture still
-      // active. This is the most compatible path across all iOS Safari versions.
-      const syncContent = content ?? fetchedContent;
-      if (syncContent) {
-        const markdown = formatMarkdownForCopy(syncContent, title);
-        await navigator.clipboard.writeText(markdown);
-        setTemporaryCopyStatus("copied");
-        closeMenu();
-        return;
-      }
-
-      // Content not yet cached — fall back to the lazy ClipboardItem pattern
-      // so that iOS Safari doesn't lose gesture context while the fetch is
-      // in-flight.
-      const blobPromise = (async () => {
-        const nextContent = await getContent();
-        const markdown = formatMarkdownForCopy(nextContent, title);
-        return new Blob([markdown], { type: "text/plain" });
-      })();
-
-      if (typeof ClipboardItem === "undefined") {
-        const blob = await blobPromise;
-        await navigator.clipboard.writeText(await blob.text());
-      } else {
-        await navigator.clipboard.write([
-          new ClipboardItem({ "text/plain": blobPromise }),
-        ]);
-      }
-
+      const nextContent = await getContent();
+      const markdown = formatMarkdownForCopy(nextContent, title);
+      await navigator.clipboard.writeText(markdown);
       setTemporaryCopyStatus("copied");
       closeMenu();
     } catch {
       setTemporaryCopyStatus("error");
     }
-  }, [closeMenu, content, fetchedContent, getContent, setTemporaryCopyStatus, title]);
+  }, [closeMenu, getContent, setTemporaryCopyStatus, title]);
 
   const chatgptUrl = pageUrl
     ? `https://chatgpt.com/?hints=search&q=${encodeURIComponent(`Read from ${pageUrl} so I can ask questions about it.`)}`
