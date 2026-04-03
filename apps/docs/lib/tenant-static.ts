@@ -33,7 +33,7 @@ import {
 } from "@/lib/navigation";
 import type { OpenApiEntry } from "@/lib/openapi";
 import { loadOpenApiRegistry } from "@/lib/openapi";
-import { toDocHref } from "@/lib/routes";
+import { toDocHref, toMarkdownDocHref } from "@/lib/routes";
 import { createTimedPromiseCache } from "@/lib/server-cache";
 import { getRequestProtocol } from "@/lib/tenancy";
 import type { TenantRequestContext } from "@/lib/tenant-utility-context";
@@ -476,10 +476,11 @@ export const buildTenantLlmsTxt = async (
     data.description ? `> ${data.description}` : null,
     "",
     `Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}`,
+    `Full content: ${origin}${toDocHref("llms-full.txt", basePath)}`,
     "",
     "## Docs",
     ...data.pages.map((page) => {
-      const url = `${origin}${toDocHref(page.slug, basePath)}`;
+      const url = `${origin}${toMarkdownDocHref(page.slug, basePath)}`;
       const desc = page.description ? `: ${page.description}` : "";
       return `- [${page.title}](${url})${desc}`;
     }),

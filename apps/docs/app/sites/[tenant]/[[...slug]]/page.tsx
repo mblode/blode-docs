@@ -80,7 +80,9 @@ export const generateMetadata = async ({
 
   const {
     config,
+    currentPath,
     hidden,
+    kind,
     noindex: pageNoindex,
     pageTitle,
     pageDescription,
@@ -108,10 +110,15 @@ export const generateMetadata = async ({
   const ogImage = config?.metadata?.ogImage;
   const favicon = config?.favicon;
   const noindex = pageNoindex || (hidden && config.seo?.indexing !== "all");
+  const markdownUrl =
+    (kind === "page" || kind === "openapi") && currentPath
+      ? `${canonicalOrigin}${toMarkdownDocHref(currentPath, canonicalBasePath)}`
+      : undefined;
 
   return {
     alternates: {
       canonical: `${canonicalOrigin}${fullCanonical}`,
+      ...(markdownUrl ? { types: { "text/markdown": markdownUrl } } : {}),
     },
     description: pageDescription ?? config?.description,
     icons: favicon ? { icon: favicon } : undefined,
