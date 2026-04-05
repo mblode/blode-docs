@@ -86,12 +86,12 @@ export const MobileNav = ({
       <PopoverTrigger asChild>
         <Button
           className={cn(
-            "extend-touch-target !p-0 h-8 touch-manipulation items-center justify-start gap-2.5 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
+            "extend-touch-target !p-0 -ml-3 size-10 touch-manipulation items-center justify-start gap-2.5 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
             className
           )}
           variant="ghost"
         >
-          <div className="relative flex h-8 w-4 items-center justify-center">
+          <div className="relative flex size-10 items-center justify-center">
             <div className="relative size-4">
               <span
                 className={cn(

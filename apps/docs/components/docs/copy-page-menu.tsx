@@ -2,7 +2,7 @@
 
 import { slugify } from "@repo/common";
 import {
-  Checkmark1Icon,
+  CheckIcon,
   ChevronDownSmallIcon,
   ClaudeaiIcon,
   CopySimpleIcon,
@@ -82,7 +82,7 @@ const getCopyDescription = (copyStatus: CopyStatus) => {
 };
 
 const getCopyIcon = (copyStatus: CopyStatus) =>
-  copyStatus === "copied" ? Checkmark1Icon : CopySimpleIcon;
+  copyStatus === "copied" ? CheckIcon : CopySimpleIcon;
 
 const MenuItem = ({
   children,
