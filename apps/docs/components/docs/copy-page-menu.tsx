@@ -163,21 +163,28 @@ export const CopyPageMenu = ({
   );
 
   useEffect(() => {
-    if (content || !contentUrl) return;
+    if (content || !contentUrl) {
+      return;
+    }
 
     const controller = new AbortController();
 
-    fetch(contentUrl, {
-      signal: controller.signal,
-      headers: { accept: MARKDOWN_ACCEPT },
-    })
-      .then((res) => (res.ok ? res.text() : null))
-      .then((text) => {
-        if (text) setFetchedContent(text);
-      })
-      .catch(() => {
+    const prefetch = async () => {
+      try {
+        const res = await fetch(contentUrl, {
+          headers: { accept: MARKDOWN_ACCEPT },
+          signal: controller.signal,
+        });
+        const text = res.ok ? await res.text() : null;
+        if (text) {
+          setFetchedContent(text);
+        }
+      } catch {
         // Ignore prefetch failures — the copy handler retries on demand
-      });
+      }
+    };
+
+    prefetch();
 
     return () => controller.abort();
   }, [content, contentUrl]);
@@ -231,10 +238,11 @@ export const CopyPageMenu = ({
       // between the tap and the clipboard call, so the old writeText path
       // fails when tapped before the pre-fetch finishes.
       if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
-        const blobPromise = getContent().then((text: string) => {
+        const blobPromise = (async () => {
+          const text = await getContent();
           const markdown = formatMarkdownForCopy(text, title);
           return new Blob([markdown], { type: "text/plain" });
-        });
+        })();
         const item = new ClipboardItem({ "text/plain": blobPromise });
         await navigator.clipboard.write([item]);
       } else {

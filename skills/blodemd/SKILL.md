@@ -71,13 +71,13 @@ BLODEMD_API_KEY=<key> npx blodemd push --project <slug>
 
 ## Authentication
 
-| Method | Command |
-|--------|---------|
-| Browser OAuth | `npx blodemd login` |
-| API key paste | `npx blodemd login --token` |
-| Environment variable | `BLODEMD_API_KEY=<key>` |
-| Check status | `npx blodemd whoami` |
-| Remove credentials | `npx blodemd logout` |
+| Method               | Command                     |
+| -------------------- | --------------------------- |
+| Browser OAuth        | `npx blodemd login`         |
+| API key paste        | `npx blodemd login --token` |
+| Environment variable | `BLODEMD_API_KEY=<key>`     |
+| Check status         | `npx blodemd whoami`        |
+| Remove credentials   | `npx blodemd logout`        |
 
 ## CI / GitHub Actions
 

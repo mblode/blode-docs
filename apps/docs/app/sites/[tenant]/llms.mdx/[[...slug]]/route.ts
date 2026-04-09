@@ -36,7 +36,7 @@ export const GET = async (
         "public, s-maxage=3600, stale-while-revalidate=86400",
       "Cache-Control": "public, max-age=3600",
       "Content-Type": "text/markdown; charset=utf-8",
-      "Vary": "accept",
+      Vary: "accept",
       "Vercel-CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",
       "X-Robots-Tag": "noindex, nofollow",

@@ -16,7 +16,7 @@ export const DocToc = ({
   return (
     <nav
       aria-label="Table of contents"
-      className="sticky top-[calc(var(--header-height,4rem)+1px)] z-30 ml-auto hidden h-[90svh] w-56 shrink-0 flex-col gap-4 overflow-hidden overscroll-none pb-8 xl:flex"
+      className="sticky top-[calc(var(--header-height)+1px)] z-30 ml-auto hidden h-[90svh] w-(--sidebar-width) flex-col gap-4 overflow-hidden overscroll-none pb-8 xl:flex"
     >
       <div className="no-scrollbar flex flex-col gap-8 overflow-y-auto px-8">
         <div className="flex flex-col gap-2 p-4 pt-0 text-sm">

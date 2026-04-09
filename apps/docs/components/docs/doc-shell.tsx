@@ -170,101 +170,101 @@ export const DocShell = ({
         <main id="main-content">{content}</main>
       ) : (
         <main
-          className={cn(
-            "flex scroll-mt-24 items-stretch gap-1 px-4 lg:px-8",
-            !showSidebar && "mx-auto max-w-[960px]"
-          )}
+          className="flex scroll-mt-24 items-stretch pb-8 text-[1.05rem] sm:text-[15px] xl:w-full"
           id="main-content"
+          style={{ "--sidebar-width": "14rem" } as React.CSSProperties}
         >
-          <div
-            className={cn(
-              "mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 py-6 text-neutral-800 lg:py-8 dark:text-neutral-300",
-              pageMode === "wide" ? "max-w-[60rem]" : "max-w-[40rem]"
-            )}
-          >
-            <div className="flex flex-col gap-2">
-              <Breadcrumbs basePath={basePath} breadcrumbs={breadcrumbs} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div
+              className={cn(
+                "mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 px-4 py-6 text-neutral-800 md:px-0 lg:py-8 dark:text-neutral-300",
+                pageMode === "wide" ? "max-w-[60rem]" : "max-w-[40rem]"
+              )}
+            >
               <div className="flex flex-col gap-2">
-                <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
-                  <h1 className="min-w-0 scroll-m-24 text-3xl font-semibold tracking-tight sm:text-3xl">
-                    {pageTitle}
-                    {deprecated ? (
-                      <span className="ml-3 inline-flex translate-y-[-2px] items-center rounded-md bg-yellow-100 px-2 py-0.5 align-middle text-xs font-medium text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
-                        Deprecated
-                      </span>
-                    ) : null}
-                  </h1>
-                  {headerContextualMenu ??
-                    (rawContent === undefined &&
-                    markdownHref === undefined ? null : (
-                      <CopyPageMenu
-                        content={markdownHref ? undefined : rawContent}
-                        contentUrl={markdownHref}
-                        key={`copy-${currentPath}`}
-                        title={pageTitle}
-                      />
-                    ))}
-                </div>
-                {pageDescription ? (
-                  <p className="text-[1.05rem] text-muted-foreground sm:text-balance sm:text-base md:max-w-[80%]">
-                    {pageDescription}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            <div className="grid min-w-0 grid-cols-1 gap-4.5 leading-relaxed [&_blockquote]:border-l-3 [&_blockquote]:border-primary [&_blockquote]:pl-3.5 [&_blockquote]:text-muted-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:text-[1.375rem] [&_h3]:font-semibold [&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-2 [&_td]:text-left [&_th]:border-b [&_th]:border-border [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_ul]:list-disc [&_ul]:pl-6">
-              {content}
-            </div>
-            {!hideFooterPagination && (prevPage || nextPage) ? (
-              <nav
-                className="flex w-full rounded-2xl bg-muted/50 p-1 text-sm"
-                id="pagination"
-              >
-                {prevPage ? (
-                  <Link
-                    className="group flex items-center justify-between gap-1.5 pl-3 pr-6"
-                    href={toDocHref(prevPage.path, basePath)}
-                  >
-                    <ChevronLeftIcon
-                      aria-hidden="true"
-                      className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
-                    />
-                    <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
-                      Previous
-                    </span>
-                  </Link>
-                ) : null}
-                {nextPage ? (
-                  <Link
-                    className="group ml-auto flex w-full min-w-0 flex-1"
-                    href={toDocHref(nextPage.path, basePath)}
-                  >
-                    <div className="flex flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border sm:h-16">
-                      <div className="flex min-w-0 flex-col items-end justify-center px-5">
-                        <span className="text-right font-semibold text-foreground/80">
-                          {nextPage.title}
+                <Breadcrumbs basePath={basePath} breadcrumbs={breadcrumbs} />
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                    <h1 className="min-w-0 scroll-m-24 text-3xl font-semibold tracking-tight sm:text-3xl">
+                      {pageTitle}
+                      {deprecated ? (
+                        <span className="ml-3 inline-flex translate-y-[-2px] items-center rounded-md bg-yellow-100 px-2 py-0.5 align-middle text-xs font-medium text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
+                          Deprecated
                         </span>
-                        {nextPage.description ? (
-                          <span className="hidden w-full truncate text-right text-muted-foreground lg:block lg:w-72">
-                            {nextPage.description}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="h-8 w-px bg-border/50" />
-                      <div className="flex items-center gap-1.5 pl-5 pr-3">
-                        <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
-                          Next
-                        </span>
-                        <ChevronRightIcon
-                          aria-hidden="true"
-                          className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
+                      ) : null}
+                    </h1>
+                    {headerContextualMenu ??
+                      (rawContent === undefined &&
+                      markdownHref === undefined ? null : (
+                        <CopyPageMenu
+                          content={markdownHref ? undefined : rawContent}
+                          contentUrl={markdownHref}
+                          key={`copy-${currentPath}`}
+                          title={pageTitle}
                         />
+                      ))}
+                  </div>
+                  {pageDescription ? (
+                    <p className="text-[1.05rem] text-muted-foreground sm:text-balance sm:text-base md:max-w-[80%]">
+                      {pageDescription}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="grid min-w-0 grid-cols-1 gap-4.5 leading-relaxed [&_blockquote]:border-l-3 [&_blockquote]:border-primary [&_blockquote]:pl-3.5 [&_blockquote]:text-muted-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:text-[1.375rem] [&_h3]:font-semibold [&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-2 [&_td]:text-left [&_th]:border-b [&_th]:border-border [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_ul]:list-disc [&_ul]:pl-6">
+                {content}
+              </div>
+              {!hideFooterPagination && (prevPage || nextPage) ? (
+                <nav
+                  className="flex w-full rounded-2xl bg-muted/50 p-1 text-sm"
+                  id="pagination"
+                >
+                  {prevPage ? (
+                    <Link
+                      className="group flex items-center justify-between gap-1.5 pl-3 pr-6"
+                      href={toDocHref(prevPage.path, basePath)}
+                    >
+                      <ChevronLeftIcon
+                        aria-hidden="true"
+                        className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
+                      />
+                      <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
+                        Previous
+                      </span>
+                    </Link>
+                  ) : null}
+                  {nextPage ? (
+                    <Link
+                      className="group ml-auto flex w-full min-w-0 flex-1"
+                      href={toDocHref(nextPage.path, basePath)}
+                    >
+                      <div className="flex flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border sm:h-16">
+                        <div className="flex min-w-0 flex-col items-end justify-center px-5">
+                          <span className="text-right font-semibold text-foreground/80">
+                            {nextPage.title}
+                          </span>
+                          {nextPage.description ? (
+                            <span className="hidden w-full truncate text-right text-muted-foreground lg:block lg:w-72">
+                              {nextPage.description}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="h-8 w-px bg-border/50" />
+                        <div className="flex items-center gap-1.5 pl-5 pr-3">
+                          <span className="font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
+                            Next
+                          </span>
+                          <ChevronRightIcon
+                            aria-hidden="true"
+                            className="size-3 text-muted-foreground/50 group-hover:text-muted-foreground"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ) : null}
-              </nav>
-            ) : null}
+                    </Link>
+                  ) : null}
+                </nav>
+              ) : null}
+            </div>
           </div>
           {hasToc ? (
             <DocToc contextualItems={contextualTocItems} toc={toc} />
