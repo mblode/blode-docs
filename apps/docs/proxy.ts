@@ -33,13 +33,13 @@ const TENANT_UTILITY_REWRITE_PATHS = {
   "/sitemap.xml": "/sitemap",
 } as const;
 
-const WELL_KNOWN_SKILLS_PREFIX = "/.well-known/skills/";
-const LLMS_SEGMENT_PREFIX = "/llms/";
+const WELL_KNOWN_SKILLS_SEGMENT = "/.well-known/skills/";
+const LLMS_SEGMENT_SEGMENT = "/llms/";
 
 const isTenantUtilityPath = (pathname: string) =>
   TENANT_UTILITY_SUFFIXES.some((suffix) => pathname.endsWith(suffix)) ||
-  pathname.startsWith(WELL_KNOWN_SKILLS_PREFIX) ||
-  (pathname.startsWith(LLMS_SEGMENT_PREFIX) && pathname.endsWith(".txt"));
+  pathname.includes(WELL_KNOWN_SKILLS_SEGMENT) ||
+  (pathname.includes(LLMS_SEGMENT_SEGMENT) && pathname.endsWith(".txt"));
 
 const getTenantUtilityRewritePath = (
   pathname: string,
@@ -48,12 +48,12 @@ const getTenantUtilityRewritePath = (
 ) => {
   const normalizedPath = stripBasePath(pathname, basePath);
 
-  if (normalizedPath.startsWith(WELL_KNOWN_SKILLS_PREFIX)) {
+  if (normalizedPath.startsWith(WELL_KNOWN_SKILLS_SEGMENT)) {
     return `/sites/${tenantSlug}${normalizedPath}`;
   }
 
   if (
-    normalizedPath.startsWith(LLMS_SEGMENT_PREFIX) &&
+    normalizedPath.startsWith(LLMS_SEGMENT_SEGMENT) &&
     normalizedPath.endsWith(".txt")
   ) {
     return `/sites/${tenantSlug}${normalizedPath}`;
@@ -266,7 +266,7 @@ export const proxy = async (request: NextRequest) => {
   const llmsBasePath = resolution.basePath ? `/${resolution.basePath}` : "";
   response.headers.set(
     "Link",
-    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt", </.well-known/skills/index.json>; rel="skills"`
+    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt", <${llmsBasePath}/.well-known/skills/index.json>; rel="skills"`
   );
   response.headers.set("X-Llms-Txt", `${llmsBasePath}/llms.txt`);
 

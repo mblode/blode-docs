@@ -552,7 +552,7 @@ export const getLlmPageText = async (tenant: Tenant, slug: string) => {
 
 export const buildTenantSkillsIndex = async (
   tenant: Tenant,
-  context: TenantRequestContext = {}
+  _context: TenantRequestContext = {}
 ) => {
   const data = await loadTenantUrlData(tenant);
   const slug = data.config.slug ?? tenant.slug;
@@ -707,7 +707,7 @@ export const getPageJson = async (
 
   if (contentEntry.frontmatter) {
     const fm = contentEntry.frontmatter as Record<string, unknown>;
-    if (fm.price !== undefined && fm.currency) {
+    if (fm.price !== undefined && fm.currency !== undefined) {
       result["@type"] = "Product";
       result.offers = {
         "@type": "Offer",

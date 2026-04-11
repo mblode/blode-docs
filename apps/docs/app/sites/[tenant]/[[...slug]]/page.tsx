@@ -276,11 +276,15 @@ const DocPage = async ({
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    description: shell.pageDescription,
-    headline: shell.pageTitle,
-    name: shell.pageTitle,
     url: canonicalUrl,
   };
+  if (shell.pageTitle) {
+    jsonLd.headline = shell.pageTitle;
+    jsonLd.name = shell.pageTitle;
+  }
+  if (shell.pageDescription) {
+    jsonLd.description = shell.pageDescription;
+  }
   if (markdownHref) {
     jsonLd.encoding = {
       "@type": "MediaObject",
