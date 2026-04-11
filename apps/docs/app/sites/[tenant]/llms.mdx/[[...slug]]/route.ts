@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { computeETag, handleIfNoneMatch } from "@/lib/etag";
 import { getLlmPageText } from "@/lib/tenant-static";
 import { getTenantBySlug } from "@/lib/tenants";
 
@@ -8,7 +9,7 @@ export const preferredRegion = "home";
 export const revalidate = 3600;
 
 export const GET = async (
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenant: string; slug?: string[] }> }
 ) => {
   const { slug = [], tenant: tenantSlug } = await params;
@@ -30,12 +31,20 @@ export const GET = async (
     `> Fetch the complete documentation index at: ${llmsTxtUrl}\n` +
     `> Use this file to discover all available pages before exploring further.\n\n`;
 
-  return new NextResponse(blockquote + content, {
+  const body = blockquote + content;
+  const etag = computeETag(body);
+  const notModified = handleIfNoneMatch(request, etag);
+  if (notModified) {
+    return notModified;
+  }
+
+  return new NextResponse(body, {
     headers: {
       "CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",
       "Cache-Control": "public, max-age=3600",
       "Content-Type": "text/markdown; charset=utf-8",
+      ETag: etag,
       Vary: "accept",
       "Vercel-CDN-Cache-Control":
         "public, s-maxage=3600, stale-while-revalidate=86400",

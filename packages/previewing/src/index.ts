@@ -39,6 +39,9 @@ export const PREBUILT_UTILITY_INDEX_PATH = "_utility-index.json";
 export const PREBUILT_UTILITY_SITEMAP_PATH = "_utility/sitemap.xml";
 export const PREBUILT_UTILITY_LLMS_PATH = "_utility/llms.txt";
 export const PREBUILT_UTILITY_LLMS_FULL_PATH = "_utility/llms-full.txt";
+export const PREBUILT_UTILITY_SKILLS_INDEX_PATH =
+  "_utility/skills-index.json";
+export const PREBUILT_UTILITY_SKILLS_MD_PREFIX = "_utility/skills/";
 export const UTILITY_DOCS_ROOT_TOKEN = "__BLODEMD_DOCS_ROOT__";
 export const LEGACY_PROJECT_NAME_FALLBACK_WARNING =
   "docs.json.slug is recommended. Falling back to docs.json.name as the deployment slug is deprecated.";
@@ -115,6 +118,7 @@ export interface UtilityIndex {
   description?: string;
   name: string;
   pages: UtilityPage[];
+  slug?: string;
 }
 
 export interface UtilityArtifact {
@@ -1223,6 +1227,7 @@ export const buildUtilityIndex = async (
     description: config.description,
     name: config.name,
     pages: sortedPages,
+    slug: config.slug,
   };
 };
 
@@ -1250,6 +1255,7 @@ export const buildUtilityArtifacts = (
     index.description ? `> ${index.description}` : null,
     "",
     `Sitemap: ${toUtilityTemplatedDocUrl("sitemap.xml")}`,
+    `Skills: ${UTILITY_DOCS_ROOT_TOKEN}/.well-known/skills/index.json`,
     "",
     "## Docs",
     ...index.pages.map((page) => {
@@ -1277,6 +1283,47 @@ ${index.pages
     )
     .join("\n\n");
 
+  const skillSlug = index.slug ?? slugify(index.name);
+  const skillDescription =
+    `${index.name} documentation. ${index.description ?? ""}`.trim();
+  const skillsIndex = JSON.stringify(
+    {
+      skills: [
+        {
+          description: skillDescription,
+          files: ["SKILL.md"],
+          name: skillSlug,
+        },
+      ],
+    },
+    null,
+    2
+  );
+
+  const topPages = index.pages.slice(0, 20);
+  const skillMdLines = [
+    "---",
+    `name: ${skillSlug}`,
+    `description: ${skillDescription} Use when working with ${index.name}, answering questions about its features, or helping users follow its guides.`,
+    "---",
+    "",
+    `# ${index.name}`,
+    "",
+    index.description ? `${index.description}\n` : "",
+    "## Documentation",
+    "",
+    `- Full docs index: ${UTILITY_DOCS_ROOT_TOKEN}/llms.txt`,
+    `- Complete docs content: ${UTILITY_DOCS_ROOT_TOKEN}/llms-full.txt`,
+    "- Append `.md` to any page URL for raw markdown",
+    "",
+    "## Key Pages",
+    "",
+    ...topPages.map((page) => {
+      const desc = page.description ? ` - ${page.description}` : "";
+      return `- [${page.title}](${toUtilityTemplatedDocUrl(page.slug)})${desc}`;
+    }),
+  ];
+
   return [
     {
       content: sitemap,
@@ -1292,6 +1339,16 @@ ${index.pages
       content: llmsFull,
       contentType: "text/plain; charset=utf-8",
       path: PREBUILT_UTILITY_LLMS_FULL_PATH,
+    },
+    {
+      content: skillsIndex,
+      contentType: "application/json; charset=utf-8",
+      path: PREBUILT_UTILITY_SKILLS_INDEX_PATH,
+    },
+    {
+      content: skillMdLines.filter((line) => line !== null).join("\n"),
+      contentType: "text/markdown; charset=utf-8",
+      path: `${PREBUILT_UTILITY_SKILLS_MD_PREFIX}${skillSlug}/SKILL.md`,
     },
     ...index.pages.map((page) => ({
       content: formatMarkdownPage(page.title, page.content),

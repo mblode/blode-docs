@@ -63,6 +63,12 @@ export const builtinOptions: Record<
     title: "Open in Devin",
     type: "link",
   },
+  gemini: {
+    description: "Ask questions about this page",
+    iconName: "GoogleColoredIcon",
+    title: "Open in Gemini",
+    type: "link",
+  },
   "devin-mcp": {
     description: "Install MCP server in Devin",
     iconName: "CodeAssistantIcon",
@@ -159,6 +165,9 @@ export const buildBuiltinUrl = (
     }
     case "aistudio": {
       return `https://aistudio.google.com/prompts/new_chat?q=${encoded(askPrompt(pageUrl))}`;
+    }
+    case "gemini": {
+      return `https://gemini.google.com/app?q=${encoded(askPrompt(pageUrl))}`;
     }
     case "devin": {
       return `https://app.devin.ai/sessions?url=${encoded(pageUrl)}`;

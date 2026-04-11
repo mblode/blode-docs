@@ -368,6 +368,7 @@ export const ContextualBuiltinOptionSchema = z.enum([
   "cursor",
   "devin",
   "devin-mcp",
+  "gemini",
   "grok",
   "mcp",
   "perplexity",

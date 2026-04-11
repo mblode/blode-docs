@@ -33,8 +33,13 @@ const TENANT_UTILITY_REWRITE_PATHS = {
   "/sitemap.xml": "/sitemap",
 } as const;
 
+const WELL_KNOWN_SKILLS_SEGMENT = "/.well-known/skills/";
+const LLMS_SEGMENT_SEGMENT = "/llms/";
+
 const isTenantUtilityPath = (pathname: string) =>
-  TENANT_UTILITY_SUFFIXES.some((suffix) => pathname.endsWith(suffix));
+  TENANT_UTILITY_SUFFIXES.some((suffix) => pathname.endsWith(suffix)) ||
+  pathname.includes(WELL_KNOWN_SKILLS_SEGMENT) ||
+  (pathname.includes(LLMS_SEGMENT_SEGMENT) && pathname.endsWith(".txt"));
 
 const getTenantUtilityRewritePath = (
   pathname: string,
@@ -42,6 +47,18 @@ const getTenantUtilityRewritePath = (
   tenantSlug: string
 ) => {
   const normalizedPath = stripBasePath(pathname, basePath);
+
+  if (normalizedPath.startsWith(WELL_KNOWN_SKILLS_SEGMENT)) {
+    return `/sites/${tenantSlug}${normalizedPath}`;
+  }
+
+  if (
+    normalizedPath.startsWith(LLMS_SEGMENT_SEGMENT) &&
+    normalizedPath.endsWith(".txt")
+  ) {
+    return `/sites/${tenantSlug}${normalizedPath}`;
+  }
+
   const utilityPath =
     TENANT_UTILITY_REWRITE_PATHS[
       normalizedPath as keyof typeof TENANT_UTILITY_REWRITE_PATHS
@@ -184,16 +201,31 @@ export const proxy = async (request: NextRequest) => {
     resolution.tenant.slug
   );
   const markdownSlug = getMarkdownExportSlug(pathname, resolution.basePath);
+  const acceptHeader = request.headers.get("accept") ?? "";
   const acceptsMarkdown =
+    !markdownSlug && acceptHeader.includes("text/markdown");
+  const acceptsJson =
     !markdownSlug &&
-    (request.headers.get("accept") ?? "").includes("text/markdown");
+    acceptHeader.includes("application/json") &&
+    !acceptHeader.includes("text/html");
   const effectiveMarkdownSlug =
     markdownSlug ??
     (acceptsMarkdown
       ? getMarkdownExportSlug(`${pathname}.md`, resolution.basePath)
       : null);
 
-  if (effectiveMarkdownSlug !== null && !pathname.includes("/llms.mdx/")) {
+  if (
+    acceptsJson &&
+    !utilityRewritePath &&
+    effectiveMarkdownSlug === null
+  ) {
+    const jsonSlug = stripBasePath(pathname, resolution.basePath).replace(
+      /^\//,
+      ""
+    );
+    const tenantPrefix = `/sites/${resolution.tenant.slug}`;
+    url.pathname = `${tenantPrefix}/api/page/${jsonSlug || "index"}`;
+  } else if (effectiveMarkdownSlug !== null && !pathname.includes("/llms.mdx/")) {
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
     url.pathname = `${tenantPrefix}/llms.mdx/${effectiveMarkdownSlug}`;
   } else if (utilityRewritePath) {
@@ -230,11 +262,11 @@ export const proxy = async (request: NextRequest) => {
   // Multi-tenant: same path may serve different content per Host or Accept header
   response.headers.set("Vary", "Host, accept");
 
-  // Advertise the llms.txt index to AI agents via standard HTTP headers
+  // Advertise the llms.txt index and skills to AI agents via standard HTTP headers
   const llmsBasePath = resolution.basePath ? `/${resolution.basePath}` : "";
   response.headers.set(
     "Link",
-    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt"`
+    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt", <${llmsBasePath}/.well-known/skills/index.json>; rel="skills"`
   );
   response.headers.set("X-Llms-Txt", `${llmsBasePath}/llms.txt`);
 

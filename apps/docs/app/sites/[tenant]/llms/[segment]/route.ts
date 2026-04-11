@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { computeETag, handleIfNoneMatch } from "@/lib/etag";
 import {
-  buildTenantLlmsFullTxt,
+  buildTenantLlmsSegment,
   getStaticTenantRequestContext,
 } from "@/lib/tenant-static";
 import { getTenantRequestContextFromUrl } from "@/lib/tenant-utility-context";
@@ -14,19 +14,28 @@ export const revalidate = 3600;
 
 export const GET = async (
   request: Request,
-  { params }: { params: Promise<{ tenant: string }> }
+  { params }: { params: Promise<{ tenant: string; segment: string }> }
 ) => {
-  const { tenant: tenantSlug } = await params;
+  const { tenant: tenantSlug, segment } = await params;
+
+  if (!segment.endsWith(".txt")) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const content = await buildTenantLlmsFullTxt(
-    tenant,
+  const segmentName = segment.replace(/\.txt$/, "");
+  const context =
     getTenantRequestContextFromUrl(new URL(request.url)) ??
-      getStaticTenantRequestContext(tenant)
-  );
+    getStaticTenantRequestContext(tenant);
+
+  const content = await buildTenantLlmsSegment(tenant, segmentName, context);
+  if (!content) {
+    return new NextResponse("Not found", { status: 404 });
+  }
 
   const etag = computeETag(content);
   const notModified = handleIfNoneMatch(request, etag);

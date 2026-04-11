@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ComponentProps } from "react";
 
 import { Accordion, AccordionGroup } from "./accordion";
+import { AgentInstructions } from "./agent-instructions";
 import { Badge } from "./badge";
 import { Callout, Check, Danger, Info, Note, Tip, Warning } from "./callout";
 import { Card } from "./card";
@@ -66,6 +67,7 @@ const MdxLink = ({
 export const mdxComponents: MDXComponents = {
   Accordion,
   AccordionGroup,
+  AgentInstructions,
   Badge,
   Callout,
   Card,

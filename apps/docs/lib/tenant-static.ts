@@ -31,6 +31,7 @@ import {
   flattenNav,
   getVisibleNavigation,
 } from "@/lib/navigation";
+import type { NavGroup } from "@/lib/navigation";
 import type { OpenApiEntry } from "@/lib/openapi";
 import { loadOpenApiRegistry } from "@/lib/openapi";
 import { toDocHref, toMarkdownDocHref } from "@/lib/routes";
@@ -207,6 +208,7 @@ const buildTenantUrlData = async (tenant: Tenant) => {
     hiddenSlugs,
     pages: [...new Set([...navPages, ...contentPages])],
     registry,
+    visibleNav,
   };
 };
 
@@ -452,7 +454,10 @@ Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 # LLM-friendly content
 # ${origin}${toDocHref("llms.txt", basePath)} - Index of all documentation pages
 # ${origin}${toDocHref("llms-full.txt", basePath)} - Full documentation content
-# Append .md to any page URL for raw markdown`;
+# Append .md to any page URL for raw markdown
+
+# Agent Skills
+# ${origin}/.well-known/skills/index.json - Discover installable agent skills`;
 };
 
 export const buildTenantLlmsTxt = async (
@@ -467,9 +472,23 @@ export const buildTenantLlmsTxt = async (
     return renderUtilityTemplate(prebuilt, tenant, context);
   }
 
+  const urlData = await loadTenantUrlData(tenant);
   const data = await loadTenantUtilityIndex(tenant);
   const origin = getCanonicalOrigin(tenant, context);
   const basePath = getCanonicalDocBasePath(tenant, context);
+
+  const segments = getNavGroupSegments(urlData);
+  const segmentLines =
+    segments.size > 0
+      ? [
+          "",
+          "## Segments",
+          ...[...segments.keys()].map(
+            (seg) =>
+              `- [${seg}](${origin}${toDocHref(`llms/${seg}.txt`, basePath)})`
+          ),
+        ]
+      : [];
 
   const lines = [
     `# ${data.name}`,
@@ -477,6 +496,8 @@ export const buildTenantLlmsTxt = async (
     "",
     `Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}`,
     `Full content: ${origin}${toDocHref("llms-full.txt", basePath)}`,
+    `Skills: ${origin}/.well-known/skills/index.json`,
+    ...segmentLines,
     "",
     "## Docs",
     ...data.pages.map((page) => {
@@ -527,4 +548,184 @@ export const getLlmPageText = async (tenant: Tenant, slug: string) => {
     return null;
   }
   return formatMarkdownPage(page.title, page.content);
+};
+
+export const buildTenantSkillsIndex = async (
+  tenant: Tenant,
+  _context: TenantRequestContext = {}
+) => {
+  const data = await loadTenantUrlData(tenant);
+  const slug = data.config.slug ?? tenant.slug;
+  const description = data.config.description ?? "";
+
+  const skills = [
+    {
+      description: `${data.config.name} documentation. ${description}`.trim(),
+      files: ["SKILL.md"],
+      name: slug,
+    },
+  ];
+
+  return JSON.stringify({ skills }, null, 2);
+};
+
+export const buildTenantSkillMd = async (
+  tenant: Tenant,
+  skillName: string,
+  context: TenantRequestContext = {}
+) => {
+  const data = await loadTenantUrlData(tenant);
+  const slug = data.config.slug ?? tenant.slug;
+
+  if (skillName !== slug) {
+    return null;
+  }
+
+  const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
+  const description = data.config.description ?? "";
+
+  const lines = [
+    "---",
+    `name: ${slug}`,
+    `description: ${data.config.name} documentation. ${description} Use when working with ${data.config.name}, answering questions about its features, or helping users follow its guides.`.trim(),
+    "---",
+    "",
+    `# ${data.config.name}`,
+    "",
+    description ? `${description}\n` : "",
+    "## Documentation",
+    "",
+    `- Full docs index: ${origin}${toDocHref("llms.txt", basePath)}`,
+    `- Complete docs content: ${origin}${toDocHref("llms-full.txt", basePath)}`,
+    `- Append \`.md\` to any page URL for raw markdown`,
+    "",
+    "## Key Pages",
+    "",
+    ...resolveLlmPages(data)
+      .slice(0, 20)
+      .map((page) => {
+        const url = `${origin}${toMarkdownDocHref(page.slug, basePath)}`;
+        const desc = page.description ? ` - ${page.description}` : "";
+        return `- [${page.title}](${url})${desc}`;
+      }),
+  ];
+
+  return lines.filter((line) => line !== null).join("\n");
+};
+
+const getNavGroupSegments = (
+  data: Awaited<ReturnType<typeof loadTenantUrlData>>
+): Map<string, Set<string>> => {
+  const segments = new Map<string, Set<string>>();
+  for (const entry of data.visibleNav) {
+    if (entry.type !== "group") {
+      continue;
+    }
+    const group = entry as NavGroup;
+    const segmentSlug = slugify(group.title);
+    const pageSlugs = new Set(
+      flattenNav([group]).map((page) => page.path)
+    );
+    if (pageSlugs.size > 0) {
+      segments.set(segmentSlug, pageSlugs);
+    }
+  }
+  return segments;
+};
+
+export const buildTenantLlmsSegment = async (
+  tenant: Tenant,
+  segmentName: string,
+  context: TenantRequestContext = {}
+): Promise<string | null> => {
+  const data = await loadTenantUrlData(tenant);
+  const segments = getNavGroupSegments(data);
+  const segmentSlugs = segments.get(segmentName);
+  if (!segmentSlugs) {
+    return null;
+  }
+
+  const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
+  const utilityIndex = await loadTenantUtilityIndex(tenant);
+
+  const segmentPages = utilityIndex.pages.filter((page) =>
+    segmentSlugs.has(page.slug)
+  );
+
+  if (segmentPages.length === 0) {
+    return null;
+  }
+
+  const groupTitle =
+    [...data.visibleNav].find(
+      (entry) => entry.type === "group" && slugify(entry.title) === segmentName
+    )?.title ?? segmentName;
+
+  const parts = segmentPages.map((page) => {
+    const url = `${origin}${toDocHref(page.slug, basePath)}`;
+    return formatMarkdownPageSection(page.title, url, page.content);
+  });
+
+  return [
+    `# ${data.config.name} - ${groupTitle}`,
+    `> Segment of ${origin}${toDocHref("llms-full.txt", basePath)}`,
+    "",
+    ...parts,
+  ].join("\n\n");
+};
+
+export const listTenantLlmsSegments = async (
+  tenant: Tenant
+): Promise<string[]> => {
+  const data = await loadTenantUrlData(tenant);
+  return [...getNavGroupSegments(data).keys()];
+};
+
+export const getPageJson = async (
+  tenant: Tenant,
+  slug: string
+): Promise<Record<string, unknown> | null> => {
+  const data = await loadTenantUrlData(tenant);
+  const contentEntry = data.contentIndex.bySlug.get(slug);
+  if (!contentEntry || contentEntry.kind !== "entry") {
+    return null;
+  }
+
+  const basePath = tenant.pathPrefix ? `/${tenant.pathPrefix}` : "";
+  const url = `https://${tenant.primaryDomain}${toDocHref(slug, basePath)}`;
+  const markdownUrl = `https://${tenant.primaryDomain}${toMarkdownDocHref(slug, basePath)}`;
+
+  const result: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    description: contentEntry.description,
+    name: contentEntry.title,
+    url,
+  };
+
+  if (contentEntry.frontmatter) {
+    const fm = contentEntry.frontmatter as Record<string, unknown>;
+    if (fm.price !== undefined && fm.currency !== undefined) {
+      result["@type"] = "Product";
+      result.offers = {
+        "@type": "Offer",
+        availability: "https://schema.org/InStock",
+        price: fm.price,
+        priceCurrency: fm.currency,
+      };
+      if (fm.sku) {
+        result.sku = fm.sku;
+      }
+    }
+  }
+
+  result.encoding = {
+    "@type": "MediaObject",
+    contentUrl: markdownUrl,
+    encodingFormat: "text/markdown",
+  };
+
+  return result;
 };
