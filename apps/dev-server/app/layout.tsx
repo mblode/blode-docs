@@ -29,7 +29,7 @@ export default function RootLayout({
       className={`${glide.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="relative flex w-full flex-col justify-center overflow-x-hidden scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*14)]">
+      <body className="relative flex w-full flex-col justify-center overflow-x-hidden scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*16)]">
         <DevReloadScript />
         <Providers>{children}</Providers>
       </body>
