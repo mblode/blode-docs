@@ -16,14 +16,14 @@ const ICONS = {
   cross: {
     opacity: [1, 1, 0] as const,
     paths: [
-      "M9.82843 4.17157L4.17157 9.82843",
-      "M4.17157 4.17157L9.82843 9.82843",
+      "M3 3L11 11",
+      "M11 3L3 11",
       "M7 7L7 7",
     ] as const,
   },
   menu: {
     opacity: [1, 1, 1] as const,
-    paths: ["M2.5 4L11.5 4", "M2.5 7L11.5 7", "M2.5 10L11.5 10"] as const,
+    paths: ["M1 3.5L13 3.5", "M1 7L13 7", "M1 10.5L13 10.5"] as const,
   },
 } as const;
 
