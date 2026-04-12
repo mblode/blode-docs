@@ -275,7 +275,7 @@ const DocPage = async ({
   );
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "TechArticle",
+    "@type": "WebPage",
     url: canonicalUrl,
   };
   if (shell.pageTitle) {
