@@ -16,14 +16,14 @@ const ICONS = {
   cross: {
     opacity: [1, 1, 0] as const,
     paths: [
-      "M3 3L11 11",
-      "M11 3L3 11",
+      "M2.5 2.5L11.5 11.5",
+      "M11.5 2.5L2.5 11.5",
       "M7 7L7 7",
     ] as const,
   },
   menu: {
     opacity: [1, 1, 1] as const,
-    paths: ["M1 3.5L13 3.5", "M1 7L13 7", "M1 10.5L13 10.5"] as const,
+    paths: ["M1 2.5L13 2.5", "M1 7L13 7", "M1 11.5L13 11.5"] as const,
   },
 } as const;
 
@@ -37,7 +37,7 @@ const instantTransition = { duration: 0 };
 export const MorphIcon = ({
   icon,
   size = 32,
-  strokeWidth = 1.5,
+  strokeWidth = 2,
   className,
   style,
   ...props
