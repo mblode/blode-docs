@@ -4,7 +4,7 @@ export const Video = ({ src }: { src: string }) => (
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
       className="absolute inset-0 h-full w-full border-0"
-      sandbox="allow-popups allow-presentation allow-scripts"
+      sandbox="allow-popups allow-presentation allow-same-origin allow-scripts"
       src={src}
       title="Video"
     />

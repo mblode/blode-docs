@@ -45,7 +45,7 @@ export const CodeBlock = ({
     <figure data-rehype-pretty-code-figure="">
       <pre
         className={cn(
-          "no-scrollbar min-w-0 overflow-x-auto overflow-y-auto overscroll-y-auto overscroll-x-contain px-4 py-3.5 outline-none has-[[data-slot=tabs]]:p-0 has-[[data-highlighted-line]]:px-0 has-[[data-line-numbers]]:px-0",
+          "no-scrollbar min-w-0 overflow-x-auto overflow-y-auto overscroll-y-auto overscroll-x-contain pl-4 pr-12 py-3.5 outline-none has-[[data-slot=tabs]]:p-0 has-[[data-highlighted-line]]:pl-0 has-[[data-line-numbers]]:pl-0",
           className
         )}
         style={preStyle}
