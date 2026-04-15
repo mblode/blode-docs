@@ -397,10 +397,10 @@
   [data-line],
   .shiki .line {
     display: inline-block;
-    width: 100%;
     min-height: calc(var(--spacing) * 1);
     padding-top: calc(var(--spacing) * 0.5);
     padding-bottom: calc(var(--spacing) * 0.5);
+    padding-right: calc(var(--spacing) * 10);
   }
 
   [data-line] span,
