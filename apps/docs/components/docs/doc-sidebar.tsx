@@ -9,6 +9,8 @@ import type { NavEntry, NavPage } from "@/lib/navigation";
 import { isExternalHref, toDocHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
+import { SidebarScrollArea } from "./sidebar-scroll-area";
+
 const MENU_BUTTON_CLASS =
   "relative flex min-h-[30px] items-center gap-2 overflow-visible rounded-md border border-transparent px-2 text-[0.8rem] font-medium transition-colors hover:bg-accent/70 hover:text-foreground";
 
@@ -81,6 +83,7 @@ const NavPageLink = ({
     return (
       <a
         className={className}
+        data-active={isActive || undefined}
         href={href}
         rel="noopener noreferrer"
         target="_blank"
@@ -91,7 +94,7 @@ const NavPageLink = ({
   }
 
   return (
-    <Link className={className} href={href}>
+    <Link className={className} data-active={isActive || undefined} href={href}>
       {linkContent}
     </Link>
   );
@@ -143,7 +146,7 @@ export const DocSidebar = ({
       <div className="h-9" />
       <div className="absolute top-8 z-10 h-8 w-full shrink-0 bg-gradient-to-b from-background via-background/80 to-background/50 blur-xs" />
       <div className="absolute top-12 right-2 bottom-0 hidden h-full w-px bg-gradient-to-b from-transparent via-border to-transparent lg:flex" />
-      <div className="no-scrollbar mx-auto flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2">
+      <SidebarScrollArea className="no-scrollbar mx-auto flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2">
         {anchors?.length ? (
           <Section paddedTop title="Pinned">
             <ul className="space-y-1">
@@ -205,7 +208,7 @@ export const DocSidebar = ({
           );
         })}
         <div className="sticky -bottom-1 z-10 h-16 shrink-0 bg-gradient-to-t from-background via-background/80 to-background/50 blur-xs" />
-      </div>
+      </SidebarScrollArea>
     </aside>
   );
 };
