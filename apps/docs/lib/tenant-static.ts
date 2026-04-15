@@ -460,6 +460,24 @@ Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 # ${origin}/.well-known/skills/index.json - Discover installable agent skills`;
 };
 
+const getNavGroupSegments = (
+  data: Awaited<ReturnType<typeof loadTenantUrlData>>
+): Map<string, Set<string>> => {
+  const segments = new Map<string, Set<string>>();
+  for (const entry of data.visibleNav) {
+    if (entry.type !== "group") {
+      continue;
+    }
+    const group = entry as NavGroup;
+    const segmentSlug = slugify(group.title);
+    const pageSlugs = new Set(flattenNav([group]).map((page) => page.path));
+    if (pageSlugs.size > 0) {
+      segments.set(segmentSlug, pageSlugs);
+    }
+  }
+  return segments;
+};
+
 export const buildTenantLlmsTxt = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
@@ -612,26 +630,6 @@ export const buildTenantSkillMd = async (
   ];
 
   return lines.filter((line) => line !== null).join("\n");
-};
-
-const getNavGroupSegments = (
-  data: Awaited<ReturnType<typeof loadTenantUrlData>>
-): Map<string, Set<string>> => {
-  const segments = new Map<string, Set<string>>();
-  for (const entry of data.visibleNav) {
-    if (entry.type !== "group") {
-      continue;
-    }
-    const group = entry as NavGroup;
-    const segmentSlug = slugify(group.title);
-    const pageSlugs = new Set(
-      flattenNav([group]).map((page) => page.path)
-    );
-    if (pageSlugs.size > 0) {
-      segments.set(segmentSlug, pageSlugs);
-    }
-  }
-  return segments;
 };
 
 export const buildTenantLlmsSegment = async (

@@ -214,18 +214,17 @@ export const proxy = async (request: NextRequest) => {
       ? getMarkdownExportSlug(`${pathname}.md`, resolution.basePath)
       : null);
 
-  if (
-    acceptsJson &&
-    !utilityRewritePath &&
-    effectiveMarkdownSlug === null
-  ) {
+  if (acceptsJson && !utilityRewritePath && effectiveMarkdownSlug === null) {
     const jsonSlug = stripBasePath(pathname, resolution.basePath).replace(
       /^\//,
       ""
     );
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
     url.pathname = `${tenantPrefix}/api/page/${jsonSlug || "index"}`;
-  } else if (effectiveMarkdownSlug !== null && !pathname.includes("/llms.mdx/")) {
+  } else if (
+    effectiveMarkdownSlug !== null &&
+    !pathname.includes("/llms.mdx/")
+  ) {
     const tenantPrefix = `/sites/${resolution.tenant.slug}`;
     url.pathname = `${tenantPrefix}/llms.mdx/${effectiveMarkdownSlug}`;
   } else if (utilityRewritePath) {

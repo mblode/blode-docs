@@ -93,7 +93,11 @@ export const MobileNav = ({
           variant="ghost"
         >
           <div className="relative flex size-10 items-center justify-center">
-            <MorphIcon icon={open ? "cross" : "menu"} size={16} strokeWidth={2} />
+            <MorphIcon
+              icon={open ? "cross" : "menu"}
+              size={16}
+              strokeWidth={2}
+            />
             <span className="sr-only">Toggle Menu</span>
           </div>
         </Button>

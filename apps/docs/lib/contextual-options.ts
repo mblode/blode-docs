@@ -63,16 +63,16 @@ export const builtinOptions: Record<
     title: "Open in Devin",
     type: "link",
   },
-  gemini: {
-    description: "Ask questions about this page",
-    iconName: "GoogleColoredIcon",
-    title: "Open in Gemini",
-    type: "link",
-  },
   "devin-mcp": {
     description: "Install MCP server in Devin",
     iconName: "CodeAssistantIcon",
     title: "Connect to Devin",
+    type: "link",
+  },
+  gemini: {
+    description: "Ask questions about this page",
+    iconName: "GoogleColoredIcon",
+    title: "Open in Gemini",
     type: "link",
   },
   grok: {

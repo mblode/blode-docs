@@ -14,8 +14,8 @@ export const handleIfNoneMatch = (
   const ifNoneMatch = request.headers.get("if-none-match");
   if (ifNoneMatch && ifNoneMatch === etag) {
     return new NextResponse(null, {
-      status: 304,
       headers: { ETag: etag },
+      status: 304,
     });
   }
   return null;

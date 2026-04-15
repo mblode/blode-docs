@@ -269,10 +269,11 @@ const DocPage = async ({
   }
 
   const canonicalOrigin = getCanonicalOrigin(shell.tenant, requestContext);
-  const canonicalUrl = `${canonicalOrigin}${basePath}${slugKey ? `/${slugKey}` : "/"}`.replaceAll(
-    /\/+/g,
-    "/"
-  );
+  const canonicalUrl =
+    `${canonicalOrigin}${basePath}${slugKey ? `/${slugKey}` : "/"}`.replaceAll(
+      /\/+/g,
+      "/"
+    );
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "WebPage",

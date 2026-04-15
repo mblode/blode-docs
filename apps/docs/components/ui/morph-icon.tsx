@@ -15,11 +15,7 @@ interface MorphIconProps extends React.SVGAttributes<SVGSVGElement> {
 const ICONS = {
   cross: {
     opacity: [1, 1, 0] as const,
-    paths: [
-      "M2.5 2.5L11.5 11.5",
-      "M11.5 2.5L2.5 11.5",
-      "M7 7L7 7",
-    ] as const,
+    paths: ["M2.5 2.5L11.5 11.5", "M11.5 2.5L2.5 11.5", "M7 7L7 7"] as const,
   },
   menu: {
     opacity: [1, 1, 1] as const,
