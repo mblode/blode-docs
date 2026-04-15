@@ -51,13 +51,14 @@ describe("route helpers", () => {
   });
 
   it("builds markdown export hrefs for root and nested pages", () => {
-    expect(toMarkdownDocHref("index")).toBe("/.md");
-    expect(toMarkdownDocHref("index", "/docs")).toBe("/docs.md");
+    expect(toMarkdownDocHref("index")).toBe("/index.md");
+    expect(toMarkdownDocHref("index", "/docs")).toBe("/docs/index.md");
     expect(toMarkdownDocHref("cli/usage", "/docs")).toBe("/docs/cli/usage.md");
   });
 
   it("strips public markdown export extensions from page paths", () => {
-    expect(getMarkdownExportSourcePath("/.md")).toBe("/");
+    expect(getMarkdownExportSourcePath("/index.md")).toBe("/index");
+    expect(getMarkdownExportSourcePath("/docs/index.md")).toBe("/docs/index");
     expect(getMarkdownExportSourcePath("/docs/cli/usage.md")).toBe(
       "/docs/cli/usage"
     );
@@ -68,11 +69,13 @@ describe("route helpers", () => {
   });
 
   it("derives tenant-relative markdown slugs from exported page paths", () => {
-    expect(getMarkdownExportSlug("/.md")).toBe("");
-    expect(getMarkdownExportSlug("/docs.md", "/docs")).toBe("");
+    expect(getMarkdownExportSlug("/index.md")).toBe("index");
+    expect(getMarkdownExportSlug("/docs/index.md", "/docs")).toBe("index");
     expect(getMarkdownExportSlug("/docs/cli/usage.md", "/docs")).toBe(
       "cli/usage"
     );
-    expect(getMarkdownExportSlug("/example.md", "/example")).toBe("");
+    expect(getMarkdownExportSlug("/example/index.md", "/example")).toBe(
+      "index"
+    );
   });
 });

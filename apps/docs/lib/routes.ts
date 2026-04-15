@@ -27,7 +27,11 @@ export const toDocHref = (path: string, basePath = "") => {
 
 export const toMarkdownDocHref = (path: string, basePath = "") => {
   const href = toDocHref(path, basePath);
-  return href === "/" ? "/.md" : `${href}.md`;
+  // Index pages use /index.md, not just .md appended to the path
+  if (href === "/" || href === basePath) {
+    return `${href}/index.md`.replaceAll(/\/+/g, "/");
+  }
+  return `${href}.md`;
 };
 
 export const getMarkdownExportSourcePath = (pathname: string) => {
