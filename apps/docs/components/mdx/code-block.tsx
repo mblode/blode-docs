@@ -52,6 +52,11 @@ export const CodeBlock = ({
         tabIndex={tabIndex ?? 0}
         {...props}
       >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 right-0 bottom-0 z-[9] w-16 bg-gradient-to-r from-transparent to-code print:hidden"
+          data-slot="fade-overlay"
+        />
         <Button
           className="absolute top-3 right-2 z-10 size-7 bg-code hover:opacity-100 focus-visible:opacity-100"
           data-copied={copied}

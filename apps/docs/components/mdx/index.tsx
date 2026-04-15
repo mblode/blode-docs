@@ -14,6 +14,7 @@ import { Column, Columns } from "./columns";
 import { Expandable } from "./expandable";
 import { Frame } from "./frame";
 import { Icon } from "./icon";
+import { Iframe } from "./iframe";
 import { Installer } from "./installer";
 import { Panel } from "./panel";
 import { ParamField } from "./param-field";
@@ -80,6 +81,7 @@ export const mdxComponents: MDXComponents = {
   Expandable,
   Frame,
   Icon,
+  Iframe,
   Info,
   Installer,
   Note,
