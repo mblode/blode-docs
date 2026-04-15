@@ -442,9 +442,6 @@ export const Search = ({ basePath }: { basePath: string }) => {
       >
         <span className="hidden lg:inline-flex">Search documentation...</span>
         <span className="inline-flex lg:hidden">Search...</span>
-        <span className="ml-auto hidden pr-3 text-[11px] text-muted-foreground sm:inline-flex">
-          Cmd K
-        </span>
       </button>
       <Dialog onOpenChange={handleOpenChange} open={open}>
         <DialogContent
