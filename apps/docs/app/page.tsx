@@ -56,7 +56,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Button size="lg" asChild>
-                <a href="https://docs.blode.md">Get started</a>
+                <a href="https://blode.md/docs">Get started</a>
               </Button>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function HomePage() {
             </div>
             <div className="mt-12">
               <Button size="lg" asChild>
-                <a href="https://docs.blode.md">Read the docs</a>
+                <a href="https://blode.md/docs">Read the docs</a>
               </Button>
             </div>
           </div>
