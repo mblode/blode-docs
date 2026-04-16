@@ -1,4 +1,11 @@
-import { apiKeys, deployments, domains, projects, users } from "../schema.js";
+import {
+  apiKeys,
+  deployments,
+  domains,
+  gitConnections,
+  projects,
+  users,
+} from "../schema.js";
 
 export const userSelect = {
   authId: users.authId,
@@ -59,4 +66,17 @@ export const apiKeySelect = {
 export const apiKeyAuthSelect = {
   ...apiKeySelect,
   tokenHash: apiKeys.tokenHash,
+} as const;
+
+export const gitConnectionSelect = {
+  accountLogin: gitConnections.accountLogin,
+  branch: gitConnections.branch,
+  createdAt: gitConnections.createdAt,
+  docsPath: gitConnections.docsPath,
+  id: gitConnections.id,
+  installationId: gitConnections.installationId,
+  projectId: gitConnections.projectId,
+  provider: gitConnections.provider,
+  repository: gitConnections.repository,
+  updatedAt: gitConnections.updatedAt,
 } as const;

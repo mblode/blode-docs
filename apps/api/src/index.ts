@@ -10,6 +10,8 @@ import { apiKeys } from "./routes/api-keys";
 import { auth } from "./routes/auth";
 import { deployments } from "./routes/deployments";
 import { domains } from "./routes/domains";
+import { githubInstall, projectGit } from "./routes/git";
+import { githubWebhook } from "./routes/github-webhook";
 import { projects } from "./routes/projects";
 import { tenants } from "./routes/tenants";
 
@@ -48,6 +50,9 @@ app.route("/projects", projects);
 app.route("/projects", domains);
 app.route("/projects", deployments);
 app.route("/projects", apiKeys);
+app.route("/projects", projectGit);
+app.route("/git", githubInstall);
+app.route("/webhooks/github", githubWebhook);
 
 export { app };
 export type AppType = typeof app;

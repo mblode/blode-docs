@@ -1,4 +1,5 @@
 import {
+  bigint,
   integer,
   pgEnum,
   pgTable,
@@ -104,6 +105,29 @@ export const deployments = pgTable("deployments", {
   status: deploymentStatusEnum("status").default("queued").notNull(),
   updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
 });
+
+export const gitProviderEnum = pgEnum("git_provider", ["github"]);
+
+export type GitProvider = (typeof gitProviderEnum.enumValues)[number];
+
+export const gitConnections = pgTable(
+  "git_connections",
+  {
+    accountLogin: text("account_login").notNull(),
+    branch: text("branch").default("main").notNull(),
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    docsPath: text("docs_path").default("docs").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    installationId: bigint("installation_id", { mode: "number" }).notNull(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    provider: gitProviderEnum("provider").default("github").notNull(),
+    repository: text("repository").notNull(),
+    updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("git_connections_project_id_key").on(table.projectId)]
+);
 
 export const apiKeys = pgTable(
   "api_keys",

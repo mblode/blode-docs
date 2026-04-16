@@ -2,6 +2,7 @@ import type {
   ApiKey,
   Deployment,
   Domain,
+  GitConnection,
   Project,
   User,
 } from "@repo/contracts";
@@ -9,6 +10,7 @@ import type {
   ApiKeyRecord,
   DeploymentRecord,
   DomainRecord,
+  GitConnectionRecord,
   ProjectRecord,
   UserRecord,
 } from "@repo/db";
@@ -70,4 +72,19 @@ export const mapApiKey = (record: ApiKeyRecord): ApiKey => ({
   prefix: record.prefix,
   projectId: record.projectId,
   revokedAt: record.revokedAt ? toIso(record.revokedAt) : undefined,
+});
+
+export const mapGitConnection = (
+  record: GitConnectionRecord
+): GitConnection => ({
+  accountLogin: record.accountLogin,
+  branch: record.branch,
+  createdAt: toIso(record.createdAt),
+  docsPath: record.docsPath,
+  id: record.id,
+  installationId: record.installationId,
+  projectId: record.projectId,
+  provider: record.provider,
+  repository: record.repository,
+  updatedAt: toIso(record.updatedAt),
 });

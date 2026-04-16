@@ -1,8 +1,7 @@
 "use client";
 
-import { EyeOpenIcon, EyeSlashIcon } from "blode-icons-react";
 import Link from "next/link";
-import { useActionState, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,38 +11,44 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { FieldError, FieldGroup } from "@/components/ui/field";
 import { createSupabaseClient } from "@/lib/supabase";
 
 import { approveOrRedirect, formatAuthorizationError } from "../client-utils";
-import { withSearchParams } from "../search-params";
 
 interface ConsentFormProps {
   authorizationId: string | null;
-  searchParamsString: string;
+  errorMessage: string | null;
 }
+
+const GitHubMark = () => (
+  <svg
+    aria-hidden
+    height="20"
+    viewBox="0 0 24 24"
+    width="20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.18c-3.2.69-3.88-1.37-3.88-1.37-.52-1.34-1.27-1.7-1.27-1.7-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.74 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.19a11.07 11.07 0 0 1 5.79 0c2.21-1.5 3.18-1.19 3.18-1.19.62 1.58.23 2.75.11 3.04.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.06.78 2.15v3.18c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"
+      fill="currentColor"
+    />
+  </svg>
+);
 
 export const ConsentForm = ({
   authorizationId,
-  searchParamsString,
+  errorMessage,
 }: ConsentFormProps) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const togglePassword = useCallback(
-    () => setShowPassword((prev) => !prev),
-    []
-  );
   const [session, setSession] = useState<{
     checked: boolean;
     email: string | null;
   }>({ checked: false, email: null });
-
   const [autoApproveError, setAutoApproveError] = useState<string | null>(null);
+  const [signInError, setSignInError] = useState<string | null>(errorMessage);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+
   const handleSignOut = useCallback(async () => {
     const supabase = createSupabaseClient();
     await supabase.auth.signOut();
@@ -58,10 +63,10 @@ export const ConsentForm = ({
       } = await supabase.auth.getSession();
 
       if (currentSession?.user?.email && authorizationId) {
-        const errorMessage = await approveOrRedirect(authorizationId);
-        if (errorMessage) {
+        const errorText = await approveOrRedirect(authorizationId);
+        if (errorText) {
           setSession({ checked: true, email: currentSession.user.email });
-          setAutoApproveError(errorMessage);
+          setAutoApproveError(errorText);
           return;
         }
 
@@ -77,48 +82,44 @@ export const ConsentForm = ({
     checkSession();
   }, [authorizationId]);
 
-  const [approveError, approveAction, isApproving] = useActionState(
-    async () => {
-      if (!authorizationId) {
-        return "Missing authorization_id.";
-      }
+  const handleApprove = useCallback(async () => {
+    if (!authorizationId) {
+      setAutoApproveError("Missing authorization_id.");
+      return;
+    }
+    setIsApproving(true);
+    const errorText = await approveOrRedirect(authorizationId);
+    setIsApproving(false);
+    if (errorText) {
+      setAutoApproveError(errorText);
+    }
+  }, [authorizationId]);
 
-      return await approveOrRedirect(authorizationId);
-    },
-    null
-  );
+  const handleGitHubSignIn = useCallback(async () => {
+    setSignInError(null);
+    setIsSigningIn(true);
+    const supabase = createSupabaseClient();
+    const redirect = new URL("/oauth/callback", window.location.origin);
+    if (authorizationId) {
+      redirect.searchParams.set("authorization_id", authorizationId);
+    } else {
+      redirect.searchParams.set("redirect_to", "/app");
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      options: {
+        redirectTo: redirect.toString(),
+        scopes: "read:user user:email",
+      },
+      provider: "github",
+    });
+    if (error) {
+      setSignInError(error.message);
+      setIsSigningIn(false);
+    }
+  }, [authorizationId]);
 
-  const [signInError, signInAction, isSigningIn] = useActionState(
-    async (_previousState: string | null, formData: FormData) => {
-      const email = formData.get("email") as string;
-      const pw = formData.get("password") as string;
-
-      if (!email || !pw) {
-        return "Email and password are required.";
-      }
-
-      const supabase = createSupabaseClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password: pw,
-      });
-
-      if (authError) {
-        return authError.message;
-      }
-
-      if (!authorizationId) {
-        return "Missing authorization_id.";
-      }
-
-      return await approveOrRedirect(authorizationId);
-    },
-    null
-  );
-
-  const signUpHref = withSearchParams("/oauth/sign-up", searchParamsString);
   const isAuthenticated = session.checked && session.email !== null;
-  const displayError = approveError ?? autoApproveError;
+  const displayError = autoApproveError;
 
   if (!session.checked) {
     return (
@@ -126,101 +127,71 @@ export const ConsentForm = ({
     );
   }
 
+  let description = "Sign in with GitHub to get started";
+  if (isAuthenticated) {
+    description = authorizationId
+      ? "Authorize the CLI to access your account"
+      : "Continue to your dashboard";
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-[400px]">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Blode.md</CardTitle>
-          <CardDescription>
-            {isAuthenticated
-              ? "Authorize the CLI to access your account"
-              : "Sign in to authorize the CLI"}
-          </CardDescription>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
 
         <CardContent>
           {isAuthenticated ? (
-            <form action={approveAction}>
-              <FieldGroup>
-                {displayError && (
-                  <FieldError>
-                    {formatAuthorizationError(displayError)}
-                  </FieldError>
-                )}
-                <p className="text-center text-sm">
-                  Signed in as <strong>{session.email}</strong>
-                </p>
-                <Button type="submit" className="w-full" disabled={isApproving}>
+            <FieldGroup>
+              {displayError && (
+                <FieldError>
+                  {formatAuthorizationError(displayError)}
+                </FieldError>
+              )}
+              <p className="text-center text-sm">
+                Signed in as <strong>{session.email}</strong>
+              </p>
+              {authorizationId ? (
+                <Button
+                  className="w-full"
+                  disabled={isApproving}
+                  onClick={handleApprove}
+                  type="button"
+                >
                   {isApproving ? "Authorizing..." : "Authorize"}
                 </Button>
-                <button
-                  type="button"
-                  className="text-center text-sm text-muted-foreground hover:text-foreground"
-                  onClick={handleSignOut}
-                >
-                  Not you? Sign out
-                </button>
-              </FieldGroup>
-            </form>
+              ) : (
+                <Button asChild className="w-full">
+                  <Link href="/app">Go to dashboard</Link>
+                </Button>
+              )}
+              <button
+                className="text-center text-sm text-muted-foreground hover:text-foreground"
+                onClick={handleSignOut}
+                type="button"
+              >
+                Not you? Sign out
+              </button>
+            </FieldGroup>
           ) : (
-            <form action={signInAction}>
-              <FieldGroup>
-                {signInError && <FieldError>{signInError}</FieldError>}
-
-                <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="current-password"
-                    className="pr-10"
-                    rightControl={
-                      <button
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                        className="flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
-                        onClick={togglePassword}
-                        type="button"
-                      >
-                        {showPassword ? (
-                          <EyeSlashIcon className="h-4 w-4" />
-                        ) : (
-                          <EyeOpenIcon className="h-4 w-4" />
-                        )}
-                      </button>
-                    }
-                  />
-                </Field>
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSigningIn}
-                  >
-                    {isSigningIn ? "Signing in..." : "Sign in"}
-                  </Button>
-
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href={signUpHref}>Create account</Link>
-                  </Button>
-                </div>
-              </FieldGroup>
-            </form>
+            <FieldGroup>
+              {signInError && <FieldError>{signInError}</FieldError>}
+              <Button
+                className="w-full"
+                disabled={isSigningIn}
+                onClick={handleGitHubSignIn}
+                type="button"
+              >
+                <GitHubMark />
+                {isSigningIn ? "Redirecting..." : "Continue with GitHub"}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                We use GitHub for sign-in so you can install the Blode.md app on
+                your docs repo from the same account.
+              </p>
+            </FieldGroup>
           )}
         </CardContent>
       </Card>

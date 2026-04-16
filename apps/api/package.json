@@ -20,6 +20,9 @@
   "dependencies": {
     "@hono/node-server": "^1.19.11",
     "@hono/zod-validator": "^0.7.6",
+    "@octokit/auth-app": "^7.1.5",
+    "@octokit/rest": "^21.1.1",
+    "@octokit/webhooks-methods": "^5.1.0",
     "@repo/common": "*",
     "@repo/contracts": "*",
     "@repo/db": "*",

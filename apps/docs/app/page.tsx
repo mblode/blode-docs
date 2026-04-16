@@ -1,9 +1,12 @@
+import { cookies } from "next/headers";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
 const landingTheme = {
   "--primary": "#EFEE77",
@@ -13,7 +16,23 @@ const landingTheme = {
   "--selection-foreground": "#000000",
 } as CSSProperties;
 
-export default function HomePage() {
+const getDashboardHref = async (): Promise<string> => {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createSupabaseServerClient(cookieStore);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session ? "/app" : "/oauth/consent";
+  } catch {
+    return "/oauth/consent";
+  }
+};
+
+export default async function HomePage() {
+  const dashboardHref = await getDashboardHref();
+  const isSignedIn = dashboardHref === "/app";
+
   return (
     <div
       className="min-h-screen bg-background text-foreground"
@@ -39,6 +58,11 @@ export default function HomePage() {
           >
             GitHub
           </a>
+          <Button asChild size="sm" variant="ghost">
+            <Link href={dashboardHref}>
+              {isSignedIn ? "Dashboard" : "Sign in"}
+            </Link>
+          </Button>
           <ThemeToggle />
         </nav>
       </header>
@@ -51,19 +75,24 @@ export default function HomePage() {
               Documentation that ships with your code
             </h1>
             <p className="mt-6 max-w-lg text-balance text-lg text-muted-foreground md:text-xl">
-              Write docs in your editor, version them in git, and deploy from
-              the command line. No separate system, no manual steps
+              Sign in with GitHub, connect your repo, and we&apos;ll deploy your
+              docs on every push. Or stay in the terminal — both work.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Button size="lg" asChild>
-                <a href="https://blode.md/docs">Get started</a>
+                <Link href={dashboardHref}>
+                  {isSignedIn ? "Open dashboard" : "Get started with GitHub"}
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <a href="#cli">Or use the CLI</a>
               </Button>
             </div>
           </div>
         </section>
 
         {/* CLI */}
-        <section className="border-t border-border py-24 md:py-32">
+        <section className="border-t border-border py-24 md:py-32" id="cli">
           <div className="container">
             <div className="grid gap-12 md:grid-cols-2 md:items-start">
               <div>
@@ -71,8 +100,8 @@ export default function HomePage() {
                   Three commands to deploy
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
-                  No dashboard. No CMS. Login, create, push. The same workflow
-                  you use for code works for docs
+                  No dashboard required. Login once with GitHub in your browser,
+                  scaffold, push.
                 </p>
               </div>
               <div className="relative rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
@@ -84,7 +113,9 @@ export default function HomePage() {
                 />
                 <div className="space-y-6">
                   <div>
-                    <p className="text-muted-foreground"># authenticate once</p>
+                    <p className="text-muted-foreground">
+                      # browser sign-in with GitHub
+                    </p>
                     <p>
                       <span className="text-muted-foreground">$</span> blodemd
                       login
@@ -129,18 +160,27 @@ export default function HomePage() {
               </div>
               <ul className="space-y-6 text-base">
                 <li>
-                  <strong>MDX components</strong>
+                  <strong>GitHub auto-deploy</strong>
                   <span className="text-muted-foreground">
                     {" "}
-                    Callouts, tabs, code groups, API references, and 30+
-                    built-in components
+                    Install the GitHub app once. Every push to your branch
+                    deploys automatically
                   </span>
                 </li>
                 <li>
                   <strong>Custom domains</strong>
                   <span className="text-muted-foreground">
                     {" "}
-                    Automatic DNS verification and SSL provisioning
+                    Automatic DNS verification and SSL. Or proxy at
+                    yourdomain.com/docs
+                  </span>
+                </li>
+                <li>
+                  <strong>MDX components</strong>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    Callouts, tabs, code groups, API references, and 30+
+                    built-in components
                   </span>
                 </li>
                 <li>
@@ -165,13 +205,6 @@ export default function HomePage() {
                     Interactive docs generated from your OpenAPI spec
                   </span>
                 </li>
-                <li>
-                  <strong>Versioning</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Pin docs to releases so readers can pick their version
-                  </span>
-                </li>
               </ul>
             </div>
           </div>
@@ -183,25 +216,35 @@ export default function HomePage() {
             <div className="grid gap-12 md:grid-cols-2 md:items-start">
               <div>
                 <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-                  Deploy docs on every merge
+                  Host docs at yourdomain.com/docs
                 </h2>
                 <p className="mt-4 max-w-sm text-muted-foreground">
-                  Add one step to your GitHub Actions workflow and docs deploy
-                  alongside your code
+                  Proxy /docs through your existing site. Guides for Vercel,
+                  Cloudflare, and Nginx.
                 </p>
+                <div className="mt-6">
+                  <Button asChild variant="outline">
+                    <Link href="/docs/guides/proxy-vercel">
+                      Read the proxy guides
+                    </Link>
+                  </Button>
+                </div>
               </div>
               <div className="relative min-w-0">
                 <CopyButton
                   className="absolute right-4 top-4 text-muted-foreground"
-                  content={`- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: \${{ secrets.BLODEMD_API_KEY }}`}
+                  content={`// next.config.js\nasync rewrites() {\n  return [\n    { source: '/docs/:path*', destination: 'https://acme.blode.md/:path*' },\n  ];\n}`}
                   variant="ghost"
                   size="sm"
                 />
                 <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
-                  {
-                    "- name: Deploy docs\n  run: npx blodemd push docs\n  env:\n    BLODEMD_API_KEY: $"
-                  }
-                  {"{{ secrets.BLODEMD_API_KEY }}"}
+                  {`// next.config.js
+async rewrites() {
+  return [
+    { source: '/docs/:path*',
+      destination: 'https://acme.blode.md/:path*' },
+  ];
+}`}
                 </pre>
               </div>
             </div>
@@ -214,22 +257,28 @@ export default function HomePage() {
             <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
               Get started in a minute
             </h2>
-            <div className="mt-8 inline-flex max-w-full overflow-x-auto items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
-              <p>
-                <span className="text-muted-foreground">$</span> npm install -g
-                blodemd
-              </p>
-              <CopyButton
-                className="text-muted-foreground"
-                content="npm install -g blodemd"
-                variant="ghost"
-                size="sm"
-              />
-            </div>
-            <div className="mt-12">
+            <p className="mt-4 max-w-md text-muted-foreground">
+              Sign in with GitHub. Pick auto-generate, template, or CLI. We
+              handle slug, domain, and deploys.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <Button size="lg" asChild>
-                <a href="https://blode.md/docs">Read the docs</a>
+                <Link href={dashboardHref}>
+                  {isSignedIn ? "Open dashboard" : "Continue with GitHub"}
+                </Link>
               </Button>
+              <div className="inline-flex max-w-full overflow-x-auto items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
+                <p>
+                  <span className="text-muted-foreground">$</span> npm install
+                  -g blodemd
+                </p>
+                <CopyButton
+                  className="text-muted-foreground"
+                  content="npm install -g blodemd"
+                  variant="ghost"
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
         </section>

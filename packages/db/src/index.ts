@@ -4,6 +4,7 @@ export { db } from "./client.js";
 export { ApiKeyDao } from "./daos/api-key-dao.js";
 export { DeploymentDao } from "./daos/deployment-dao.js";
 export { DomainDao } from "./daos/domain-dao.js";
+export { GitConnectionDao } from "./daos/git-connection-dao.js";
 export { ProjectDao } from "./daos/project-dao.js";
 export { UserDao } from "./daos/user-dao.js";
 export * from "./mappers/status-mappers.js";

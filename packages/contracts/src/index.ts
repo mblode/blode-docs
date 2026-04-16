@@ -4,6 +4,7 @@ export * from "./api-key.js";
 export * from "./dates.js";
 export * from "./deployment.js";
 export * from "./domain.js";
+export * from "./git.js";
 export * from "./ids.js";
 export * from "./pagination.js";
 export * from "./project.js";

@@ -1,0 +1,48 @@
+---
+title: Proxy /docs through Nginx
+description: Reverse-proxy /docs/* to your Blode.md site with an Nginx location block.
+---
+
+Drop this block into your Nginx server config to host docs under
+`yourdomain.com/docs`.
+
+## Server block
+
+```nginx
+location /docs/ {
+  proxy_pass https://acme.blode.md/;
+  proxy_set_header Host acme.blode.md;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_ssl_server_name on;
+  proxy_http_version 1.1;
+  proxy_buffering on;
+}
+
+location = /docs {
+  return 301 /docs/;
+}
+```
+
+Replace `acme` with your project slug. The trailing slashes matter — they tell
+Nginx to strip the `/docs` prefix before forwarding.
+
+## Strip the prefix in Blode.md
+
+Set the default subdomain path prefix to `/docs` in **Dashboard → Project →
+Domains**, or pass `pathPrefix: "/docs"` when creating the domain via the API.
+
+## Verifying
+
+```bash
+curl -I https://yourdomain.com/docs/
+```
+
+You should see a 200 OK and `server: vercel` in the response headers,
+indicating the request reached Blode.md upstream.
+
+## TLS
+
+Make sure your Nginx server has a valid TLS cert for `yourdomain.com`. The
+upstream connection to `*.blode.md` is always HTTPS.

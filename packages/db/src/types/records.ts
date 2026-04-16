@@ -2,6 +2,7 @@ import type {
   apiKeys,
   deployments,
   domains,
+  gitConnections,
   projects,
   users,
 } from "../schema.js";
@@ -11,6 +12,7 @@ type ProjectRow = typeof projects.$inferSelect;
 type DomainRow = typeof domains.$inferSelect;
 type DeploymentRow = typeof deployments.$inferSelect;
 type ApiKeyRow = typeof apiKeys.$inferSelect;
+type GitConnectionRow = typeof gitConnections.$inferSelect;
 
 export type UserRecord = Pick<
   UserRow,
@@ -69,3 +71,17 @@ export type ApiKeyRecord = Pick<
 >;
 
 export type ApiKeyAuthRecord = ApiKeyRecord & Pick<ApiKeyRow, "tokenHash">;
+
+export type GitConnectionRecord = Pick<
+  GitConnectionRow,
+  | "accountLogin"
+  | "branch"
+  | "createdAt"
+  | "docsPath"
+  | "id"
+  | "installationId"
+  | "projectId"
+  | "provider"
+  | "repository"
+  | "updatedAt"
+>;

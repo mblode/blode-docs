@@ -798,6 +798,8 @@ program
         authUrl.searchParams.set("code_challenge_method", "S256");
         authUrl.searchParams.set("state", state);
         authUrl.searchParams.set("scope", "openid email profile");
+        // Pin provider=github so users go straight to GitHub OAuth without a picker
+        authUrl.searchParams.set("provider", "github");
 
         const callbackPromise = waitForOAuthCode({
           expectedState: state,

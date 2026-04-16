@@ -48,6 +48,20 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/sites/**": ["./content/**/*"],
   },
+  redirects() {
+    return [
+      {
+        destination: "/oauth/consent",
+        permanent: false,
+        source: "/oauth/sign-up",
+      },
+      {
+        destination: "/oauth/consent",
+        permanent: false,
+        source: "/oauth/sign-up/:path*",
+      },
+    ];
+  },
   rewrites() {
     const assetPrefix = cleanEnv(process.env.PLATFORM_ASSET_PREFIX);
     const assetRewrite = assetPrefix

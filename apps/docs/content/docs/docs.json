@@ -68,6 +68,14 @@
             ]
           },
           {
+            "group": "Guides",
+            "pages": [
+              "guides/proxy-vercel",
+              "guides/proxy-cloudflare",
+              "guides/proxy-nginx"
+            ]
+          },
+          {
             "group": "API",
             "pages": ["api/overview"]
           }

@@ -1,0 +1,50 @@
+---
+title: Proxy /docs through Cloudflare Workers
+description: Forward /docs/* to your Blode.md site with a Cloudflare Worker.
+---
+
+Use a Cloudflare Worker to proxy any path under `/docs` to your Blode.md site.
+Works with apex domains and subdomains.
+
+## Worker script
+
+```js
+const TARGET = "https://acme.blode.md";
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (!url.pathname.startsWith("/docs")) {
+      return fetch(request);
+    }
+    const upstreamPath = url.pathname.replace(/^\/docs/, "") || "/";
+    const upstream = new URL(upstreamPath + url.search, TARGET);
+    return fetch(new Request(upstream, request));
+  },
+};
+```
+
+Replace `acme` with your project slug.
+
+## Routes
+
+In **Workers → Triggers**, add a route like:
+
+```
+yourdomain.com/docs*
+```
+
+Cloudflare invokes the Worker for every matching request and forwards them to
+your Blode.md site without exposing the upstream URL to users.
+
+## Caching
+
+Use Cloudflare&apos;s default cache behavior, or wrap the response with
+`new Response(response.body, response)` and set custom `cache-control` headers
+if you need fine control.
+
+## Strip the prefix in Blode.md
+
+Set the default subdomain path prefix to `/docs` in **Dashboard → Project →
+Domains**, or pass `pathPrefix: "/docs"` when creating the domain via the API,
+so internal links resolve correctly.

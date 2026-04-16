@@ -1,0 +1,61 @@
+---
+title: Proxy /docs through Vercel
+description: Host Blode.md docs at yourdomain.com/docs by adding a single rewrite to your Next.js project.
+---
+
+If your marketing site already lives on Vercel, you can host docs at
+`yourdomain.com/docs` without a custom domain on Blode.md. One rewrite, two
+minutes.
+
+## next.config.js
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/docs",
+        destination: "https://acme.blode.md",
+      },
+      {
+        source: "/docs/:path*",
+        destination: "https://acme.blode.md/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+Replace `acme` with your project slug. The rewrite forwards every request under
+`/docs` to your Blode.md site, so search, navigation, and assets keep working.
+
+## Strip the prefix in Blode.md
+
+Blode.md serves content at the root by default. If you serve at `/docs`, set
+the path prefix on your default subdomain in **Dashboard → Project →
+Domains** (the path prefix field on the default subdomain row), or pass
+`pathPrefix: "/docs"` when creating the domain via the API.
+
+## Verifying the proxy
+
+After deploying, hit `https://yourdomain.com/docs` — you should see the
+homepage of your Blode.md site rendered under your domain. View the network
+tab to confirm requests are 200 OK and being proxied.
+
+## Why proxy?
+
+- One canonical domain for SEO.
+- No DNS work for users — pages just appear under your existing site.
+- Switch backends later by changing the rewrite target.
+
+## Troubleshooting
+
+- **404 on assets**: double-check the path prefix matches what you set in the
+  domain config.
+- **Redirect loops**: make sure your Blode.md project doesn&apos;t have a
+  conflicting custom domain configured for the same hostname.
+- **Stale content**: Vercel caches rewrites at the edge; redeploy after
+  changes to `next.config.js`.

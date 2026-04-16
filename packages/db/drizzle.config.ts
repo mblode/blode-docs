@@ -14,5 +14,12 @@ export default defineConfig({
   out: "./drizzle",
   schema: "./src/schema.ts",
   schemaFilter: ["public"],
-  tablesFilter: ["users", "projects", "domains", "deployments", "api_keys"],
+  tablesFilter: [
+    "users",
+    "projects",
+    "domains",
+    "deployments",
+    "api_keys",
+    "git_connections",
+  ],
 });
