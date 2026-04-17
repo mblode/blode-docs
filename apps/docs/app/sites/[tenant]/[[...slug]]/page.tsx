@@ -1,9 +1,19 @@
+import { CloudUploadIcon, TriangleExclamationIcon } from "blode-icons-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { DocShell } from "@/components/docs/doc-shell";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CopyButton } from "@/components/ui/copy-button";
 import { getDocPageContent, getDocShellData } from "@/lib/docs-runtime";
 import { toMarkdownDocHref } from "@/lib/routes";
 import { TENANT_HEADERS } from "@/lib/tenant-headers";
@@ -165,35 +175,69 @@ const DocPage = async ({
       return notFound();
     }
 
+    const pushCommands = "blodemd login\nblodemd push";
+    const docsPath = shell.tenant.docsPath ?? "";
+
     return (
-      <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center gap-6 px-6 py-16">
-        <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Unpublished Project
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight">
-            {shell.tenant.name} has no docs deployment yet.
-          </h1>
-          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-            This project exists, but Blode.md could not find a published
-            deployment or a local docs root with a <code>docs.json</code> file.
-          </p>
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col justify-center gap-8 px-6 py-16">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div
+            aria-hidden="true"
+            className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground ring-1 ring-foreground/10"
+          >
+            <CloudUploadIcon className="size-6" />
+          </div>
+          <div className="flex flex-col gap-3">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Unpublished project
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {shell.tenant.name} has no docs deployment yet.
+            </h1>
+            <p className="text-base leading-7 text-muted-foreground">
+              This project exists, but Blode.md couldn&apos;t find a published
+              deployment or a local docs root.
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-muted/30 p-6">
-          <p className="text-sm font-medium">Expected local docs path</p>
-          <p className="mt-2 break-all font-mono text-sm text-muted-foreground">
-            {shell.tenant.docsPath}
-          </p>
-        </div>
+        <Card size="sm">
+          <CardHeader>
+            <CardDescription className="text-[11px] font-medium uppercase tracking-[0.16em]">
+              Expected local docs path
+            </CardDescription>
+            <CardTitle className="truncate font-mono font-normal text-foreground">
+              {docsPath}
+            </CardTitle>
+            <CardAction className="self-center">
+              <CopyButton
+                aria-label="Copy docs path"
+                content={docsPath}
+                size="sm"
+                variant="ghost"
+              />
+            </CardAction>
+          </CardHeader>
+        </Card>
 
-        <div className="rounded-2xl border border-border bg-background p-6">
-          <p className="text-sm font-medium">Next step</p>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Create a docs directory with <code>docs.json</code> and publish it
-            with <code>blodemd push</code>, or place the local docs source at
-            the path above for local development.
-          </p>
+        <div className="flex flex-col gap-2 text-left">
+          <p className="text-sm font-medium">Publish with the CLI</p>
+          <div className="relative overflow-hidden rounded-xl bg-code ring-1 ring-foreground/10">
+            <pre className="no-scrollbar overflow-x-auto py-3 pr-14 pl-4 font-mono text-sm leading-6 text-code-foreground">
+              <span className="select-none text-muted-foreground">$ </span>
+              blodemd login{"\n"}
+              <span className="select-none text-muted-foreground">$ </span>
+              blodemd push
+            </pre>
+            <div className="absolute top-2 right-2">
+              <CopyButton
+                aria-label="Copy commands"
+                content={pushCommands}
+                size="sm"
+                variant="ghost"
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -202,24 +246,74 @@ const DocPage = async ({
   if ("configErrors" in shell) {
     const errors = shell.configErrors ?? [];
     const warnings = shell.configWarnings ?? [];
+
     return (
-      <div className="p-10">
-        <h1>Invalid docs.json</h1>
-        {warnings.length ? (
-          <>
-            <h2>Warnings</h2>
-            <ul>
-              {warnings.map((warning) => (
-                <li key={warning}>{warning}</li>
-              ))}
-            </ul>
-          </>
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col justify-center gap-8 px-6 py-16">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div
+            aria-hidden="true"
+            className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-1 ring-destructive/30"
+          >
+            <TriangleExclamationIcon className="size-6" />
+          </div>
+          <div className="flex flex-col gap-3">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-destructive">
+              Invalid configuration
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Your docs.json has errors.
+            </h1>
+            <p className="text-base leading-7 text-muted-foreground">
+              Fix the problems below and redeploy.
+            </p>
+          </div>
+        </div>
+
+        {warnings.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Warnings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col gap-2 text-sm">
+                {warnings.map((warning) => (
+                  <li className="flex gap-3" key={warning}>
+                    <span
+                      aria-hidden="true"
+                      className="mt-2 block size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                    />
+                    <span className="leading-6">{warning}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         ) : null}
-        <ul>
-          {errors.map((error) => (
-            <li key={error}>{error}</li>
-          ))}
-        </ul>
+
+        {errors.length > 0 ? (
+          <Card className="bg-destructive/5 ring-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-[11px] font-medium uppercase tracking-[0.16em] text-destructive">
+                Errors
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col gap-2 text-sm">
+                {errors.map((error) => (
+                  <li className="flex gap-3" key={error}>
+                    <span
+                      aria-hidden="true"
+                      className="mt-2 block size-1.5 shrink-0 rounded-full bg-destructive"
+                    />
+                    <span className="leading-6">{error}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     );
   }

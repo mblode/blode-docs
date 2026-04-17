@@ -7,7 +7,13 @@
  * Run: node scripts/prepare-dist.mjs
  */
 
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -83,7 +89,6 @@ const standaloneTsConfig = {
     paths: {
       "@/*": ["../docs/*"],
       "@dev/*": ["./*"],
-      "@repo/*": ["../packages/@repo/*/src/index.ts"],
     },
     plugins: [{ name: "next" }],
     resolveJsonModule: true,
@@ -150,13 +155,52 @@ cpSync(
 // 4. Copy @repo packages (uses the same REPO_PACKAGES list as the build step)
 console.log("Copying @repo packages...");
 
+// Rewrite @repo/*/package.json `exports` so the `types` condition
+// points at the compiled `dist/*.d.ts` instead of the original
+// `src/*.ts`. Leaving `types` pointing at source confuses Turbopack
+// in standalone mode (it picks up src/index.ts and then can't resolve
+// the `.js` same-package imports without the TS resolver).
+const rewriteExportsForStandalone = (exportsField) => {
+  if (!exportsField || typeof exportsField !== "object") {
+    return exportsField;
+  }
+
+  const rewriteConditions = (conditions) => {
+    if (!conditions || typeof conditions !== "object") {
+      return conditions;
+    }
+    const next = { ...conditions };
+    if (typeof next.types === "string") {
+      next.types = next.types
+        .replace(/^\.\/src\//, "./dist/")
+        .replace(/\.ts$/, ".d.ts");
+    }
+    return next;
+  };
+
+  const rewritten = {};
+  for (const [key, value] of Object.entries(exportsField)) {
+    rewritten[key] = rewriteConditions(value);
+  }
+  return rewritten;
+};
+
 for (const pkg of REPO_PACKAGES) {
   const dest = path.join(cliRoot, `packages/@repo/${pkg}`);
   mkdirSync(dest, { recursive: true });
-  cpSync(
-    path.join(repoRoot, `packages/${pkg}/package.json`),
-    path.join(dest, "package.json")
+
+  const sourcePkgJson = JSON.parse(
+    readFileSync(path.join(repoRoot, `packages/${pkg}/package.json`), "utf8")
   );
+  const standalonePkgJson = {
+    ...sourcePkgJson,
+    exports: rewriteExportsForStandalone(sourcePkgJson.exports),
+  };
+  writeFileSync(
+    path.join(dest, "package.json"),
+    `${JSON.stringify(standalonePkgJson, null, 2)}\n`
+  );
+
   cpSync(path.join(repoRoot, `packages/${pkg}/dist`), path.join(dest, "dist"), {
     filter: createCopyFilter(path.join(repoRoot, `packages/${pkg}/dist`)),
     recursive: true,

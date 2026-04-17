@@ -254,6 +254,27 @@ export const createStandaloneRuntimeRoot = async (
   return await fs.mkdtemp(path.join(configDir, STANDALONE_RUNTIME_PREFIX));
 };
 
+/**
+ * Locate the `node_modules` directory that actually contains the CLI's
+ * transitive dependencies. Package managers like npm/yarn-classic (and
+ * `npx` caches) hoist shared deps above the package directory, so
+ * `<cliPackageRoot>/node_modules` may not exist or may not contain `next`.
+ * Resolve `next/package.json` and use the directory that owns it.
+ */
+const resolveRuntimeNodeModules = async (
+  cliPackageRoot: string
+): Promise<string> => {
+  const localNodeModules = path.join(cliPackageRoot, "node_modules");
+  if (await fileExists(path.join(localNodeModules, "next", "package.json"))) {
+    return localNodeModules;
+  }
+
+  const nextPkgPath = createRequire(
+    path.join(cliPackageRoot, "package.json")
+  ).resolve("next/package.json");
+  return path.dirname(path.dirname(nextPkgPath));
+};
+
 const materializeStandaloneRuntime = async (
   cliPackageRoot: string
 ): Promise<{
@@ -270,19 +291,29 @@ const materializeStandaloneRuntime = async (
       );
     }
 
+    const runtimeNodeModules = await resolveRuntimeNodeModules(cliPackageRoot);
     await fs.symlink(
-      path.join(cliPackageRoot, "node_modules"),
+      runtimeNodeModules,
       path.join(runtimeRoot, "node_modules"),
       process.platform === "win32" ? "junction" : "dir"
     );
-    await fs.mkdir(path.join(runtimeRoot, "dev-server", "node_modules"), {
-      recursive: true,
-    });
-    await fs.symlink(
-      path.join(runtimeRoot, "packages", "@repo"),
-      path.join(runtimeRoot, "dev-server", "node_modules", "@repo"),
-      process.platform === "win32" ? "junction" : "dir"
-    );
+    // Both dev-server/ and docs/ import from `@repo/*`, and the
+    // `@repo/*` packages import each other. Module resolution walks up
+    // from each consuming file, so every consumption root needs a
+    // `node_modules/@repo` symlink pointing at the shared packages/
+    // copy. `packages/node_modules/@repo` also satisfies lookups from
+    // inside `packages/@repo/<pkg>/dist/*.js` imports.
+    const linkTarget = path.join(runtimeRoot, "packages", "@repo");
+    for (const consumer of ["dev-server", "docs", "packages"]) {
+      await fs.mkdir(path.join(runtimeRoot, consumer, "node_modules"), {
+        recursive: true,
+      });
+      await fs.symlink(
+        linkTarget,
+        path.join(runtimeRoot, consumer, "node_modules", "@repo"),
+        process.platform === "win32" ? "junction" : "dir"
+      );
+    }
 
     await fs.writeFile(
       path.join(runtimeRoot, "dev-server", "package.json"),

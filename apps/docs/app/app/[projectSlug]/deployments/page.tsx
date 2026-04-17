@@ -46,7 +46,7 @@ const DeploymentsTable = async ({ projectSlug }: { projectSlug: string }) => {
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
           No deployments yet. Run{" "}
           <code className="font-mono">
-            npx blodemd push docs --project {project.slug}
+            blodemd push docs --project {project.slug}
           </code>{" "}
           or install the GitHub app.
         </CardContent>
