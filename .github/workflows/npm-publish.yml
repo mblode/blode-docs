@@ -18,6 +18,12 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    env:
+      # changesets/action commits "Version Packages" to a new branch. The
+      # repo's lefthook pre-commit hook runs oxlint, whose native linux
+      # binding is missing from the lockfile on hosted runners (npm
+      # optional deps bug). Skip hooks entirely in CI.
+      LEFTHOOK: "0"
     steps:
       - uses: actions/checkout@v5
         with:
