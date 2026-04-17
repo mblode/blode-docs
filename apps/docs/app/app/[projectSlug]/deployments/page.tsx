@@ -1,4 +1,5 @@
 import { mapDeployment } from "@repo/db";
+import { Suspense } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { deploymentDao } from "@/lib/db";
@@ -9,6 +10,8 @@ interface DeploymentsPageProps {
   params: Promise<{ projectSlug: string }>;
 }
 
+const DEPLOYMENTS_PAGE_SIZE = 50;
+
 const STATUS_STYLES: Record<string, string> = {
   building:
     "bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-100",
@@ -18,12 +21,23 @@ const STATUS_STYLES: Record<string, string> = {
     "bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-green-100",
 };
 
-export default async function ProjectDeploymentsPage({
-  params,
-}: DeploymentsPageProps) {
-  const { projectSlug } = await params;
+const DeploymentsTableSkeleton = () => (
+  <Card>
+    <CardContent className="p-6">
+      <div className="space-y-3">
+        <div className="h-4 w-full animate-pulse rounded bg-muted" />
+        <div className="h-4 w-full animate-pulse rounded bg-muted" />
+        <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const DeploymentsTable = async ({ projectSlug }: { projectSlug: string }) => {
   const { project } = await requireProjectContext(projectSlug);
-  const records = await deploymentDao.listByProject(project.id);
+  const records = await deploymentDao.listByProject(project.id, {
+    limit: DEPLOYMENTS_PAGE_SIZE,
+  });
   const deployments = records.map(mapDeployment);
 
   if (deployments.length === 0) {
@@ -87,5 +101,16 @@ export default async function ProjectDeploymentsPage({
         </table>
       </CardContent>
     </Card>
+  );
+};
+
+export default async function ProjectDeploymentsPage({
+  params,
+}: DeploymentsPageProps) {
+  const { projectSlug } = await params;
+  return (
+    <Suspense fallback={<DeploymentsTableSkeleton />}>
+      <DeploymentsTable projectSlug={projectSlug} />
+    </Suspense>
   );
 }

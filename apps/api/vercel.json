@@ -1,6 +1,6 @@
 {
   "buildCommand": "npx turbo run build --filter=api...",
   "outputDirectory": "dist",
-  "regions": ["iad1"],
+  "regions": ["sin1"],
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }

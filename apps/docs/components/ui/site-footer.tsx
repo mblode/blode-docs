@@ -1,9 +1,10 @@
 import Image from "next/image";
 
+import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/lib/config";
 
 export const SiteFooter = () => (
-  <footer className="flex flex-col items-center justify-center gap-2 pt-16 pb-8 text-muted-foreground text-sm">
+  <footer className="flex flex-col items-center justify-center gap-3 pt-16 pb-8 text-muted-foreground text-sm">
     <div className="flex items-center gap-1">
       Crafted by
       <a
@@ -23,9 +24,10 @@ export const SiteFooter = () => (
         Matthew Blode
       </a>
     </div>
-    <div className="flex items-center gap-2 text-muted-foreground/30">
-      <span className="text-muted-foreground">v{siteConfig.version}</span>{" "}
-      &bull;
+    <div className="flex items-center gap-2">
+      <Badge className="font-mono" variant="outline">
+        v{siteConfig.version}
+      </Badge>
       <a
         className="text-muted-foreground transition-colors hover:text-foreground"
         href={siteConfig.links.github}

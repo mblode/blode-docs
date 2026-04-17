@@ -1,11 +1,11 @@
 // oxlint-disable eslint/class-methods-use-this
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { assertRecord } from "../assert-record.js";
 import { db } from "../client.js";
-import { projects } from "../schema.js";
-import type { ProjectRecord } from "../types/records.js";
-import { projectSelect } from "../types/selects.js";
+import { projects, users } from "../schema.js";
+import type { ProjectRecord, UserRecord } from "../types/records.js";
+import { projectSelect, userSelect } from "../types/selects.js";
 
 export interface ProjectCreateInput {
   slug: string;
@@ -52,6 +52,19 @@ export class ProjectDao {
       .select(projectSelect)
       .from(projects)
       .where(eq(projects.slug, slug))
+      .limit(1);
+    return record ?? null;
+  }
+
+  async getAuthorizedBySlug(
+    authId: string,
+    slug: string
+  ): Promise<{ project: ProjectRecord; user: UserRecord } | null> {
+    const [record] = await db
+      .select({ project: projectSelect, user: userSelect })
+      .from(projects)
+      .innerJoin(users, eq(users.id, projects.userId))
+      .where(and(eq(users.authId, authId), eq(projects.slug, slug)))
       .limit(1);
     return record ?? null;
   }

@@ -1,5 +1,6 @@
 import {
   bigint,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -65,7 +66,10 @@ export const projects = pgTable(
       onDelete: "set null",
     }),
   },
-  (table) => [uniqueIndex("projects_slug_key").on(table.slug)]
+  (table) => [
+    uniqueIndex("projects_slug_key").on(table.slug),
+    index("projects_user_id_idx").on(table.userId),
+  ]
 );
 
 export const domains = pgTable(
@@ -83,28 +87,40 @@ export const domains = pgTable(
       .notNull(),
     verifiedAt: timestampColumn("verified_at"),
   },
-  (table) => [uniqueIndex("domains_hostname_key").on(table.hostname)]
+  (table) => [
+    uniqueIndex("domains_hostname_key").on(table.hostname),
+    index("domains_project_id_idx").on(table.projectId),
+  ]
 );
 
-export const deployments = pgTable("deployments", {
-  branch: text("branch").notNull(),
-  changes: text("changes"),
-  commitMessage: text("commit_message"),
-  createdAt: timestampColumn("created_at").defaultNow().notNull(),
-  environment: deploymentEnvironmentEnum("environment")
-    .default("production")
-    .notNull(),
-  fileCount: integer("file_count"),
-  id: uuid("id").defaultRandom().primaryKey(),
-  manifestUrl: text("manifest_url"),
-  previewUrl: text("preview_url"),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  promotedAt: timestampColumn("promoted_at"),
-  status: deploymentStatusEnum("status").default("queued").notNull(),
-  updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
-});
+export const deployments = pgTable(
+  "deployments",
+  {
+    branch: text("branch").notNull(),
+    changes: text("changes"),
+    commitMessage: text("commit_message"),
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    environment: deploymentEnvironmentEnum("environment")
+      .default("production")
+      .notNull(),
+    fileCount: integer("file_count"),
+    id: uuid("id").defaultRandom().primaryKey(),
+    manifestUrl: text("manifest_url"),
+    previewUrl: text("preview_url"),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    promotedAt: timestampColumn("promoted_at"),
+    status: deploymentStatusEnum("status").default("queued").notNull(),
+    updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("deployments_project_id_created_at_idx").on(
+      table.projectId,
+      table.createdAt.desc()
+    ),
+  ]
+);
 
 export const gitProviderEnum = pgEnum("git_provider", ["github"]);
 

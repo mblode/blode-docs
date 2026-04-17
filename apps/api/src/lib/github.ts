@@ -219,6 +219,61 @@ export const listAppInstallations = async (): Promise<
   return summaries;
 };
 
+export const exchangeUserCode = async (
+  code: string
+): Promise<string | null> => {
+  const { clientId, clientSecret } = githubAppEnv();
+  if (!(clientId && clientSecret)) {
+    return null;
+  }
+  const response = await fetch("https://github.com/login/oauth/access_token", {
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+    }),
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+  if (!response.ok) {
+    return null;
+  }
+  const data = (await response.json()) as { access_token?: string };
+  return typeof data.access_token === "string" ? data.access_token : null;
+};
+
+export const listUserInstallations = async (
+  userToken: string
+): Promise<AppInstallationSummary[]> => {
+  const octokit = new Octokit({ auth: userToken });
+  interface Raw {
+    id: number;
+    account: { login?: string | null; type?: string | null } | null;
+  }
+  const installations = (await octokit.paginate(
+    "GET /user/installations",
+    { per_page: 100 },
+    (response) =>
+      (response.data as unknown as { installations: Raw[] }).installations
+  )) as Raw[];
+  const summaries: AppInstallationSummary[] = [];
+  for (const installation of installations) {
+    const login = installation.account?.login;
+    if (!login) {
+      continue;
+    }
+    summaries.push({
+      accountLogin: login,
+      accountType: installation.account?.type ?? "User",
+      id: installation.id,
+    });
+  }
+  return summaries;
+};
+
 export interface RepoFile {
   relativePath: string;
   content: Buffer;

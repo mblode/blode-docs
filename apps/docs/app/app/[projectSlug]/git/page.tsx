@@ -1,5 +1,7 @@
 import { mapGitConnection } from "@repo/db";
+import { Suspense } from "react";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { gitConnectionDao } from "@/lib/db";
 
@@ -33,12 +35,21 @@ const fetchSuggestedInstallations = async (
   }
 };
 
-export default async function ProjectGitPage({ params }: GitPageProps) {
-  const { projectSlug } = await params;
+const GitPanelSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+    </CardHeader>
+    <CardContent>
+      <div className="h-32 animate-pulse rounded bg-muted" />
+    </CardContent>
+  </Card>
+);
+
+const GitPanelAsync = async ({ projectSlug }: { projectSlug: string }) => {
   const { accessToken, project } = await requireProjectContext(projectSlug);
   const record = await gitConnectionDao.getByProject(project.id);
   const connection = record ? mapGitConnection(record) : null;
-
   const suggestedInstallations = connection
     ? []
     : await fetchSuggestedInstallations(accessToken);
@@ -50,5 +61,14 @@ export default async function ProjectGitPage({ params }: GitPageProps) {
       project={project}
       suggestedInstallations={suggestedInstallations}
     />
+  );
+};
+
+export default async function ProjectGitPage({ params }: GitPageProps) {
+  const { projectSlug } = await params;
+  return (
+    <Suspense fallback={<GitPanelSkeleton />}>
+      <GitPanelAsync projectSlug={projectSlug} />
+    </Suspense>
   );
 }

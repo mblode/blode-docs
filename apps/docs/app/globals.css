@@ -223,6 +223,11 @@
     font-synthesis: none;
     font-kerning: normal;
     font-variant-ligatures: common-ligatures;
+    font-feature-settings: "ss01", "cv11", "calt";
+  }
+
+  :is([data-slot="kbd"], code, pre, .font-mono) {
+    font-variant-numeric: tabular-nums;
   }
 
   [data-slot="layout"] {
@@ -282,6 +287,15 @@
 
 @utility container {
   @apply 3xl:max-w-screen-2xl mx-auto max-w-[1400px] px-4 lg:px-8;
+}
+
+@utility h-display {
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+@utility measure {
+  max-width: 65ch;
 }
 
 @utility no-scrollbar {

@@ -32,12 +32,19 @@ export interface DeploymentUpdateInput {
 }
 
 export class DeploymentDao {
-  async listByProject(projectId: string): Promise<DeploymentRecord[]> {
-    return await db
+  async listByProject(
+    projectId: string,
+    options?: { limit?: number }
+  ): Promise<DeploymentRecord[]> {
+    const query = db
       .select(deploymentSelect)
       .from(deployments)
       .where(eq(deployments.projectId, projectId))
       .orderBy(desc(deployments.createdAt));
+    if (options?.limit) {
+      return await query.limit(options.limit);
+    }
+    return await query;
   }
 
   async getLatestByProject(

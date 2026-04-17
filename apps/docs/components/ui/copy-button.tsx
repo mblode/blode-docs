@@ -6,7 +6,6 @@ import {
 } from "blode-icons-react";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback } from "react";
 import type { MouseEvent } from "react";
 
@@ -30,18 +29,17 @@ const buttonVariants = cva(
         xs: "size-7 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
       },
       variant: {
-        accent: "bg-accent text-accent-foreground shadow-xs hover:bg-accent/90",
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        accent: "bg-accent text-accent-foreground hover:bg-accent/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
       },
     },
   }
@@ -103,18 +101,13 @@ const CopyButton = ({
       onClick={handleCopy}
       {...props}
     >
-      <AnimatePresence mode="popLayout">
-        <motion.span
-          animate={{ filter: "blur(0px)", opacity: 1, scale: 1 }}
-          data-slot="copy-button-icon"
-          exit={{ filter: "blur(4px)", opacity: 0.4, scale: 0 }}
-          initial={false}
-          key={isCopied ? "check" : "copy"}
-          transition={{ duration: 0.25 }}
-        >
-          <Icon />
-        </motion.span>
-      </AnimatePresence>
+      <span
+        className="inline-flex animate-in fade-in-0 zoom-in-95 duration-200 motion-reduce:animate-none"
+        data-slot="copy-button-icon"
+        key={isCopied ? "check" : "copy"}
+      >
+        <Icon />
+      </span>
     </ButtonPrimitive>
   );
 };

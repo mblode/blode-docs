@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { FieldError } from "@/components/ui/field";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { startGithubInstall } from "@/lib/github-install";
 
 export interface SuggestedInstallation {
   id: number;
@@ -46,19 +47,11 @@ export const GitConnectionPanel = ({
     setError(null);
     setPending(true);
     try {
-      const result = await apiFetch<{ url: string; state: string }>(
-        `/projects/${project.id}/git/install-url`,
-        { accessToken, method: "POST" }
-      );
-      sessionStorage.setItem(
-        "blodemd:install-state",
-        JSON.stringify({
-          projectId: project.id,
-          projectSlug: project.slug,
-          state: result.state,
-        })
-      );
-      window.location.assign(result.url);
+      await startGithubInstall({
+        accessToken,
+        projectId: project.id,
+        projectSlug: project.slug,
+      });
     } catch (error) {
       const message =
         error instanceof ApiError
@@ -124,32 +117,19 @@ export const GitConnectionPanel = ({
     );
   }
 
-  const primaryInstallation = suggestedInstallations[0];
-
-  if (primaryInstallation) {
+  if (suggestedInstallations.length > 0) {
     return (
       <div className="space-y-3">
         {formError && <FieldError>{formError}</FieldError>}
         <RepoPicker
           accessToken={accessToken}
-          installationId={primaryInstallation.id}
+          addAccountPending={pending}
+          installations={suggestedInstallations}
+          onAddAccount={handleInstall}
+          onConnected={setConnection}
           projectId={project.id}
           projectSlug={project.slug}
         />
-        <p className="text-xs text-muted-foreground">
-          Using the Blode.md app installed on{" "}
-          <span className="font-medium">{primaryInstallation.accountLogin}</span>
-          . Need a different account?{" "}
-          <button
-            className="underline underline-offset-2 hover:text-foreground"
-            disabled={pending}
-            onClick={handleInstall}
-            type="button"
-          >
-            {pending ? "Redirecting…" : "Install on another GitHub account"}
-          </button>
-          .
-        </p>
       </div>
     );
   }
@@ -167,8 +147,8 @@ export const GitConnectionPanel = ({
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">
             Click below to install the Blode.md app on your GitHub account or
-            organization. We&apos;ll bring you back here to pick a repo and
-            docs path.
+            organization. We&apos;ll bring you back here to pick a repo and docs
+            path.
           </p>
           <Button disabled={pending} onClick={handleInstall} type="button">
             {pending ? "Redirecting..." : "Install on GitHub"}

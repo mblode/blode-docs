@@ -5,11 +5,13 @@ import { z } from "zod";
 
 import { gitConnectionDao, projectDao } from "../lib/db";
 import {
+  exchangeUserCode,
   getInstallationAccount,
   installAppUrl,
   isGithubAppConfigured,
   listAppInstallations,
   listInstallationRepos,
+  listUserInstallations,
   signInstallState,
   verifyInstallState,
 } from "../lib/github";
@@ -202,12 +204,10 @@ githubInstall.get("/installations/mine", async (c) => {
   if (!login) {
     return c.json({ installations: [] }, 200);
   }
-  const installations = await listAppInstallations().catch(
-    (error: unknown) => {
-      logError("Failed to list app installations", error);
-      return null;
-    }
-  );
+  const installations = await listAppInstallations().catch((error: unknown) => {
+    logError("Failed to list app installations", error);
+    return null;
+  });
   if (!installations) {
     return c.json({ installations: [] }, 200);
   }
@@ -216,6 +216,39 @@ githubInstall.get("/installations/mine", async (c) => {
   );
   return c.json({ installations: matches }, 200);
 });
+
+const codeBodySchema = z.object({ code: z.string().min(1) });
+
+githubInstall.post(
+  "/installations/from-code",
+  validateJson(codeBodySchema),
+  async (c) => {
+    if (!(await getAuthenticatedUser(c))) {
+      return unauthorized(c, "Authentication required.");
+    }
+    if (!isGithubAppConfigured()) {
+      return badRequest(c, "GitHub App is not configured on this server.");
+    }
+    const { code } = c.req.valid("json");
+    const token = await exchangeUserCode(code).catch((error: unknown) => {
+      logError("Failed to exchange GitHub user code", error);
+      return null;
+    });
+    if (!token) {
+      return badRequest(c, "Could not exchange GitHub code.");
+    }
+    const installations = await listUserInstallations(token).catch(
+      (error: unknown) => {
+        logError("Failed to list user installations", error);
+        return null;
+      }
+    );
+    if (!installations) {
+      return badRequest(c, "Could not read user installations from GitHub.");
+    }
+    return c.json({ installations }, 200);
+  }
+);
 
 githubInstall.get("/state/:state", async (c) => {
   if (!(await getAuthenticatedUser(c))) {

@@ -397,7 +397,7 @@ export const ApiPlayground = ({
           <Field>
             <FieldLabel htmlFor="api-server">Server</FieldLabel>
             <select
-              className="flex h-[var(--field-height)] w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground shadow-input transition-colors hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
+              className="flex h-[var(--field-height)] w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground transition-colors hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
               id="api-server"
               onChange={handleServerChange}
               value={serverIndex}
@@ -440,7 +440,7 @@ export const ApiPlayground = ({
           <Field>
             <FieldLabel htmlFor="request-body">Request body</FieldLabel>
             <textarea
-              className="flex w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground shadow-input transition-colors placeholder:text-placeholder-foreground hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
+              className="flex w-full rounded-[var(--field-radius)] border border-input bg-card px-[var(--field-padding-x)] py-[var(--field-padding-y)] font-sans text-base text-foreground transition-colors placeholder:text-placeholder-foreground hover:border-input-hover focus:border-ring focus:outline-hidden focus:ring-2 focus:ring-ring/15 focus:ring-offset-1 focus:ring-offset-background"
               id="request-body"
               onChange={handleBodyChange}
               rows={6}

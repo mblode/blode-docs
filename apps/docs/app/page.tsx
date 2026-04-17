@@ -1,11 +1,31 @@
+import {
+  ArrowRightIcon,
+  BookIcon,
+  CodeIcon,
+  GithubIcon,
+  LayersTwoIcon,
+  MagnifyingGlassIcon,
+  SparklesIcon,
+  WorldIcon,
+} from "blode-icons-react";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
+import { Separator } from "@/components/ui/separator";
 import { SiteFooter } from "@/components/ui/site-footer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { siteConfig } from "@/lib/config";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
 const landingTheme = {
@@ -15,6 +35,75 @@ const landingTheme = {
   "--selection": "#EFEE77",
   "--selection-foreground": "#000000",
 } as CSSProperties;
+
+const features = [
+  {
+    Icon: GithubIcon,
+    description: "Install once. Every push to your branch deploys in seconds.",
+    title: "GitHub auto-deploy",
+  },
+  {
+    Icon: WorldIcon,
+    description:
+      "Point a domain, get SSL. Or proxy docs at yourdomain.com/docs.",
+    title: "Custom domains",
+  },
+  {
+    Icon: CodeIcon,
+    description:
+      "30+ components out of the box — callouts, tabs, code groups, API refs.",
+    title: "MDX components",
+  },
+  {
+    Icon: MagnifyingGlassIcon,
+    description: "Full-text search across every page. No plugin, no config.",
+    title: "Search",
+  },
+  {
+    Icon: LayersTwoIcon,
+    description:
+      "Docs, blogs, changelogs, and courses — one project, one domain.",
+    title: "Content types",
+  },
+  {
+    Icon: BookIcon,
+    description: "Point at an OpenAPI spec, ship an interactive API reference.",
+    title: "API reference",
+  },
+];
+
+const proxySnippets = {
+  caddy: `# Caddyfile
+yourdomain.com {
+  reverse_proxy /docs/* https://acme.blode.md {
+    header_up Host acme.blode.md
+  }
+}`,
+  cloudflare: `// worker.js
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/docs')) {
+      return fetch(
+        \`https://acme.blode.md\${url.pathname.replace('/docs', '')}\`,
+      );
+    }
+    return fetch(request);
+  },
+};`,
+  nginx: `# nginx.conf
+location /docs/ {
+  proxy_pass https://acme.blode.md/;
+  proxy_set_header Host acme.blode.md;
+}`,
+  vercel: `// next.config.js
+async rewrites() {
+  return [
+    { source: '/docs/:path*',
+      destination: 'https://acme.blode.md/:path*' },
+  ];
+}`,
+};
 
 const getDashboardHref = async (): Promise<string> => {
   try {
@@ -38,7 +127,6 @@ export default async function HomePage() {
       className="min-h-screen bg-background text-foreground"
       style={landingTheme}
     >
-      {/* Skip link */}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -46,18 +134,27 @@ export default async function HomePage() {
         Skip to content
       </a>
 
-      {/* Header */}
       <header className="container flex items-center justify-between px-4 py-6">
-        <span className="text-base font-semibold tracking-tight">blode.md</span>
-        <nav aria-label="Main" className="flex items-center gap-2">
-          <a
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            href="https://github.com/mblode/blodemd"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
+        <div className="flex items-center gap-3">
+          <span className="text-base font-semibold tracking-tight">
+            blode.md
+          </span>
+          <Badge className="font-mono" variant="outline">
+            v{siteConfig.version}
+          </Badge>
+        </div>
+        <nav aria-label="Main" className="flex items-center gap-1">
+          <Button asChild size="sm" variant="ghost">
+            <a
+              href={siteConfig.links.github}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <GithubIcon data-icon="inline-start" />
+              GitHub
+            </a>
+          </Button>
+          <Separator className="mx-1 h-5" orientation="vertical" />
           <Button asChild size="sm" variant="ghost">
             <Link href={dashboardHref}>
               {isSignedIn ? "Dashboard" : "Sign in"}
@@ -68,217 +165,221 @@ export default async function HomePage() {
       </header>
 
       <main id="main">
-        {/* Hero */}
         <section className="pb-24 pt-20 md:pb-32 md:pt-28 lg:pt-36">
           <div className="container">
-            <h1 className="max-w-3xl text-balance text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl">
-              Documentation that ships with your code
+            <Badge className="mb-8 gap-1.5" variant="secondary">
+              <SparklesIcon />
+              Docs, in your git workflow
+            </Badge>
+            <h1 className="h-display max-w-3xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
+              Ship docs on every push
             </h1>
-            <p className="mt-6 max-w-lg text-balance text-lg text-muted-foreground md:text-xl">
-              Sign in with GitHub, connect your repo, and we&apos;ll deploy your
-              docs on every push. Or stay in the terminal — both work.
+            <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
+              Connect a repo or run a command. blode.md deploys MDX from your
+              branch to a custom domain — no dashboard required, no
+              infrastructure to own.
             </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Button size="lg" asChild>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg">
                 <Link href={dashboardHref}>
-                  {isSignedIn ? "Open dashboard" : "Get started with GitHub"}
+                  {isSignedIn ? "Open dashboard" : "Deploy from GitHub"}
+                  <ArrowRightIcon data-icon="inline-end" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="#cli">Or use the CLI</a>
+              <Button asChild size="lg" variant="outline">
+                <a href="#cli">Use the CLI</a>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* CLI */}
         <section className="border-t border-border py-24 md:py-32" id="cli">
           <div className="container">
-            <div className="grid gap-12 md:grid-cols-2 md:items-start">
+            <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:items-start">
               <div>
-                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-                  Three commands to deploy
+                <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
+                  Built for the browser and the terminal
                 </h2>
-                <p className="mt-4 max-w-sm text-muted-foreground">
-                  No dashboard required. Login once with GitHub in your browser,
-                  scaffold, push.
+                <p className="measure mt-4 text-muted-foreground">
+                  Sign in with GitHub and pick a repo, or run three commands
+                  from your project root. Same deploy, same domain.
                 </p>
               </div>
-              <div className="relative rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
-                <CopyButton
-                  className="absolute right-4 top-4 text-muted-foreground"
-                  content={`blodemd login\nblodemd new docs\nblodemd push docs`}
-                  variant="ghost"
-                  size="sm"
-                />
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-muted-foreground">
-                      # browser sign-in with GitHub
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">$</span> blodemd
-                      login
-                    </p>
+              <Tabs defaultValue="github">
+                <TabsList>
+                  <TabsTrigger value="github">
+                    <GithubIcon data-icon="inline-start" />
+                    GitHub
+                  </TabsTrigger>
+                  <TabsTrigger value="cli">
+                    <CodeIcon data-icon="inline-start" />
+                    CLI
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent className="mt-6" value="github">
+                  <div className="overflow-hidden rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+                    <ol className="space-y-4">
+                      <li className="flex gap-3">
+                        <span className="text-muted-foreground">1.</span>
+                        <span>
+                          Install the GitHub app at{" "}
+                          <span className="text-foreground">
+                            github.com/apps/blodemd
+                          </span>
+                        </span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-muted-foreground">2.</span>
+                        <span>Pick a repo and a docs folder</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-muted-foreground">3.</span>
+                        <span>
+                          Push to <span className="text-foreground">main</span>{" "}
+                          — deployed to{" "}
+                          <span className="text-foreground">acme.blode.md</span>
+                        </span>
+                      </li>
+                    </ol>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">
-                      # scaffold from your project root
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">$</span> blodemd
-                      new docs
-                    </p>
+                </TabsContent>
+
+                <TabsContent className="mt-6" value="cli">
+                  <div className="relative overflow-hidden rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+                    <CopyButton
+                      className="absolute right-3 top-3 text-muted-foreground"
+                      content={`blodemd login\nblodemd new docs\nblodemd push docs`}
+                      size="sm"
+                      variant="ghost"
+                    />
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-muted-foreground">
+                          # browser sign-in with GitHub
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">$</span>{" "}
+                          blodemd login
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">
+                          # scaffold from your project root
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">$</span>{" "}
+                          blodemd new docs
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground"># ship it</p>
+                        <p>
+                          <span className="text-muted-foreground">$</span>{" "}
+                          blodemd push docs
+                        </p>
+                      </div>
+                      <p className="text-muted-foreground">
+                        Deployed to acme.blode.md
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground"># ship it</p>
-                    <p>
-                      <span className="text-muted-foreground">$</span> blodemd
-                      push docs
-                    </p>
-                  </div>
-                  <p className="text-muted-foreground">
-                    Deployed to acme.blode.md
-                  </p>
-                </div>
-              </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </section>
 
-        {/* Features */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
-            <div className="grid gap-16 md:grid-cols-2">
-              <div>
-                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-                  Everything in one project
-                </h2>
-                <p className="mt-4 max-w-sm text-muted-foreground">
-                  Write once, in MDX. blode.md handles the rest
-                </p>
-              </div>
-              <ul className="space-y-6 text-base">
-                <li>
-                  <strong>GitHub auto-deploy</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Install the GitHub app once. Every push to your branch
-                    deploys automatically
-                  </span>
-                </li>
-                <li>
-                  <strong>Custom domains</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Automatic DNS verification and SSL. Or proxy at
-                    yourdomain.com/docs
-                  </span>
-                </li>
-                <li>
-                  <strong>MDX components</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Callouts, tabs, code groups, API references, and 30+
-                    built-in components
-                  </span>
-                </li>
-                <li>
-                  <strong>Search</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Full-text search across all your content, included by
-                    default
-                  </span>
-                </li>
-                <li>
-                  <strong>Content types</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Docs, blogs, changelogs, and courses from one project
-                  </span>
-                </li>
-                <li>
-                  <strong>API reference</strong>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Interactive docs generated from your OpenAPI spec
-                  </span>
-                </li>
-              </ul>
+            <div className="mb-12 max-w-xl">
+              <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
+                Everything a docs site needs
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                One MDX project. Domain, search, components, and deploys
+                included.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map(({ Icon, title, description }) => (
+                <Card className="justify-start p-2" key={title}>
+                  <CardHeader>
+                    <div className="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
+                      <Icon />
+                    </div>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* CI/CD */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
-            <div className="grid gap-12 md:grid-cols-2 md:items-start">
+            <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:items-start">
               <div>
-                <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-                  Host docs at yourdomain.com/docs
+                <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
+                  Keep docs on your own domain
                 </h2>
-                <p className="mt-4 max-w-sm text-muted-foreground">
-                  Proxy /docs through your existing site. Guides for Vercel,
-                  Cloudflare, and Nginx.
+                <p className="measure mt-4 text-muted-foreground">
+                  Rewrite /docs through your marketing site. One config, four
+                  platforms: Vercel, Cloudflare, Nginx, Caddy.
                 </p>
                 <div className="mt-6">
                   <Button asChild variant="outline">
                     <Link href="/docs/guides/proxy-vercel">
                       Read the proxy guides
+                      <ArrowRightIcon data-icon="inline-end" />
                     </Link>
                   </Button>
                 </div>
               </div>
-              <div className="relative min-w-0">
-                <CopyButton
-                  className="absolute right-4 top-4 text-muted-foreground"
-                  content={`// next.config.js\nasync rewrites() {\n  return [\n    { source: '/docs/:path*', destination: 'https://acme.blode.md/:path*' },\n  ];\n}`}
-                  variant="ghost"
-                  size="sm"
-                />
-                <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
-                  {`// next.config.js
-async rewrites() {
-  return [
-    { source: '/docs/:path*',
-      destination: 'https://acme.blode.md/:path*' },
-  ];
-}`}
-                </pre>
-              </div>
+              <Tabs defaultValue="vercel">
+                <TabsList>
+                  <TabsTrigger value="vercel">Vercel</TabsTrigger>
+                  <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
+                  <TabsTrigger value="nginx">Nginx</TabsTrigger>
+                  <TabsTrigger value="caddy">Caddy</TabsTrigger>
+                </TabsList>
+                {Object.entries(proxySnippets).map(([key, snippet]) => (
+                  <TabsContent className="mt-6" key={key} value={key}>
+                    <div className="relative min-w-0">
+                      <CopyButton
+                        className="absolute right-3 top-3 text-muted-foreground"
+                        content={snippet}
+                        size="sm"
+                        variant="ghost"
+                      />
+                      <pre className="overflow-x-auto rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
+                        {snippet}
+                      </pre>
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
             </div>
           </div>
         </section>
 
-        {/* CTA */}
         <section className="border-t border-border py-24 md:py-32">
           <div className="container" id="get-started">
-            <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-              Get started in a minute
+            <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
+              Your first deploy in under a minute
             </h2>
-            <p className="mt-4 max-w-md text-muted-foreground">
-              Sign in with GitHub. Pick auto-generate, template, or CLI. We
-              handle slug, domain, and deploys.
+            <p className="measure mt-4 text-muted-foreground">
+              Sign in with GitHub, pick a repo, and pick a template. We handle
+              the slug, the domain, and every push after that.
             </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Button size="lg" asChild>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg">
                 <Link href={dashboardHref}>
-                  {isSignedIn ? "Open dashboard" : "Continue with GitHub"}
+                  {isSignedIn ? "Open dashboard" : "Deploy a site"}
+                  <ArrowRightIcon data-icon="inline-end" />
                 </Link>
               </Button>
-              <div className="inline-flex max-w-full overflow-x-auto items-center gap-4 rounded-xl bg-surface py-4 pl-5 pr-3 font-mono text-sm md:pl-7 md:pr-4">
-                <p>
-                  <span className="text-muted-foreground">$</span> npm install
-                  -g blodemd
-                </p>
-                <CopyButton
-                  className="text-muted-foreground"
-                  content="npm install -g blodemd"
-                  variant="ghost"
-                  size="sm"
-                />
-              </div>
             </div>
           </div>
         </section>

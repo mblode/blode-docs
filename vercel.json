@@ -1,3 +1,4 @@
 {
-  "installCommand": "npm install --ignore-scripts"
+  "installCommand": "npm install --ignore-scripts",
+  "regions": ["sin1"]
 }

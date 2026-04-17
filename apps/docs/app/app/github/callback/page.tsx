@@ -7,6 +7,7 @@ import { GithubInstallCallback } from "./callback-client";
 
 interface CallbackPageProps {
   searchParams: Promise<{
+    code?: string;
     installation_id?: string;
     setup_action?: string;
     state?: string;
@@ -27,6 +28,7 @@ export default async function GithubCallbackPage({
     ? Number(installationIdRaw)
     : Number.NaN;
   const state = params.state ?? "";
+  const code = params.code ?? null;
 
   if (!Number.isFinite(installationId) || installationId <= 0) {
     return (
@@ -46,6 +48,7 @@ export default async function GithubCallbackPage({
   return (
     <GithubInstallCallback
       accessToken={session.accessToken}
+      code={code}
       installationId={installationId}
       state={state}
     />

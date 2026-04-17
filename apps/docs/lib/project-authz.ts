@@ -29,14 +29,18 @@ export const resolveCurrentUser = cache(
 
 export const getAuthorizedProjectBySlug = cache(
   async (slug: string): Promise<AuthorizedProjectContext | null> => {
-    const current = await resolveCurrentUser();
-    if (!current) {
+    const session = await getDashboardSession();
+    if (!session) {
       return null;
     }
-    const project = await projectDao.getBySlugUnique(slug);
-    if (!project || project.userId !== current.user.id) {
+    const result = await projectDao.getAuthorizedBySlug(session.authId, slug);
+    if (!result) {
       return null;
     }
-    return { accessToken: current.accessToken, project, user: current.user };
+    return {
+      accessToken: session.accessToken,
+      project: result.project,
+      user: result.user,
+    };
   }
 );
