@@ -5,6 +5,7 @@
 import type { GitConnection, Project } from "@repo/contracts";
 import { useCallback, useState } from "react";
 
+import { RepoPicker } from "@/components/git/repo-picker";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,16 +17,24 @@ import {
 import { FieldError } from "@/components/ui/field";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
+export interface SuggestedInstallation {
+  id: number;
+  accountLogin: string;
+  accountType: string;
+}
+
 interface GitConnectionPanelProps {
   accessToken: string;
   initialConnection: GitConnection | null;
   project: Project;
+  suggestedInstallations?: SuggestedInstallation[];
 }
 
 export const GitConnectionPanel = ({
   accessToken,
   initialConnection,
   project,
+  suggestedInstallations = [],
 }: GitConnectionPanelProps) => {
   const [connection, setConnection] = useState<GitConnection | null>(
     initialConnection
@@ -78,17 +87,17 @@ export const GitConnectionPanel = ({
     }
   }, [accessToken, project.id]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>GitHub</CardTitle>
-        <CardDescription>
-          Install the Blode.md GitHub App to deploy on every push. No API keys.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {formError && <FieldError>{formError}</FieldError>}
-        {connection ? (
+  if (connection) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>GitHub</CardTitle>
+          <CardDescription>
+            Pushes to {connection.branch} deploy this project automatically.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {formError && <FieldError>{formError}</FieldError>}
           <div className="space-y-3 rounded-lg border border-border p-4 text-sm">
             <div>
               <div className="font-mono">{connection.repository}</div>
@@ -110,22 +119,65 @@ export const GitConnectionPanel = ({
               </Button>
             </div>
           </div>
-        ) : (
-          <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">
-              Click below to install the Blode.md app on your GitHub account or
-              organization. We&apos;ll bring you back here to pick a repo and
-              docs path.
-            </p>
-            <Button disabled={pending} onClick={handleInstall} type="button">
-              {pending ? "Redirecting..." : "Install on GitHub"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Already installed on a different project? Reuse the same
-              installation here.
-            </p>
-          </div>
-        )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const primaryInstallation = suggestedInstallations[0];
+
+  if (primaryInstallation) {
+    return (
+      <div className="space-y-3">
+        {formError && <FieldError>{formError}</FieldError>}
+        <RepoPicker
+          accessToken={accessToken}
+          installationId={primaryInstallation.id}
+          projectId={project.id}
+          projectSlug={project.slug}
+        />
+        <p className="text-xs text-muted-foreground">
+          Using the Blode.md app installed on{" "}
+          <span className="font-medium">{primaryInstallation.accountLogin}</span>
+          . Need a different account?{" "}
+          <button
+            className="underline underline-offset-2 hover:text-foreground"
+            disabled={pending}
+            onClick={handleInstall}
+            type="button"
+          >
+            {pending ? "Redirecting…" : "Install on another GitHub account"}
+          </button>
+          .
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>GitHub</CardTitle>
+        <CardDescription>
+          Install the Blode.md GitHub App to deploy on every push. No API keys.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {formError && <FieldError>{formError}</FieldError>}
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Click below to install the Blode.md app on your GitHub account or
+            organization. We&apos;ll bring you back here to pick a repo and
+            docs path.
+          </p>
+          <Button disabled={pending} onClick={handleInstall} type="button">
+            {pending ? "Redirecting..." : "Install on GitHub"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Already installed on a different project? Reuse the same
+            installation here.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

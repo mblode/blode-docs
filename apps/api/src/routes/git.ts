@@ -1,5 +1,6 @@
 import { GitConnectionBindSchema } from "@repo/contracts";
 import { Hono } from "hono";
+import { decodeJwt } from "jose";
 import { z } from "zod";
 
 import { gitConnectionDao, projectDao } from "../lib/db";
@@ -7,10 +8,12 @@ import {
   getInstallationAccount,
   installAppUrl,
   isGithubAppConfigured,
+  listAppInstallations,
   listInstallationRepos,
   signInstallState,
   verifyInstallState,
 } from "../lib/github";
+import { getBearerToken } from "../lib/header-auth";
 import { logError } from "../lib/logger";
 import {
   authorizeProjectRequest,
@@ -159,6 +162,60 @@ githubInstall.get(
     return c.json({ repos }, 200);
   }
 );
+
+const extractGithubLogin = (
+  headers: Record<string, unknown>
+): string | null => {
+  const token = getBearerToken(headers);
+  if (!token) {
+    return null;
+  }
+  try {
+    const claims = decodeJwt(token) as {
+      user_metadata?: {
+        user_name?: unknown;
+        preferred_username?: unknown;
+      };
+    };
+    const metadata = claims.user_metadata;
+    const login =
+      (typeof metadata?.user_name === "string" && metadata.user_name) ||
+      (typeof metadata?.preferred_username === "string" &&
+        metadata.preferred_username) ||
+      null;
+    return login ? login.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+};
+
+githubInstall.get("/installations/mine", async (c) => {
+  if (!(await getAuthenticatedUser(c))) {
+    return unauthorized(c, "Authentication required.");
+  }
+  if (!isGithubAppConfigured()) {
+    return c.json({ installations: [] }, 200);
+  }
+  const login = extractGithubLogin(
+    Object.fromEntries(c.req.raw.headers.entries())
+  );
+  if (!login) {
+    return c.json({ installations: [] }, 200);
+  }
+  const installations = await listAppInstallations().catch(
+    (error: unknown) => {
+      logError("Failed to list app installations", error);
+      return null;
+    }
+  );
+  if (!installations) {
+    return c.json({ installations: [] }, 200);
+  }
+  const matches = installations.filter(
+    (installation) => installation.accountLogin.toLowerCase() === login
+  );
+  return c.json({ installations: matches }, 200);
+});
 
 githubInstall.get("/state/:state", async (c) => {
   if (!(await getAuthenticatedUser(c))) {

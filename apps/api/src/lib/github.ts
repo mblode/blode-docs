@@ -179,6 +179,46 @@ export const getInstallationAccount = async (
   return { login: account.login, type: account.type ?? "User" };
 };
 
+export interface AppInstallationSummary {
+  id: number;
+  accountLogin: string;
+  accountType: string;
+}
+
+export const listAppInstallations = async (): Promise<
+  AppInstallationSummary[]
+> => {
+  const { appId, privateKey } = githubAppEnv();
+  if (!(appId && privateKey)) {
+    return [];
+  }
+  const octokit = new Octokit({
+    auth: { appId, privateKey: decodePrivateKey(privateKey) },
+    authStrategy: createAppAuth,
+  });
+  const installations = await octokit.paginate(
+    "GET /app/installations",
+    { per_page: 100 },
+    (response) => response.data
+  );
+  const summaries: AppInstallationSummary[] = [];
+  for (const installation of installations) {
+    const account = installation.account as {
+      login?: string;
+      type?: string;
+    } | null;
+    if (!account?.login) {
+      continue;
+    }
+    summaries.push({
+      accountLogin: account.login,
+      accountType: account.type ?? "User",
+      id: installation.id,
+    });
+  }
+  return summaries;
+};
+
 export interface RepoFile {
   relativePath: string;
   content: Buffer;
