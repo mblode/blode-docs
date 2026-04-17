@@ -1,9 +1,8 @@
 import { GitConnectionBindSchema } from "@repo/contracts";
 import { Hono } from "hono";
-import { decodeJwt } from "jose";
 import { z } from "zod";
 
-import { gitConnectionDao, projectDao } from "../lib/db";
+import { githubInstallationDao, gitConnectionDao, projectDao } from "../lib/db";
 import {
   exchangeUserCode,
   getInstallationAccount,
@@ -15,7 +14,6 @@ import {
   signInstallState,
   verifyInstallState,
 } from "../lib/github";
-import { getBearerToken } from "../lib/header-auth";
 import { logError } from "../lib/logger";
 import {
   authorizeProjectRequest,
@@ -165,56 +163,67 @@ githubInstall.get(
   }
 );
 
-const extractGithubLogin = (
-  headers: Record<string, unknown>
-): string | null => {
-  const token = getBearerToken(headers);
-  if (!token) {
-    return null;
+githubInstall.get(
+  "/installations/:installationId/account",
+  validateParams(installationParamsSchema),
+  async (c) => {
+    const { installationId } = c.req.valid("param");
+    if (!(await getAuthenticatedUser(c))) {
+      return unauthorized(c, "Authentication required.");
+    }
+    if (!isGithubAppConfigured()) {
+      return badRequest(c, "GitHub App is not configured on this server.");
+    }
+    const account = await getInstallationAccount(installationId).catch(
+      (error: unknown) => {
+        logError("Failed to fetch installation account", error);
+        return null;
+      }
+    );
+    if (!account) {
+      return notFound(c);
+    }
+    return c.json(
+      {
+        accountLogin: account.login,
+        accountType: account.type,
+        id: installationId,
+      },
+      200
+    );
   }
-  try {
-    const claims = decodeJwt(token) as {
-      user_metadata?: {
-        user_name?: unknown;
-        preferred_username?: unknown;
-      };
-    };
-    const metadata = claims.user_metadata;
-    const login =
-      (typeof metadata?.user_name === "string" && metadata.user_name) ||
-      (typeof metadata?.preferred_username === "string" &&
-        metadata.preferred_username) ||
-      null;
-    return login ? login.toLowerCase() : null;
-  } catch {
-    return null;
-  }
-};
+);
 
 githubInstall.get("/installations/mine", async (c) => {
-  if (!(await getAuthenticatedUser(c))) {
+  const user = await getAuthenticatedUser(c);
+  if (!user) {
     return unauthorized(c, "Authentication required.");
   }
   if (!isGithubAppConfigured()) {
     return c.json({ installations: [] }, 200);
   }
-  const login = extractGithubLogin(
-    Object.fromEntries(c.req.raw.headers.entries())
-  );
-  if (!login) {
-    return c.json({ installations: [] }, 200);
-  }
-  const installations = await listAppInstallations().catch((error: unknown) => {
-    logError("Failed to list app installations", error);
-    return null;
-  });
-  if (!installations) {
-    return c.json({ installations: [] }, 200);
-  }
-  const matches = installations.filter(
-    (installation) => installation.accountLogin.toLowerCase() === login
-  );
-  return c.json({ installations: matches }, 200);
+
+  const [stored, live] = await Promise.all([
+    githubInstallationDao.listByUserId(user.id),
+    listAppInstallations().catch((error: unknown) => {
+      logError("Failed to list app installations", error);
+      return null;
+    }),
+  ]);
+
+  const liveIds = live
+    ? new Set(live.map((installation) => installation.id))
+    : null;
+
+  const installations = stored
+    .filter((row) => liveIds === null || liveIds.has(row.installationId))
+    .map((row) => ({
+      accountLogin: row.accountLogin,
+      accountType: row.accountType,
+      id: row.installationId,
+    }));
+
+  return c.json({ installations }, 200);
 });
 
 const codeBodySchema = z.object({ code: z.string().min(1) });
@@ -223,7 +232,8 @@ githubInstall.post(
   "/installations/from-code",
   validateJson(codeBodySchema),
   async (c) => {
-    if (!(await getAuthenticatedUser(c))) {
+    const user = await getAuthenticatedUser(c);
+    if (!user) {
       return unauthorized(c, "Authentication required.");
     }
     if (!isGithubAppConfigured()) {
@@ -246,6 +256,18 @@ githubInstall.post(
     if (!installations) {
       return badRequest(c, "Could not read user installations from GitHub.");
     }
+    await githubInstallationDao
+      .replaceForUser(
+        user.id,
+        installations.map((installation) => ({
+          accountLogin: installation.accountLogin,
+          accountType: installation.accountType,
+          installationId: installation.id,
+        }))
+      )
+      .catch((error: unknown) => {
+        logError("Failed to persist user installations", error);
+      });
     return c.json({ installations }, 200);
   }
 );

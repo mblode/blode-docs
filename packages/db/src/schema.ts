@@ -144,3 +144,26 @@ export const gitConnections = pgTable(
   },
   (table) => [uniqueIndex("git_connections_project_id_key").on(table.projectId)]
 );
+
+export const githubInstallations = pgTable(
+  "github_installations",
+  {
+    accountLogin: text("account_login").notNull(),
+    accountType: text("account_type").notNull(),
+    createdAt: timestampColumn("created_at").defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    installationId: bigint("installation_id", { mode: "number" }).notNull(),
+    updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    uniqueIndex("github_installations_user_install_key").on(
+      table.userId,
+      table.installationId
+    ),
+    index("github_installations_user_id_idx").on(table.userId),
+    index("github_installations_installation_id_idx").on(table.installationId),
+  ]
+);

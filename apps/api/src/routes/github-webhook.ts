@@ -1,6 +1,11 @@
 import { Hono } from "hono";
 
-import { deploymentDao, gitConnectionDao, projectDao } from "../lib/db";
+import {
+  deploymentDao,
+  githubInstallationDao,
+  gitConnectionDao,
+  projectDao,
+} from "../lib/db";
 import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
 import { fetchDocsFiles, verifyWebhookSignature } from "../lib/github";
 import { logError, logWarn } from "../lib/logger";
@@ -135,6 +140,22 @@ githubWebhook.post("/", async (c) => {
   const event = c.req.header("x-github-event");
   if (event === "ping") {
     return c.json({ ok: true, pong: true }, 200);
+  }
+  if (event === "installation") {
+    const payload = safeParse(rawBody) as
+      | (PushPayload & { action?: string })
+      | null;
+    if (
+      payload?.action === "deleted" &&
+      typeof payload.installation?.id === "number"
+    ) {
+      await githubInstallationDao
+        .deleteByInstallationId(payload.installation.id)
+        .catch((error: unknown) => {
+          logError("Failed to delete github installation rows", error);
+        });
+    }
+    return c.json({ ok: true }, 200);
   }
   if (event !== "push") {
     return c.json({ ignored: event, ok: true }, 200);

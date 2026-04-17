@@ -62,6 +62,7 @@ export interface RepoPickerProps {
   projectId: string;
   projectSlug: string;
   addAccountPending?: boolean;
+  initialInstallationId?: number | null;
   onConnected?: (connection: GitConnection) => void;
 }
 
@@ -241,7 +242,7 @@ const AccountPicker = ({
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
         aria-label="Select GitHub account"
-        className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm outline-none transition hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm outline-none transition hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
         type="button"
       >
         {selected ? (
@@ -319,6 +320,7 @@ const AccountPicker = ({
 export const RepoPicker = ({
   accessToken,
   addAccountPending,
+  initialInstallationId = null,
   installations,
   onAddAccount,
   onConnected,
@@ -326,9 +328,14 @@ export const RepoPicker = ({
   projectSlug,
 }: RepoPickerProps) => {
   const router = useRouter();
+  const preselected =
+    initialInstallationId !== null &&
+    installations.some((i) => i.id === initialInstallationId)
+      ? initialInstallationId
+      : (installations[0]?.id ?? null);
   const [selectedInstallationId, setSelectedInstallationId] = useState<
     number | null
-  >(installations[0]?.id ?? null);
+  >(preselected);
   const [repos, setRepos] = useState<RepoSummary[] | null>(null);
   const [formError, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RepoSummary | null>(null);

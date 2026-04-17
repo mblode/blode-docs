@@ -2,6 +2,7 @@ import type {
   deployments,
   domains,
   gitConnections,
+  githubInstallations,
   projects,
   users,
 } from "../schema.js";
@@ -11,6 +12,7 @@ type ProjectRow = typeof projects.$inferSelect;
 type DomainRow = typeof domains.$inferSelect;
 type DeploymentRow = typeof deployments.$inferSelect;
 type GitConnectionRow = typeof gitConnections.$inferSelect;
+type GithubInstallationRow = typeof githubInstallations.$inferSelect;
 
 export type UserRecord = Pick<
   UserRow,
@@ -69,4 +71,15 @@ export type GitConnectionRecord = Pick<
   | "provider"
   | "repository"
   | "updatedAt"
+>;
+
+export type GithubInstallationRecord = Pick<
+  GithubInstallationRow,
+  | "accountLogin"
+  | "accountType"
+  | "createdAt"
+  | "id"
+  | "installationId"
+  | "updatedAt"
+  | "userId"
 >;

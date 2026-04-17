@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ApiError, apiFetch } from "@/lib/api-client";
 import { getDashboardSession } from "@/lib/dashboard-session";
-
-import { GithubInstallCallback } from "./callback-client";
 
 interface CallbackPageProps {
   searchParams: Promise<{
@@ -13,6 +12,16 @@ interface CallbackPageProps {
     state?: string;
   }>;
 }
+
+const ErrorCard = ({ message }: { message: string }) => (
+  <div className="mx-auto max-w-lg space-y-3 py-12 text-center">
+    <h1 className="text-2xl font-semibold">Install didn&apos;t complete</h1>
+    <p className="text-sm text-muted-foreground">{message}</p>
+    <Link className="text-sm underline" href="/app">
+      Back to projects
+    </Link>
+  </div>
+);
 
 export default async function GithubCallbackPage({
   searchParams,
@@ -32,25 +41,38 @@ export default async function GithubCallbackPage({
 
   if (!Number.isFinite(installationId) || installationId <= 0) {
     return (
-      <div className="mx-auto max-w-lg space-y-3 py-12 text-center">
-        <h1 className="text-2xl font-semibold">No installation</h1>
-        <p className="text-sm text-muted-foreground">
-          GitHub didn&apos;t return an installation id. Try again from the
-          project Git tab.
-        </p>
-        <Link className="text-sm underline" href="/app">
-          Back to projects
-        </Link>
-      </div>
+      <ErrorCard message="GitHub didn't return an installation id. Try again from the project Git tab." />
     );
   }
 
-  return (
-    <GithubInstallCallback
-      accessToken={session.accessToken}
-      code={code}
-      installationId={installationId}
-      state={state}
-    />
-  );
+  if (!state) {
+    return (
+      <ErrorCard message="Missing install state. Try again from the project Git tab." />
+    );
+  }
+
+  let projectSlug: string;
+  try {
+    const verified = await apiFetch<{
+      projectId: string;
+      projectSlug: string;
+    }>(`/git/state/${encodeURIComponent(state)}`, {
+      accessToken: session.accessToken,
+    });
+    ({ projectSlug } = verified);
+  } catch (error) {
+    const message =
+      error instanceof ApiError
+        ? error.message
+        : "Couldn't recover the install state. Please retry from the project Git tab.";
+    return <ErrorCard message={message} />;
+  }
+
+  const query = new URLSearchParams({
+    installation_id: String(installationId),
+  });
+  if (code) {
+    query.set("code", code);
+  }
+  redirect(`/app/${projectSlug}/git?${query.toString()}`);
 }

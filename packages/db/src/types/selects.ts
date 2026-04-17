@@ -2,6 +2,7 @@ import {
   deployments,
   domains,
   gitConnections,
+  githubInstallations,
   projects,
   users,
 } from "../schema.js";
@@ -63,4 +64,14 @@ export const gitConnectionSelect = {
   provider: gitConnections.provider,
   repository: gitConnections.repository,
   updatedAt: gitConnections.updatedAt,
+} as const;
+
+export const githubInstallationSelect = {
+  accountLogin: githubInstallations.accountLogin,
+  accountType: githubInstallations.accountType,
+  createdAt: githubInstallations.createdAt,
+  id: githubInstallations.id,
+  installationId: githubInstallations.installationId,
+  updatedAt: githubInstallations.updatedAt,
+  userId: githubInstallations.userId,
 } as const;

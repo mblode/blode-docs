@@ -20,5 +20,6 @@ export default defineConfig({
     "domains",
     "deployments",
     "git_connections",
+    "github_installations",
   ],
 });

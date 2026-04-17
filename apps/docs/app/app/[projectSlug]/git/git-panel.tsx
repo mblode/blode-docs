@@ -27,6 +27,7 @@ export interface SuggestedInstallation {
 interface GitConnectionPanelProps {
   accessToken: string;
   initialConnection: GitConnection | null;
+  initialInstallationId?: number | null;
   project: Project;
   suggestedInstallations?: SuggestedInstallation[];
 }
@@ -34,6 +35,7 @@ interface GitConnectionPanelProps {
 export const GitConnectionPanel = ({
   accessToken,
   initialConnection,
+  initialInstallationId = null,
   project,
   suggestedInstallations = [],
 }: GitConnectionPanelProps) => {
@@ -124,6 +126,7 @@ export const GitConnectionPanel = ({
         <RepoPicker
           accessToken={accessToken}
           addAccountPending={pending}
+          initialInstallationId={initialInstallationId}
           installations={suggestedInstallations}
           onAddAccount={handleInstall}
           onConnected={setConnection}
