@@ -2,7 +2,7 @@ import { GitConnectionBindSchema } from "@repo/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { gitConnectionDao } from "../lib/db";
+import { gitConnectionDao, projectDao } from "../lib/db";
 import {
   getInstallationAccount,
   installAppUrl,
@@ -169,5 +169,9 @@ githubInstall.get("/state/:state", async (c) => {
   if (!verified) {
     return badRequest(c, "Install state is invalid or expired.");
   }
-  return c.json(verified, 200);
+  const project = await projectDao.getById(verified.projectId);
+  if (!project) {
+    return badRequest(c, "Project not found.");
+  }
+  return c.json({ projectId: project.id, projectSlug: project.slug }, 200);
 });

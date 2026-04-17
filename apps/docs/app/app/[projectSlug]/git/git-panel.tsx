@@ -43,7 +43,11 @@ export const GitConnectionPanel = ({
       );
       sessionStorage.setItem(
         "blodemd:install-state",
-        JSON.stringify({ projectSlug: project.slug, state: result.state })
+        JSON.stringify({
+          projectId: project.id,
+          projectSlug: project.slug,
+          state: result.state,
+        })
       );
       window.location.assign(result.url);
     } catch (error) {

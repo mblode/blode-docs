@@ -2,7 +2,7 @@
 
 // oxlint-disable eslint-plugin-react-perf/jsx-no-new-function-as-prop -- deferred useCallback refactor
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,7 @@ interface RepoSummary {
 }
 
 interface PendingInstall {
+  projectId: string;
   projectSlug: string;
   state: string;
 }
@@ -44,6 +45,7 @@ export const GithubInstallCallback = ({
   state,
 }: GithubInstallCallbackProps) => {
   const router = useRouter();
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [projectSlug, setProjectSlug] = useState<string | null>(null);
   const [repos, setRepos] = useState<RepoSummary[] | null>(null);
   const [formError, setError] = useState<string | null>(null);
@@ -52,12 +54,10 @@ export const GithubInstallCallback = ({
   const [docsPath, setDocsPath] = useState("docs");
   const [submitting, setSubmitting] = useState(false);
 
-  const projectId = useMemo(() => projectSlug, [projectSlug]);
-
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      // Recover project slug from sessionStorage (set when initiating install).
+      // Recover project identifiers from sessionStorage (set when initiating install).
       const raw = sessionStorage.getItem("blodemd:install-state");
       let pending: PendingInstall | null = null;
       if (raw) {
@@ -67,20 +67,21 @@ export const GithubInstallCallback = ({
           pending = null;
         }
       }
-      if (pending && pending.state === state) {
+      if (pending && pending.state === state && pending.projectId) {
         if (!cancelled) {
+          setProjectId(pending.projectId);
           setProjectSlug(pending.projectSlug);
         }
       } else {
         // Verify state with API as a fallback.
         try {
-          const verified = await apiFetch<{ projectId: string }>(
-            `/git/state/${encodeURIComponent(state)}`,
-            { accessToken }
-          );
-          // We have the project ID but not the slug — bounce back with it as path.
+          const verified = await apiFetch<{
+            projectId: string;
+            projectSlug: string;
+          }>(`/git/state/${encodeURIComponent(state)}`, { accessToken });
           if (!cancelled) {
-            setProjectSlug(verified.projectId);
+            setProjectId(verified.projectId);
+            setProjectSlug(verified.projectSlug);
           }
         } catch (error) {
           const message =
