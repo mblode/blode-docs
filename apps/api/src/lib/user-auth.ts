@@ -1,5 +1,10 @@
 import type { UserRecord } from "@repo/db";
-import { errors as joseErrors, jwtVerify } from "jose";
+import {
+  createRemoteJWKSet,
+  decodeProtectedHeader,
+  errors as joseErrors,
+  jwtVerify,
+} from "jose";
 
 import { supabaseJwtSecret, supabaseUrl } from "./config";
 import { userDao } from "./db";
@@ -14,7 +19,7 @@ const USER_CACHE_TTL_MS = 30_000;
 const fallbackEmail = (authId: string) => `${authId}@${FALLBACK_EMAIL_DOMAIN}`;
 
 let cachedSecret: Uint8Array | null = null;
-const getJwtSecret = (): Uint8Array | null => {
+const getHmacKey = (): Uint8Array | null => {
   if (!supabaseJwtSecret) {
     return null;
   }
@@ -24,8 +29,46 @@ const getJwtSecret = (): Uint8Array | null => {
   return cachedSecret;
 };
 
-const getExpectedIssuer = (): string | undefined =>
+const getIssuer = (): string | undefined =>
   supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/auth/v1` : undefined;
+
+let cachedJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+const getJwks = () => {
+  if (!supabaseUrl) {
+    return null;
+  }
+  if (!cachedJwks) {
+    cachedJwks = createRemoteJWKSet(
+      new URL(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/.well-known/jwks.json`)
+    );
+  }
+  return cachedJwks;
+};
+
+const verifyOptions = {
+  audience: "authenticated",
+  clockTolerance: "5s",
+  issuer: getIssuer(),
+};
+
+const verifyAccessToken = (token: string) => {
+  const header = decodeProtectedHeader(token);
+  if (header.alg === "HS256") {
+    const secret = getHmacKey();
+    if (!secret) {
+      throw new Error("SUPABASE_JWT_SECRET required for HS256 tokens.");
+    }
+    return jwtVerify(token, secret, {
+      ...verifyOptions,
+      algorithms: ["HS256"],
+    });
+  }
+  const jwks = getJwks();
+  if (!jwks) {
+    throw new Error("SUPABASE_URL required for asymmetric token verification.");
+  }
+  return jwtVerify(token, jwks, verifyOptions);
+};
 
 interface SupabaseAccessTokenClaims {
   sub?: unknown;
@@ -74,8 +117,6 @@ const resolveUserRecord = async (claims: {
   if (existing) {
     return existing;
   }
-  // Cold path: user signed in before the OAuth callback upsert shipped, or
-  // their row was manually deleted. Recreate it so the request can proceed.
   logWarn("Upserting missing user row during API request.", {
     authId: claims.authId,
   });
@@ -94,20 +135,9 @@ export const authenticateUser = async (
     return null;
   }
 
-  const secret = getJwtSecret();
-  if (!secret) {
-    logWarn("SUPABASE_JWT_SECRET not configured; rejecting user token.", null);
-    return null;
-  }
-
   let claims: SupabaseAccessTokenClaims;
   try {
-    const { payload } = await jwtVerify(token, secret, {
-      algorithms: ["HS256"],
-      audience: "authenticated",
-      clockTolerance: "5s",
-      issuer: getExpectedIssuer(),
-    });
+    const { payload } = await verifyAccessToken(token);
     claims = payload as SupabaseAccessTokenClaims;
   } catch (error) {
     if (!(error instanceof joseErrors.JOSEError)) {

@@ -1,4 +1,9 @@
-import { errors as joseErrors, jwtVerify } from "jose";
+import {
+  createRemoteJWKSet,
+  decodeProtectedHeader,
+  errors as joseErrors,
+  jwtVerify,
+} from "jose";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
@@ -13,7 +18,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseJwtSecret = process.env.SUPABASE_JWT_SECRET ?? "";
 
 let cachedSecret: Uint8Array | null = null;
-const getSecret = (): Uint8Array | null => {
+const getHmacKey = (): Uint8Array | null => {
   if (!supabaseJwtSecret) {
     return null;
   }
@@ -23,8 +28,42 @@ const getSecret = (): Uint8Array | null => {
   return cachedSecret;
 };
 
+let cachedJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+const getJwks = () => {
+  if (!supabaseUrl) {
+    return null;
+  }
+  if (!cachedJwks) {
+    cachedJwks = createRemoteJWKSet(
+      new URL(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/.well-known/jwks.json`)
+    );
+  }
+  return cachedJwks;
+};
+
 const getIssuer = (): string | undefined =>
   supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/auth/v1` : undefined;
+
+const verifyAccessToken = (token: string) => {
+  const header = decodeProtectedHeader(token);
+  const options = {
+    audience: "authenticated",
+    clockTolerance: "5s",
+    issuer: getIssuer(),
+  };
+  if (header.alg === "HS256") {
+    const secret = getHmacKey();
+    if (!secret) {
+      throw new Error("SUPABASE_JWT_SECRET required for HS256 tokens.");
+    }
+    return jwtVerify(token, secret, { ...options, algorithms: ["HS256"] });
+  }
+  const jwks = getJwks();
+  if (!jwks) {
+    throw new Error("SUPABASE_URL required for asymmetric token verification.");
+  }
+  return jwtVerify(token, jwks, options);
+};
 
 // Supabase's auth-helpers cookie name is derived from the project ref. We
 // match the default pattern the browser client writes: `sb-<ref>-auth-token`.
@@ -92,9 +131,8 @@ const asString = (value: unknown): string | null =>
 
 export const getDashboardSession = cache(
   async (): Promise<DashboardSession | null> => {
-    const secret = getSecret();
     const ref = getProjectRef();
-    if (!secret || !ref) {
+    if (!ref) {
       return null;
     }
 
@@ -106,12 +144,7 @@ export const getDashboardSession = cache(
 
     let authId: string;
     try {
-      const { payload } = await jwtVerify(accessToken, secret, {
-        algorithms: ["HS256"],
-        audience: "authenticated",
-        clockTolerance: "5s",
-        issuer: getIssuer(),
-      });
+      const { payload } = await verifyAccessToken(accessToken);
       const sub = asString(payload.sub);
       if (!sub) {
         return null;
