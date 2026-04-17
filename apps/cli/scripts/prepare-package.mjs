@@ -5,6 +5,8 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { REPO_PACKAGES } from "./repo-packages.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliRoot = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(cliRoot, "../..");
@@ -27,6 +29,18 @@ if (!shouldPackage && !isGlobalInstall) {
 }
 
 console.log("Preparing blodemd standalone package...");
+
+// Build @repo/* workspace packages first so tsdown can inline their dist/
+// output into the CLI bundle. Without this, tsdown falls back to treating
+// `@repo/common` etc. as external imports and the published tarball ships
+// unresolved imports that break `npx blodemd`.
+console.log("Building @repo packages...");
+for (const pkg of REPO_PACKAGES) {
+  execSync("npm run build", {
+    cwd: path.join(repoRoot, `packages/${pkg}`),
+    stdio: "inherit",
+  });
+}
 
 execSync("npm run build", {
   cwd: cliRoot,

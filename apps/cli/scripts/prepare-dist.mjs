@@ -7,31 +7,15 @@
  * Run: node scripts/prepare-dist.mjs
  */
 
-import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { REPO_PACKAGES } from "./repo-packages.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliRoot = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(cliRoot, "../..");
-
-// 0. Build @repo packages so dist/ is available for all of them
-console.log("Building @repo packages...");
-const REPO_PACKAGES = [
-  "common",
-  "contracts",
-  "models",
-  "prebuild",
-  "previewing",
-  "validation",
-];
-for (const pkg of REPO_PACKAGES) {
-  execSync("npm run build", {
-    cwd: path.join(repoRoot, `packages/${pkg}`),
-    stdio: "inherit",
-  });
-}
 
 const EXCLUDE_DIRS = new Set([
   "node_modules",
