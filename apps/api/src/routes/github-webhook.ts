@@ -1,13 +1,21 @@
 import { Hono } from "hono";
 
-import { deploymentDao, gitConnectionDao } from "../lib/db";
+import { deploymentDao, gitConnectionDao, projectDao } from "../lib/db";
 import { syncProjectTenantEdgeConfig } from "../lib/edge-config";
-import { verifyWebhookSignature } from "../lib/github";
+import { fetchDocsFiles, verifyWebhookSignature } from "../lib/github";
 import { logError, logWarn } from "../lib/logger";
+import { prewarmProject } from "../lib/prewarm";
+import {
+  finalizeDeploymentManifest,
+  isPublishValidationError,
+  uploadDeploymentFiles,
+} from "../lib/publish";
 import { unauthorized } from "../lib/responses";
+import { revalidateProject } from "../lib/revalidate";
 
 interface PushPayload {
   ref?: string;
+  after?: string;
   installation?: { id?: number };
   repository?: { full_name?: string };
   head_commit?: { id?: string; message?: string };
@@ -29,6 +37,92 @@ const branchFromRef = (ref?: string): string | null => {
   return ref.slice("refs/heads/".length);
 };
 
+interface RunInput {
+  branch: string;
+  commitMessage: string | null;
+  commitSha: string;
+  connection: Awaited<
+    ReturnType<typeof gitConnectionDao.listByInstallation>
+  >[number];
+}
+
+const runDeployment = async (input: RunInput): Promise<string | null> => {
+  const project = await projectDao.getById(input.connection.projectId);
+  if (!project) {
+    logWarn(
+      `Webhook: project ${input.connection.projectId} missing for connection ${input.connection.id}`,
+      null
+    );
+    return null;
+  }
+
+  const deployment = await deploymentDao.create({
+    branch: input.branch,
+    commitMessage: input.commitMessage,
+    environment: "production",
+    projectId: project.id,
+    status: "building",
+  });
+
+  try {
+    const { files } = await fetchDocsFiles({
+      docsPath: input.connection.docsPath,
+      installationId: input.connection.installationId,
+      ref: input.commitSha,
+      repository: input.connection.repository,
+    });
+
+    await uploadDeploymentFiles(
+      project.slug,
+      deployment.id,
+      files.map((file) => ({
+        content: file.content,
+        relativePath: file.relativePath,
+      }))
+    );
+
+    const manifest = await finalizeDeploymentManifest({
+      deploymentId: deployment.id,
+      projectSlug: project.slug,
+    });
+
+    await deploymentDao.update(deployment.id, {
+      fileCount: manifest.fileCount,
+      manifestUrl: manifest.manifestUrl,
+      promotedAt: new Date(),
+      status: "successful",
+    });
+
+    try {
+      await syncProjectTenantEdgeConfig(project.id);
+    } catch (error) {
+      logWarn("Webhook: edge config sync failed", error);
+    }
+    try {
+      await revalidateProject(project.slug);
+    } catch (error) {
+      logWarn("Webhook: revalidate failed", error);
+    }
+    try {
+      await prewarmProject(project.id);
+    } catch (error) {
+      logWarn("Webhook: prewarm failed", error);
+    }
+
+    return deployment.id;
+  } catch (error) {
+    await deploymentDao
+      .update(deployment.id, { status: "failed" })
+      .catch(() => null);
+    if (isPublishValidationError(error)) {
+      logError(`Webhook deployment ${deployment.id} validation failed`, error);
+    } else {
+      logError(`Webhook deployment ${deployment.id} failed`, error);
+    }
+    return deployment.id;
+  }
+};
+
 export const githubWebhook = new Hono();
 
 githubWebhook.post("/", async (c) => {
@@ -39,6 +133,9 @@ githubWebhook.post("/", async (c) => {
   }
 
   const event = c.req.header("x-github-event");
+  if (event === "ping") {
+    return c.json({ ok: true, pong: true }, 200);
+  }
   if (event !== "push") {
     return c.json({ ignored: event, ok: true }, 200);
   }
@@ -51,6 +148,11 @@ githubWebhook.post("/", async (c) => {
   const branch = branchFromRef(payload.ref);
   if (!branch) {
     return c.json({ ignored: "non-branch ref", ok: true }, 200);
+  }
+
+  const commitSha = payload.after ?? payload.head_commit?.id;
+  if (!commitSha) {
+    return c.json({ ignored: "missing commit sha", ok: true }, 200);
   }
 
   const installationId = payload.installation.id;
@@ -67,39 +169,20 @@ githubWebhook.post("/", async (c) => {
     return c.json({ ignored: "no matching connection", ok: true }, 200);
   }
 
-  const results = await Promise.allSettled(
-    matches.map(async (connection) => {
-      const deployment = await deploymentDao.create({
+  const deploymentIds = await Promise.all(
+    matches.map((connection) =>
+      runDeployment({
         branch,
         commitMessage: payload.head_commit?.message ?? null,
-        environment: "production",
-        projectId: connection.projectId,
-        status: "queued",
-      });
-      // Webhook only enqueues — push of file contents happens via the
-      // existing /deployments/:id/files/batch + finalize endpoints, which
-      // the GitHub-side runner (or future background job) will call.
-      try {
-        await syncProjectTenantEdgeConfig(connection.projectId);
-      } catch (error) {
-        logWarn("Failed to sync tenant Edge Config after webhook", error);
-      }
-      return deployment.id;
-    })
+        commitSha,
+        connection,
+      })
+    )
   );
-
-  const failed = results.filter((r) => r.status === "rejected");
-  if (failed.length > 0) {
-    for (const result of failed) {
-      logError("Webhook deployment enqueue failed", result.reason);
-    }
-  }
 
   return c.json(
     {
-      enqueued: results
-        .filter((r) => r.status === "fulfilled")
-        .map((r) => (r as PromiseFulfilledResult<string>).value),
+      deployments: deploymentIds.filter((id): id is string => id !== null),
       ok: true,
     },
     202

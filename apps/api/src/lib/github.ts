@@ -176,3 +176,101 @@ export const getInstallationAccount = async (
   }
   return { login: account.login, type: account.type ?? "User" };
 };
+
+export interface RepoFile {
+  relativePath: string;
+  content: Buffer;
+}
+
+export interface FetchDocsResult {
+  commitSha: string;
+  files: RepoFile[];
+}
+
+const FETCH_BLOB_CONCURRENCY = 10;
+
+const splitRepository = (repository: string): [string, string] => {
+  const [owner, repo] = repository.split("/");
+  if (!(owner && repo)) {
+    throw new Error(`Invalid repository: ${repository}`);
+  }
+  return [owner, repo];
+};
+
+const stripSlashes = (value: string) => value.replaceAll(/^\/+|\/+$/g, "");
+
+/**
+ * Fetch every file under `docsPath` in the given ref using the GitHub Trees +
+ * Blobs API. Returns resolved commit SHA plus file contents for the caller to
+ * upload.
+ */
+export const fetchDocsFiles = async (input: {
+  installationId: number;
+  repository: string;
+  ref: string;
+  docsPath: string;
+}): Promise<FetchDocsResult> => {
+  const octokit = buildOctokit(input.installationId);
+  const [owner, repo] = splitRepository(input.repository);
+
+  const { data: commit } = await octokit.repos.getCommit({
+    owner,
+    ref: input.ref,
+    repo,
+  });
+  const commitSha = commit.sha;
+  const treeSha = commit.commit.tree.sha;
+
+  const { data: tree } = await octokit.git.getTree({
+    owner,
+    recursive: "1",
+    repo,
+    tree_sha: treeSha,
+  });
+
+  if (tree.truncated) {
+    throw new Error(
+      `Repository tree for ${input.repository}@${commitSha} is too large (GitHub truncated the response).`
+    );
+  }
+
+  const normalizedPath = stripSlashes(input.docsPath);
+  const prefix = normalizedPath ? `${normalizedPath}/` : "";
+
+  const entries = tree.tree.filter(
+    (entry): entry is typeof entry & { path: string; sha: string } =>
+      entry.type === "blob" &&
+      typeof entry.path === "string" &&
+      typeof entry.sha === "string" &&
+      (prefix ? entry.path.startsWith(prefix) : true)
+  );
+
+  if (entries.length === 0) {
+    throw new Error(
+      `No files found under "${normalizedPath || "/"}" in ${input.repository}@${commitSha}.`
+    );
+  }
+
+  const files: RepoFile[] = [];
+  for (let i = 0; i < entries.length; i += FETCH_BLOB_CONCURRENCY) {
+    const batch = entries.slice(i, i + FETCH_BLOB_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(async (entry) => {
+        const { data: blob } = await octokit.git.getBlob({
+          file_sha: entry.sha,
+          owner,
+          repo,
+        });
+        const encoding = (blob.encoding ?? "base64") as BufferEncoding;
+        const content = Buffer.from(blob.content, encoding);
+        const relativePath = prefix
+          ? entry.path.slice(prefix.length)
+          : entry.path;
+        return { content, relativePath };
+      })
+    );
+    files.push(...batchResults);
+  }
+
+  return { commitSha, files };
+};
