@@ -12,6 +12,7 @@ export const revalidateProject = async (projectSlug: string) => {
   const url = new URL("/api/revalidate", docsAppUrl);
   const response = await fetch(url, {
     body: JSON.stringify({
+      paths: [`/sites/${projectSlug}`],
       secret: revalidateSecret,
       tags: [`project:${projectSlug}`, "tenants"],
     }),
