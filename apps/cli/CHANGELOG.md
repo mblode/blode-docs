@@ -1,5 +1,11 @@
 # blodemd
 
+## 0.0.12
+
+### Patch Changes
+
+- 85c7a6a: Fix `npx blodemd` failing with `Cannot find package '@repo/common'`. The CLI build now builds the workspace `@repo/*` packages before running tsdown so their compiled output is inlined into the published bundle, and the npm publish workflow runs the CLI build through turbo so `^build` ordering is respected.
+
 ## 0.0.11
 
 ### Patch Changes
