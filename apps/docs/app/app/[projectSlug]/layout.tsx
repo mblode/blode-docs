@@ -1,3 +1,4 @@
+import { ArrowLeftIcon, ArrowUpRightIcon } from "blode-icons-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -29,22 +30,24 @@ export default async function ProjectLayout({
     <div className="space-y-6">
       <div>
         <Link
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           href="/app"
         >
-          ← All projects
+          <ArrowLeftIcon className="size-3" />
+          All projects
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">
             {project.name}
           </h1>
           <a
-            className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
             href={`https://${project.slug}.${platformRootDomain}`}
             rel="noopener noreferrer"
             target="_blank"
           >
-            {project.slug}.{platformRootDomain} ↗
+            {project.slug}.{platformRootDomain}
+            <ArrowUpRightIcon className="size-3" />
           </a>
         </div>
       </div>
