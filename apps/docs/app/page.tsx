@@ -169,15 +169,14 @@ export default async function HomePage() {
           <div className="container">
             <Badge className="mb-8 gap-1.5" variant="secondary">
               <SparklesIcon />
-              Docs, in your git workflow
+              Built for humans and AI
             </Badge>
             <h1 className="h-display max-w-4xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
-              Docs belong where your code lives
+              Gorgeous docs in one push
             </h1>
             <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-              Great docs shouldn&apos;t need a second CMS, a second workflow, or
-              a second team. blode.md keeps them next to your code — versioned
-              in git, reviewed in pull requests, and shipped on every push.
+              Write MDX, commit, push. blode.md ships a fast, beautiful docs
+              site your users love — and the LLMs they ask can actually read.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
