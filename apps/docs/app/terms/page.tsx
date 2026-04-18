@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 
 import { Badge } from "@/components/ui/badge";
 import { MarketingShell } from "@/components/ui/marketing-shell";
+import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "Terms of service for blode.md — the ground rules for using the platform, how we handle your content, and the limits on our liability.",
-  title: "Terms — Blode.md",
+    "Terms of service for blode.md. The ground rules for using the platform.",
+  title: "Terms | Blode.md",
 };
 
 export default function TermsPage() {
@@ -20,9 +21,6 @@ export default function TermsPage() {
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
             Terms of service
           </h1>
-          <p className="mt-6 text-muted-foreground">
-            Last updated: April 1, 2026.
-          </p>
         </div>
       </section>
 
@@ -33,11 +31,7 @@ export default function TermsPage() {
               <h2 className="mb-2 font-semibold text-foreground text-xl">
                 Agreement
               </h2>
-              <p>
-                By creating an account or using blode.md, you agree to these
-                terms. If you&apos;re using the service on behalf of a company,
-                you&apos;re agreeing on their behalf.
-              </p>
+              <p>By using blode.md, you agree to these terms.</p>
             </div>
 
             <div>
@@ -45,9 +39,9 @@ export default function TermsPage() {
                 Your content
               </h2>
               <p>
-                You own the content you publish. You grant us a license to host,
-                build, and serve it so we can run the service. That license ends
-                when you delete the content.
+                You own the content you publish. You grant us the license we
+                need to host, build, and serve it. That license ends when you
+                remove the content.
               </p>
             </div>
 
@@ -56,22 +50,9 @@ export default function TermsPage() {
                 Acceptable use
               </h2>
               <p>
-                Don&apos;t use blode.md to host content that&apos;s illegal,
-                abusive, or violates third-party rights. Don&apos;t use it to
-                attack or scrape other services. We reserve the right to suspend
-                accounts that do.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="mb-2 font-semibold text-foreground text-xl">
-                Billing
-              </h2>
-              <p>
-                Paid plans are billed monthly or annually in advance. You can
-                cancel at any time; access continues until the end of the
-                current period. Refunds are handled case-by-case, and we&apos;re
-                usually generous.
+                Do not use blode.md for content that is illegal, abusive, or
+                that violates someone else&apos;s rights. Do not use it to
+                attack or scrape other services.
               </p>
             </div>
 
@@ -80,21 +61,18 @@ export default function TermsPage() {
                 Termination
               </h2>
               <p>
-                You can delete your account at any time from the dashboard. We
-                can terminate accounts that violate these terms with reasonable
-                notice.
+                You can stop using the service at any time. We can suspend
+                accounts that break these terms.
               </p>
             </div>
 
             <div>
               <h2 className="mb-2 font-semibold text-foreground text-xl">
-                Warranties and liability
+                No warranty
               </h2>
               <p>
-                The service is provided &ldquo;as is&rdquo;. We&apos;ll do our
-                best to keep it reliable, but we can&apos;t guarantee zero
-                downtime. Our liability is capped at the fees you&apos;ve paid
-                in the last twelve months.
+                The service is provided as is. We do our best to keep it
+                reliable, but cannot guarantee zero downtime.
               </p>
             </div>
 
@@ -103,9 +81,8 @@ export default function TermsPage() {
                 Changes
               </h2>
               <p>
-                If we update these terms, we&apos;ll announce it on the
-                changelog and give you at least 30 days&apos; notice before
-                material changes take effect.
+                If we update these terms, the latest version will live at this
+                URL.
               </p>
             </div>
 
@@ -114,12 +91,14 @@ export default function TermsPage() {
                 Contact
               </h2>
               <p>
-                Questions? Email{" "}
+                Questions? File an issue on the{" "}
                 <a
                   className="underline underline-offset-4"
-                  href="mailto:legal@blode.md"
+                  href={siteConfig.links.github}
+                  rel="noopener noreferrer"
+                  target="_blank"
                 >
-                  legal@blode.md
+                  GitHub repo
                 </a>
                 .
               </p>

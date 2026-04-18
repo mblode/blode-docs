@@ -8,43 +8,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MarketingShell } from "@/components/ui/marketing-shell";
+import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "Security practices at blode.md — TLS by default, GitHub OAuth, encrypted storage, and responsible disclosure.",
-  title: "Security — Blode.md",
+    "How blode.md handles security. HTTPS by default, GitHub OAuth for sign-in, and open source code you can read.",
+  title: "Security | Blode.md",
 };
 
 const controls = [
   {
-    description:
-      "Every site served by blode.md is HTTPS-only. Custom domains get auto-renewed certificates via ACME.",
-    title: "TLS everywhere",
+    description: "Every site on blode.md is served over HTTPS.",
+    title: "HTTPS by default",
   },
   {
     description:
-      "We authenticate with GitHub and only request the scopes we need to read the repos you explicitly connect.",
+      "Sign-in runs through GitHub OAuth. We request the minimum scopes needed.",
     title: "GitHub OAuth",
   },
   {
-    description:
-      "Source content, build artifacts, and search indices are encrypted at rest with AES-256.",
-    title: "Encrypted at rest",
-  },
-  {
-    description:
-      "Internal access is role-scoped, MFA-required, and every production change is logged.",
-    title: "Least privilege",
-  },
-  {
-    description:
-      "We keep a tight dependency graph and patch upstream CVEs on a 24-hour SLO for high-severity issues.",
-    title: "Dependency hygiene",
-  },
-  {
-    description:
-      "A documented runbook covers detection, containment, and customer communication. Time-to-notify is under 72 hours.",
-    title: "Incident response",
+    description: "The code is public on GitHub. You can read every line.",
+    title: "Open source",
   },
 ];
 
@@ -57,12 +41,11 @@ export default function SecurityPage() {
             Security
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
-            Security you can read in one page
+            Security
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            Docs platforms hold your source, your drafts, and your customer
-            integrations. We treat that with the respect it deserves — and we
-            keep the summary short enough to actually read.
+            A short summary of how we handle security today. The surface is
+            small, and we want you to be able to read the whole page.
           </p>
         </div>
       </section>
@@ -86,27 +69,22 @@ export default function SecurityPage() {
         <div className="container">
           <div className="max-w-2xl">
             <Badge className="mb-4 font-mono" variant="outline">
-              Responsible disclosure
+              Reporting an issue
             </Badge>
             <h2 className="h-display text-balance font-bold text-3xl md:text-4xl">
-              Found something? Tell us first.
+              Found a problem?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              If you believe you&apos;ve found a security vulnerability in
-              blode.md, please email{" "}
+              Open a private security advisory on the{" "}
               <a
                 className="underline underline-offset-4"
-                href="mailto:security@blode.md"
+                href={`${siteConfig.links.github}/security/advisories/new`}
+                rel="noopener noreferrer"
+                target="_blank"
               >
-                security@blode.md
-              </a>{" "}
-              with a description and reproduction steps. We acknowledge within
-              24 hours, triage within 72, and commit to a public writeup once a
-              fix has shipped.
-            </p>
-            <p className="mt-4 text-muted-foreground">
-              We do not currently run a paid bug bounty, but we will happily
-              credit researchers in release notes and on this page.
+                GitHub repo
+              </a>
+              . Include steps to reproduce and we will take it from there.
             </p>
           </div>
         </div>
