@@ -14,8 +14,6 @@ export const siteConfig = {
     {
       label: "Product",
       links: [
-        { href: "/pricing", label: "Pricing" },
-        { href: "/templates", label: "Templates" },
         { href: "/changelog", label: "Changelog" },
         { href: "/docs", label: "Docs" },
       ],
@@ -24,7 +22,6 @@ export const siteConfig = {
       label: "Company",
       links: [
         { href: "/about", label: "About" },
-        { href: "/customers", label: "Customers" },
         { href: "/blog", label: "Blog" },
         {
           external: true,

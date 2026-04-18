@@ -40,9 +40,6 @@ export const SiteHeader = ({ dashboardHref, isSignedIn }: SiteHeaderProps) => (
     </Link>
     <nav aria-label="Main" className="flex items-center gap-1">
       <Button asChild size="sm" variant="ghost">
-        <Link href="/pricing">Pricing</Link>
-      </Button>
-      <Button asChild size="sm" variant="ghost">
         <Link href="/changelog">Changelog</Link>
       </Button>
       <Button asChild size="sm" variant="ghost">
