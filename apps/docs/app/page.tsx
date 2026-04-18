@@ -51,7 +51,7 @@ const features = [
   {
     Icon: CodeIcon,
     description:
-      "30+ components out of the box — callouts, tabs, code groups, API refs.",
+      "30+ components out of the box: callouts, tabs, code groups, API refs.",
     title: "MDX components",
   },
   {
@@ -62,7 +62,7 @@ const features = [
   {
     Icon: LayersTwoIcon,
     description:
-      "Docs, blogs, changelogs, and courses — one project, one domain.",
+      "Docs, blogs, changelogs, and courses in one project, one domain.",
     title: "Content types",
   },
   {
@@ -169,15 +169,14 @@ export default async function HomePage() {
           <div className="container">
             <Badge className="mb-8 gap-1.5" variant="secondary">
               <SparklesIcon />
-              Docs, in your git workflow
+              Built for humans and AI
             </Badge>
             <h1 className="h-display max-w-4xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
-              Docs belong where your code lives
+              Docs your users love. And their AI understands.
             </h1>
             <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-              Great docs shouldn&apos;t need a second CMS, a second workflow, or
-              a second team. blode.md keeps them next to your code — versioned
-              in git, reviewed in pull requests, and shipped on every push.
+              Write MDX, commit, push. blode.md ships a fast, beautiful docs
+              site in one git push, wired up for the LLMs your users ask too.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
@@ -207,8 +206,8 @@ export default async function HomePage() {
                   Git in, docs out
                 </h2>
                 <p className="measure mt-4 text-muted-foreground">
-                  Point us at a repo — from the browser or the terminal — and
-                  we handle the MDX build, the search index, the domain, and
+                  Point us at a repo from the browser or the terminal, and we
+                  handle the MDX build, the search index, the domain, and
                   every deploy after that. No dashboard to babysit. No pipeline
                   to own.
                 </p>
@@ -244,8 +243,8 @@ export default async function HomePage() {
                       <li className="flex gap-3">
                         <span className="text-muted-foreground">3.</span>
                         <span>
-                          Push to <span className="text-foreground">main</span>{" "}
-                          — deployed to{" "}
+                          Push to <span className="text-foreground">main</span>,
+                          deployed to{" "}
                           <span className="text-foreground">acme.blode.md</span>
                         </span>
                       </li>
@@ -309,7 +308,7 @@ export default async function HomePage() {
               </h2>
               <p className="measure mt-4 text-muted-foreground">
                 One MDX project, one domain, one price. The components,
-                infrastructure, and workflow are already taken care of — so
+                infrastructure, and workflow are already taken care of, so
                 you can spend your time on the writing.
               </p>
             </div>
@@ -342,7 +341,7 @@ export default async function HomePage() {
                 <p className="measure mt-4 text-muted-foreground">
                   Proxy /docs through your marketing site so blode.md never
                   looks like a detour. Ready-made configs for Vercel,
-                  Cloudflare, Nginx, and Caddy — paste in, ship it.
+                  Cloudflare, Nginx, and Caddy. Paste in, ship it.
                 </p>
                 <div className="mt-6">
                   <Button asChild variant="outline">
@@ -390,7 +389,7 @@ export default async function HomePage() {
             </h2>
             <p className="measure mt-4 text-muted-foreground">
               Sign in with GitHub, pick a repo, pick a template. Your first
-              site is live in under a minute — and every push from then on
+              site is live in under a minute, and every push from then on
               ships itself.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
