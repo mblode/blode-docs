@@ -172,11 +172,11 @@ export default async function HomePage() {
               Built for humans and AI
             </Badge>
             <h1 className="h-display max-w-4xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
-              Gorgeous docs in one push
+              Docs your users love. And their AI understands.
             </h1>
             <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
               Write MDX, commit, push. blode.md ships a fast, beautiful docs
-              site your users love, and the LLMs they ask can actually read.
+              site in one git push, wired up for the LLMs your users ask too.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
