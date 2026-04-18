@@ -124,7 +124,7 @@ export default async function HomePage() {
 
   return (
     <div
-      className="min-h-screen bg-background text-foreground"
+      className="min-h-screen overflow-x-clip bg-background text-foreground"
       style={landingTheme}
     >
       <a
@@ -171,41 +171,49 @@ export default async function HomePage() {
               <SparklesIcon />
               Docs, in your git workflow
             </Badge>
-            <h1 className="h-display max-w-3xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
-              Ship docs on every push
+            <h1 className="h-display max-w-4xl text-balance text-5xl font-bold md:text-7xl lg:text-8xl">
+              Docs belong where your code lives
             </h1>
             <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-              Connect a repo or run a command. blode.md deploys MDX from your
-              branch to a custom domain — no dashboard required, no
-              infrastructure to own.
+              Great docs shouldn&apos;t need a second CMS, a second workflow, or
+              a second team. blode.md keeps them next to your code — versioned
+              in git, reviewed in pull requests, and shipped on every push.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
                 <Link href={dashboardHref}>
-                  {isSignedIn ? "Open dashboard" : "Deploy from GitHub"}
+                  {isSignedIn ? "Open dashboard" : "Start from GitHub"}
                   <ArrowRightIcon data-icon="inline-end" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="#cli">Use the CLI</a>
+                <a href="#how-it-works">See how it works</a>
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="border-t border-border py-24 md:py-32" id="cli">
+        <section
+          className="border-t border-border py-24 md:py-32"
+          id="how-it-works"
+        >
           <div className="container">
             <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:items-start">
-              <div>
+              <div className="min-w-0">
+                <Badge className="mb-4 font-mono" variant="outline">
+                  How it works
+                </Badge>
                 <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-                  Built for the browser and the terminal
+                  Git in, docs out
                 </h2>
                 <p className="measure mt-4 text-muted-foreground">
-                  Sign in with GitHub and pick a repo, or run three commands
-                  from your project root. Same deploy, same domain.
+                  Point us at a repo — from the browser or the terminal — and
+                  we handle the MDX build, the search index, the domain, and
+                  every deploy after that. No dashboard to babysit. No pipeline
+                  to own.
                 </p>
               </div>
-              <Tabs defaultValue="github">
+              <Tabs className="min-w-0" defaultValue="github">
                 <TabsList>
                   <TabsTrigger value="github">
                     <GithubIcon data-icon="inline-start" />
@@ -217,7 +225,7 @@ export default async function HomePage() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent className="mt-6" value="github">
+                <TabsContent className="mt-6 min-w-0" value="github">
                   <div className="overflow-hidden rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
                     <ol className="space-y-4">
                       <li className="flex gap-3">
@@ -245,7 +253,7 @@ export default async function HomePage() {
                   </div>
                 </TabsContent>
 
-                <TabsContent className="mt-6" value="cli">
+                <TabsContent className="mt-6 min-w-0" value="cli">
                   <div className="relative overflow-hidden rounded-xl bg-surface p-6 font-mono text-sm md:p-8">
                     <CopyButton
                       className="absolute right-3 top-3 text-muted-foreground"
@@ -292,13 +300,17 @@ export default async function HomePage() {
 
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
-            <div className="mb-12 max-w-xl">
+            <div className="mb-12 max-w-2xl">
+              <Badge className="mb-4 font-mono" variant="outline">
+                What you get
+              </Badge>
               <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-                Everything a docs site needs
+                Every piece of a modern docs site, included
               </h2>
-              <p className="mt-4 text-muted-foreground">
-                One MDX project. Domain, search, components, and deploys
-                included.
+              <p className="measure mt-4 text-muted-foreground">
+                One MDX project, one domain, one price. The components,
+                infrastructure, and workflow are already taken care of — so
+                you can spend your time on the writing.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -320,13 +332,17 @@ export default async function HomePage() {
         <section className="border-t border-border py-24 md:py-32">
           <div className="container">
             <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:items-start">
-              <div>
+              <div className="min-w-0">
+                <Badge className="mb-4 font-mono" variant="outline">
+                  On your domain
+                </Badge>
                 <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-                  Keep docs on your own domain
+                  Keep docs under the domain your users already trust
                 </h2>
                 <p className="measure mt-4 text-muted-foreground">
-                  Rewrite /docs through your marketing site. One config, four
-                  platforms: Vercel, Cloudflare, Nginx, Caddy.
+                  Proxy /docs through your marketing site so blode.md never
+                  looks like a detour. Ready-made configs for Vercel,
+                  Cloudflare, Nginx, and Caddy — paste in, ship it.
                 </p>
                 <div className="mt-6">
                   <Button asChild variant="outline">
@@ -337,15 +353,15 @@ export default async function HomePage() {
                   </Button>
                 </div>
               </div>
-              <Tabs defaultValue="vercel">
-                <TabsList>
+              <Tabs className="min-w-0" defaultValue="vercel">
+                <TabsList className="max-w-full overflow-x-auto no-scrollbar">
                   <TabsTrigger value="vercel">Vercel</TabsTrigger>
                   <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
                   <TabsTrigger value="nginx">Nginx</TabsTrigger>
                   <TabsTrigger value="caddy">Caddy</TabsTrigger>
                 </TabsList>
                 {Object.entries(proxySnippets).map(([key, snippet]) => (
-                  <TabsContent className="mt-6" key={key} value={key}>
+                  <TabsContent className="mt-6 min-w-0" key={key} value={key}>
                     <div className="relative min-w-0">
                       <CopyButton
                         className="absolute right-3 top-3 text-muted-foreground"
@@ -366,12 +382,16 @@ export default async function HomePage() {
 
         <section className="border-t border-border py-24 md:py-32">
           <div className="container" id="get-started">
-            <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-              Your first deploy in under a minute
+            <Badge className="mb-4 font-mono" variant="outline">
+              Ship today
+            </Badge>
+            <h2 className="h-display max-w-3xl text-balance text-3xl font-bold md:text-4xl">
+              Make the next commit a deploy
             </h2>
             <p className="measure mt-4 text-muted-foreground">
-              Sign in with GitHub, pick a repo, and pick a template. We handle
-              the slug, the domain, and every push after that.
+              Sign in with GitHub, pick a repo, pick a template. Your first
+              site is live in under a minute — and every push from then on
+              ships itself.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
@@ -379,6 +399,16 @@ export default async function HomePage() {
                   {isSignedIn ? "Open dashboard" : "Deploy a site"}
                   <ArrowRightIcon data-icon="inline-end" />
                 </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a
+                  href={siteConfig.links.github}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <GithubIcon data-icon="inline-start" />
+                  Star on GitHub
+                </a>
               </Button>
             </div>
           </div>
