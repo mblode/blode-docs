@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { getMarketingMarkdown } from "./lib/marketing-markdown";
 import {
   getMarkdownExportSlug,
   getMarkdownExportSourcePath,
@@ -140,6 +141,26 @@ export const proxy = async (request: NextRequest) => {
   const host = getRequestHost(request.headers);
   if (!host) {
     return NextResponse.next();
+  }
+
+  if (isRootRuntimeHost(host)) {
+    const acceptHeader = request.headers.get("accept") ?? "";
+    if (acceptHeader.includes("text/markdown")) {
+      const markdown = getMarketingMarkdown(pathname);
+      if (markdown !== null) {
+        return new NextResponse(markdown, {
+          headers: {
+            "CDN-Cache-Control":
+              "public, s-maxage=3600, stale-while-revalidate=86400",
+            "Content-Type": "text/markdown; charset=utf-8",
+            Vary: "Accept",
+            "Vercel-CDN-Cache-Control":
+              "public, s-maxage=3600, stale-while-revalidate=86400",
+            "x-markdown-tokens": String(markdown.length),
+          },
+        });
+      }
+    }
   }
 
   const allowTenantUtilityRewrite =
