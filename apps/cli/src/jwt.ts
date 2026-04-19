@@ -1,4 +1,4 @@
-export interface JwtClaims {
+interface JwtClaims {
   exp?: number;
   email?: string;
   sub?: string;

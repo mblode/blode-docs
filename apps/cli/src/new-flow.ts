@@ -9,7 +9,7 @@ export type NoArgInteractiveAction =
   | typeof SCAFFOLD_CURRENT_DIRECTORY
   | typeof CANCEL_SCAFFOLD;
 
-export type InitialDirectoryResolution =
+type InitialDirectoryResolution =
   | {
       directory: string;
       kind: "target";

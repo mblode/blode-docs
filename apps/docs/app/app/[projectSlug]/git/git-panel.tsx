@@ -18,7 +18,7 @@ import { FieldError } from "@/components/ui/field";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { startGithubInstall } from "@/lib/github-install";
 
-export interface SuggestedInstallation {
+interface SuggestedInstallation {
   id: number;
   accountLogin: string;
   accountType: string;

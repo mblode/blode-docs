@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LEFTHOOK: "0"
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    name: Lint, format, types, knip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx turbo lint format:check check-types
+
+      - name: Knip
+        run: DATABASE_URL=postgresql://localhost/dummy npx knip
+
+  test:
+    name: Vitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run test:unit
+        env:
+          DATABASE_URL: postgresql://localhost/dummy
+
+      - run: npm run test:component
+        env:
+          DATABASE_URL: postgresql://localhost/dummy
+
+      - run: npm run test:smoke
+        env:
+          DATABASE_URL: postgresql://localhost/dummy

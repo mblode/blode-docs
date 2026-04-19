@@ -5,16 +5,5 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
-  },
-  "scripts": {
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
-    "format": "oxfmt --write .",
-    "format:check": "oxfmt ."
-  },
-  "devDependencies": {
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.57.0",
-    "ultracite": "^7.3.2"
   }
 }

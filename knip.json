@@ -2,25 +2,113 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "workspaces": {
     ".": {
-      "ignoreBinaries": ["knip"],
+      "ignoreBinaries": ["knip", "supabase"],
       "ignoreDependencies": ["ultracite"]
     },
-    "apps/*": {},
     "apps/api": {
-      "ignoreBinaries": ["portless"],
+      "entry": [
+        "src/index.ts",
+        "src/**/*.{unit,int,smoke}.test.ts",
+        "scripts/*.ts"
+      ],
+      "project": ["src/**/*.ts"],
+      "ignoreBinaries": ["portless", "tsdown"],
       "ignoreDependencies": ["tsx"]
     },
+    "apps/cli": {
+      "entry": ["src/**/*.unit.test.ts", "scripts/*.mjs", "src/site-config.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": [
+        "@base-ui/react",
+        "@mdx-js/mdx",
+        "@shikijs/rehype",
+        "@tailwindcss/postcss",
+        "blode-icons-react",
+        "class-variance-authority",
+        "clsx",
+        "cmdk",
+        "geist",
+        "merge-refs",
+        "motion",
+        "next-mdx-remote",
+        "next-themes",
+        "radix-ui",
+        "rehype-autolink-headings",
+        "rehype-slug",
+        "remark-gfm",
+        "shadcn",
+        "shiki",
+        "tailwind-merge",
+        "tailwindcss",
+        "tw-animate-css",
+        "yaml",
+        "zod"
+      ]
+    },
     "apps/docs": {
+      "entry": [
+        "app/**/{page,layout,route,loading,error,not-found,template,default,opengraph-image,twitter-image,sitemap,robots,manifest}.{ts,tsx}",
+        "next.config.{js,mjs,ts}",
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
       "ignoreBinaries": ["portless"],
-      "ignoreDependencies": ["postcss"]
+      "ignoreDependencies": [
+        "postcss",
+        "shadcn",
+        "sharp",
+        "tailwindcss",
+        "tw-animate-css"
+      ]
     },
-    "packages/*": {},
+    "apps/dev-server": {
+      "entry": [
+        "app/**/{page,layout,route,loading,error,not-found,template,default}.{ts,tsx}",
+        "next.config.{js,mjs,ts}"
+      ],
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        "@base-ui/react",
+        "@mdx-js/mdx",
+        "@repo/contracts",
+        "@repo/prebuild",
+        "@shikijs/rehype",
+        "@types/mdx",
+        "blode-icons-react",
+        "class-variance-authority",
+        "clsx",
+        "cmdk",
+        "next-mdx-remote",
+        "radix-ui",
+        "rehype-autolink-headings",
+        "rehype-slug",
+        "remark-gfm",
+        "shadcn",
+        "shiki",
+        "tailwind-merge",
+        "tailwindcss",
+        "tw-animate-css"
+      ]
+    },
     "packages/db": {
-      "entry": ["seed.ts"]
+      "entry": ["seed.ts", "scripts/*.{mjs,ts}"]
     },
-    "apps/cli": {},
     "packages/typescript-config": {
       "ignoreDependencies": ["next"]
+    },
+    "packages/validation": {
+      "entry": ["scripts/*.mjs"]
     }
   }
 }

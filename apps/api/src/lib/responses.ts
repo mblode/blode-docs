@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 
-export const errorResponse = (
+const errorResponse = (
   _c: Context,
   status: number,
   message: string,

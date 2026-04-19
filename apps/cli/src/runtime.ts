@@ -6,7 +6,7 @@ import { CliError, EXIT_CODES } from "./errors.js";
 
 const MIN_SUPPORTED_NODE_VERSION = [20, 17, 0] as const;
 
-export const SUPPORTED_NODE_RANGE = ">=20.17.0";
+const SUPPORTED_NODE_RANGE = ">=20.17.0";
 
 const parseVersion = (input: string): [number, number, number] | null => {
   const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(input.trim());

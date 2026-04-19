@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalDependencies": [".oxlintrc.json", ".oxfmtrc.jsonc", "tsconfig.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -43,19 +44,52 @@
       ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "lib/**",
+        "scripts/**",
+        "*.{ts,tsx,js,jsx,mjs,cjs}"
+      ],
+      "outputs": []
     },
     "lint:fix": {
-      "dependsOn": ["^lint:fix"]
+      "dependsOn": ["^lint:fix"],
+      "cache": false
     },
     "format": {
-      "dependsOn": ["^format"]
+      "dependsOn": ["^format"],
+      "cache": false
     },
     "format:check": {
-      "dependsOn": ["^format:check"]
+      "dependsOn": ["^format:check"],
+      "inputs": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "lib/**",
+        "scripts/**",
+        "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,md,mdx,css,scss}"
+      ],
+      "outputs": []
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build", "^check-types"],
+      "inputs": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "lib/**",
+        "scripts/**",
+        "**/*.{ts,tsx}",
+        "tsconfig.json"
+      ],
+      "outputs": []
     },
     "dev": {
       "cache": false,

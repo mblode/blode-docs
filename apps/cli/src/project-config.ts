@@ -1,11 +1,11 @@
 import { slugify } from "@repo/common";
 
-export interface DocsProjectConfig {
+interface DocsProjectConfig {
   name?: string;
   slug?: string;
 }
 
-export interface ResolvedProjectTarget {
+interface ResolvedProjectTarget {
   project?: string;
   usedLegacyNameFallback: boolean;
 }

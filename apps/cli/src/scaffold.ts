@@ -9,7 +9,7 @@ export { validateProjectSlug } from "./project-config.js";
 export const SCAFFOLD_TEMPLATES = ["minimal", "starter"] as const;
 export type ScaffoldTemplate = (typeof SCAFFOLD_TEMPLATES)[number];
 export const DEFAULT_SCAFFOLD_DIRECTORY = "docs";
-export const DEFAULT_PROJECT_SLUG = "my-project";
+const DEFAULT_PROJECT_SLUG = "my-project";
 
 interface BaseScaffoldFile {
   path: string;
@@ -26,7 +26,7 @@ interface SymlinkScaffoldFile extends BaseScaffoldFile {
   type: "symlink";
 }
 
-export type ScaffoldFile = TextScaffoldFile | SymlinkScaffoldFile;
+type ScaffoldFile = TextScaffoldFile | SymlinkScaffoldFile;
 
 const stringifyJson = (value: unknown): string =>
   `${JSON.stringify(value, null, 2)}\n`;

@@ -1,6 +1,6 @@
 import { CliError, EXIT_CODES } from "./errors.js";
 
-export interface OAuthTokenConfig {
+interface OAuthTokenConfig {
   tokenUrl: string;
   clientId: string;
 }

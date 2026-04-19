@@ -5,6 +5,7 @@ import { CliError, EXIT_CODES } from "./errors.js";
 
 const CONFIG_FILE = "docs.json";
 
+// Required as the inferred return type of validateDocsRoot in dev/resolve-root.ts
 export interface ValidatedSiteConfigResult {
   config: SiteConfig;
   warnings: string[];

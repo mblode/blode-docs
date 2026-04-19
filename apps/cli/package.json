@@ -76,6 +76,7 @@
   },
   "devDependencies": {
     "@repo/common": "*",
+    "@repo/models": "*",
     "@repo/previewing": "*",
     "@repo/typescript-config": "*",
     "oxfmt": "^0.42.0",

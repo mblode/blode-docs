@@ -160,23 +160,23 @@ console.log("Copying @repo packages...");
 // `src/*.ts`. Leaving `types` pointing at source confuses Turbopack
 // in standalone mode (it picks up src/index.ts and then can't resolve
 // the `.js` same-package imports without the TS resolver).
+const rewriteConditions = (conditions) => {
+  if (!conditions || typeof conditions !== "object") {
+    return conditions;
+  }
+  const next = { ...conditions };
+  if (typeof next.types === "string") {
+    next.types = next.types
+      .replace(/^\.\/src\//, "./dist/")
+      .replace(/\.ts$/, ".d.ts");
+  }
+  return next;
+};
+
 const rewriteExportsForStandalone = (exportsField) => {
   if (!exportsField || typeof exportsField !== "object") {
     return exportsField;
   }
-
-  const rewriteConditions = (conditions) => {
-    if (!conditions || typeof conditions !== "object") {
-      return conditions;
-    }
-    const next = { ...conditions };
-    if (typeof next.types === "string") {
-      next.types = next.types
-        .replace(/^\.\/src\//, "./dist/")
-        .replace(/\.ts$/, ".d.ts");
-    }
-    return next;
-  };
 
   const rewritten = {};
   for (const [key, value] of Object.entries(exportsField)) {

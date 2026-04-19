@@ -16,7 +16,7 @@ const decodePrivateKey = (raw: string): string => {
   return Buffer.from(raw, "base64").toString("utf8");
 };
 
-export const githubAppEnv = () => ({
+const githubAppEnv = () => ({
   appId: env("GITHUB_APP_ID"),
   appSlug: env("GITHUB_APP_SLUG"),
   clientId: env("GITHUB_APP_CLIENT_ID"),
@@ -128,7 +128,7 @@ const buildOctokit = (installationId: number): Octokit => {
   });
 };
 
-export interface InstallationRepoSummary {
+interface InstallationRepoSummary {
   fullName: string;
   defaultBranch: string;
   private: boolean;
@@ -152,7 +152,7 @@ export const listInstallationRepos = async (
   }));
 };
 
-export interface InstallationAccountSummary {
+interface InstallationAccountSummary {
   login: string;
   type: string;
 }
@@ -179,7 +179,7 @@ export const getInstallationAccount = async (
   return { login: account.login, type: account.type ?? "User" };
 };
 
-export interface AppInstallationSummary {
+interface AppInstallationSummary {
   id: number;
   accountLogin: string;
   accountType: string;
@@ -274,12 +274,12 @@ export const listUserInstallations = async (
   return summaries;
 };
 
-export interface RepoFile {
+interface RepoFile {
   relativePath: string;
   content: Buffer;
 }
 
-export interface FetchDocsResult {
+interface FetchDocsResult {
   commitSha: string;
   files: RepoFile[];
 }

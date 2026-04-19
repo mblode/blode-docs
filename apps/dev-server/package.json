@@ -51,6 +51,7 @@
     "@types/react-dom": "19.2.3",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
+    "postcss": "^8.5.3",
     "typescript": "6.0.2",
     "ultracite": "^7.3.2"
   }

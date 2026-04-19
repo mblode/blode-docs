@@ -442,8 +442,6 @@ export const DocsConfigSchema = z
   .strict();
 
 export type DocsConfig = z.infer<typeof DocsConfigSchema>;
-export const MintlifyDocsConfigSchema = DocsConfigSchema;
-export type MintlifyDocsConfig = DocsConfig;
 
 export const ContentTypeSchema = z.enum([
   "site",

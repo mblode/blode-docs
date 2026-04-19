@@ -6,7 +6,7 @@ import { cache } from "react";
 import { getDashboardSession } from "@/lib/dashboard-session";
 import { getAuthorizedProjectBySlug } from "@/lib/project-authz";
 
-export interface ProjectContext {
+interface ProjectContext {
   accessToken: string;
   project: Project;
 }

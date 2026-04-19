@@ -18,7 +18,7 @@ const TEXT_CONTENT_TYPES: Record<string, string> = {
   ".yml": "application/yaml; charset=utf-8",
 };
 
-export interface UploadBatchItem {
+interface UploadBatchItem {
   contentBase64: string;
   contentType: string;
   path: string;
