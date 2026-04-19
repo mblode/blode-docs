@@ -20,6 +20,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { MarketingShell } from "@/components/ui/marketing-shell";
 import { getDashboardHref } from "@/components/ui/site-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WebMcpTools } from "@/components/web-mcp";
 import { siteConfig } from "@/lib/config";
 
 const features = [
@@ -97,6 +98,7 @@ export default async function HomePage() {
 
   return (
     <MarketingShell>
+      <WebMcpTools />
       <section className="pb-24 pt-20 md:pb-32 md:pt-28 lg:pt-36">
         <div className="container">
           <h1 className="h-display max-w-4xl text-balance text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl">
