@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 
 import { Providers } from "@/components/providers";
 import { ThirdParties } from "@/components/third-parties";
+import { WebMcpTools } from "@/components/web-mcp";
 
 import "./globals.css";
 
@@ -43,7 +44,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://public.blob.vercel-storage.com" />
       </head>
       <body className="relative flex w-full flex-col justify-center scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*16)]">
-        <Providers>{children}</Providers>
+        <Providers>
+          <WebMcpTools />
+          {children}
+        </Providers>
         <ThirdParties />
       </body>
     </html>
