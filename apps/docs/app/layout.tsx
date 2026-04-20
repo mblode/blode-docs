@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 
 import { Providers } from "@/components/providers";
 import { ThirdParties } from "@/components/third-parties";
+import { WebMcpTools } from "@/components/web-mcp";
 
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="relative flex w-full flex-col justify-center scroll-smooth bg-background font-sans antialiased [--header-height:calc(var(--spacing)*16)]">
         <Providers>{children}</Providers>
         <ThirdParties />
+        <WebMcpTools />
       </body>
     </html>
   );
