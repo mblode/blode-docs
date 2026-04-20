@@ -291,7 +291,7 @@ export default function HomePage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(({ Icon, title, description }) => (
-              <Card className="justify-start p-2" key={title}>
+              <Card className="justify-start" key={title}>
                 <CardHeader>
                   <div className="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
                     <Icon />
