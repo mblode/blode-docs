@@ -3,14 +3,18 @@
 ## Project Structure
 
 - Turborepo monorepo; workspaces defined in root `package.json`.
-- `apps/` — product apps: `apps/docs` (Next.js, port 3001), `apps/api` (Hono, port 4000), and `apps/cli` (CLI tool).
+- `apps/` — product apps:
+  - `apps/web` (Next.js, marketing — `/`, `/about`, `/blog`, `/changelog`, `/privacy`, `/terms`, `/security`). Owns apex `blode.md`. Rewrites `/docs`, `/app`, `/oauth`, `/api`, `/sites`, `/.well-known`, `/llms*.txt` to `DOCS_APP_URL`.
+  - `apps/docs` (Next.js, port 3001) — tenant-proxy (`proxy.ts`), multi-tenant docs rendering, dashboard (`/app`), auth (`/oauth`), API routes. Served at `docs.blode.md` (or internally via rewrite).
+  - `apps/api` (Hono, port 4000).
+  - `apps/cli` (CLI tool).
 - `packages/` — shared libraries (`@repo/contracts`, `@repo/db`, `@repo/models`, `@repo/common`, `@repo/validation`, `@repo/ui`, `@repo/api-client`, `@repo/prebuild`, `@repo/previewing`) and config packages (`@repo/typescript-config`).
 - Root config: `turbo.json`, `.oxlintrc.json`, `.oxfmtrc.jsonc`.
 
 ## Commands
 
 ```sh
-npm run dev              # start all apps (docs → :3001, api → :4000)
+npm run dev              # start all apps (web → portless blodemd.localhost, docs → :3001, api → :4000)
 npm run build            # build all packages/apps
 npm run check-types      # TypeScript type check across workspaces
 npm run lint             # Oxlint lint check
@@ -20,6 +24,7 @@ npm run fix              # Ultracite auto-fix (lint + format together)
 npm run check            # Ultracite check without fixing
 
 # Run a single app
+npx turbo run dev --filter=web
 npx turbo run dev --filter=docs
 npx turbo run dev --filter=api
 ```
@@ -44,6 +49,8 @@ Copy `.env.example` to `.env.local` before running the API. Required variables i
 - **API build may fail** due to ESM/TypeScript module resolution issues with Drizzle and `@repo/contracts`. Run `npx turbo run build --filter=docs` to build only the docs app if the API is blocking deployment.
 - **`@repo/supabase` is deprecated** — do not add new imports or dependencies on it.
 - **Multi-tenant routing** uses Next.js 16's `proxy.ts` convention (`apps/docs/proxy.ts`), not `middleware.ts`. Never create a `middleware.ts` — it conflicts with `proxy.ts` and breaks the build. Platform routes (e.g. `/oauth`) must be added to `DEFAULT_RESERVED_PATHS` in `apps/docs/lib/tenancy.ts` to bypass tenant resolution. Changes to domain/tenant logic require updating both the proxy and the API tenant resolution in `apps/api/src/index.ts`.
+- **apps/web ↔ apps/docs split.** Marketing lives in `apps/web`; everything authenticated/tenant-serving lives in `apps/docs`. `apps/web/next.config.js` rewrites `/docs/*`, `/app/*`, `/oauth/*`, `/api/*`, `/sites/*`, `/.well-known/*`, `/llms*.txt` to `DOCS_APP_URL` (default `http://127.0.0.1:3001`). The original host rides along as `x-forwarded-host`; `apps/docs/proxy.ts` reads it via `getRequestHost` in `apps/docs/lib/tenancy.ts`. In production set `DOCS_APP_URL` to the docs deployment URL; locally set `DOCS_APP_URL=https://docs.localhost` in `apps/web/.env.local` and run `npm run dev --workspace=docs` alongside.
+- **Marketing-page components are intentionally duplicated** in `apps/web/components/ui/` (button, card, badge, sheet, tabs, morph-icon, theme-toggle, hero-media, text-effect, animated-group, marketing-header, marketing-shell, site-footer). Do not add Supabase or `@repo/*` deps to `apps/web` — it stays auth-free and light.
 - **Pre-commit hook** runs `ultracite fix` on staged files via Lefthook. If it fails, run `npm run fix` and re-stage.
 
 ## Conventions

@@ -68,6 +68,22 @@
         "tw-animate-css"
       ]
     },
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,route,loading,error,not-found,template,default,opengraph-image,twitter-image,sitemap,robots,manifest}.{ts,tsx}",
+        "next.config.{js,mjs,ts}",
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": ["shadcn", "sharp", "tailwindcss", "tw-animate-css"]
+    },
     "apps/dev-server": {
       "entry": [
         "app/**/{page,layout,route,loading,error,not-found,template,default}.{ts,tsx}",

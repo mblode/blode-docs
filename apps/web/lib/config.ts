@@ -54,5 +54,3 @@ export const siteConfig = {
   },
   version: "0.0.9",
 };
-
-export type { NavLink, NavGroup };

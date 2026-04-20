@@ -9,6 +9,7 @@ import {
 } from "blode-icons-react";
 import Link from "next/link";
 
+import { AnimatedGroup } from "@/components/ui/animated-group";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,10 +18,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
+import { HeroMedia } from "@/components/ui/hero-media";
 import { MarketingShell } from "@/components/ui/marketing-shell";
-import { getDashboardHref } from "@/components/ui/site-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { siteConfig } from "@/lib/config";
+import { TextEffect } from "@/components/ui/text-effect";
 
 const features = [
   {
@@ -91,33 +92,77 @@ async rewrites() {
 }`,
 };
 
-export default async function HomePage() {
-  const dashboardHref = await getDashboardHref();
-  const isSignedIn = dashboardHref === "/app";
-
+export default function HomePage() {
   return (
     <MarketingShell>
-      <section className="pb-24 pt-20 md:pb-32 md:pt-28 lg:pt-36">
+      <section className="pb-16 pt-20 md:pb-24 md:pt-28 lg:pt-36">
         <div className="container">
-          <h1 className="h-display max-w-4xl text-balance text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl">
+          <TextEffect
+            as="h1"
+            className="h-display max-w-4xl text-balance text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl"
+            per="word"
+            preset="fade-in-blur"
+            speedSegment={0.3}
+          >
             Docs your users love. And their AI understands.
-          </h1>
-          <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            Write MDX, commit, push. blode.md ships a fast, beautiful docs site
-            in one git push, wired up for the LLMs your users ask too.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Button asChild size="lg">
-              <Link href={dashboardHref}>
-                {isSignedIn ? "Open dashboard" : "Start from GitHub"}
+          </TextEffect>
+          <TextEffect
+            as="p"
+            className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl"
+            delay={0.5}
+            per="word"
+            preset="fade-in-blur"
+            speedSegment={0.2}
+          >
+            Ship Markdown docs from GitHub in minutes. Versioned, searchable,
+            and built so the LLMs your users ask can actually read them.
+          </TextEffect>
+          <AnimatedGroup
+            className="mt-10 flex flex-wrap items-center gap-3"
+            variants={{
+              container: {
+                hidden: {},
+                visible: {
+                  transition: {
+                    delayChildren: 0.9,
+                    staggerChildren: 0.08,
+                  },
+                },
+              },
+            }}
+          >
+            <div className="rounded-[calc(var(--radius)+0.375rem)] border border-border/70 bg-foreground/5 p-0.5">
+              <Button asChild size="lg">
+                <Link href="/oauth/consent">
+                  Get started
+                  <ArrowRightIcon data-icon="inline-end" />
+                </Link>
+              </Button>
+            </div>
+            <Button asChild size="lg" variant="ghost">
+              <Link href="/docs">
+                Read the docs
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#how-it-works">See how it works</a>
-            </Button>
-          </div>
+          </AnimatedGroup>
         </div>
+        <AnimatedGroup
+          className="mt-16 md:mt-20"
+          variants={{
+            container: {
+              hidden: {},
+              visible: {
+                transition: {
+                  delayChildren: 1.1,
+                  staggerChildren: 0.05,
+                },
+              },
+            },
+          }}
+        >
+          <HeroMedia />
+        </AnimatedGroup>
       </section>
 
       <section
@@ -192,9 +237,7 @@ export default async function HomePage() {
                   />
                   <div className="space-y-6">
                     <div>
-                      <p className="text-muted-foreground">
-                        # install the CLI
-                      </p>
+                      <p className="text-muted-foreground"># install the CLI</p>
                       <p className="break-all">
                         <span className="text-muted-foreground">$</span> npm i
                         -g blodemd
@@ -331,21 +374,19 @@ export default async function HomePage() {
             is live in under a minute, and every push from then on ships itself.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Button asChild size="lg">
-              <Link href={dashboardHref}>
-                {isSignedIn ? "Open dashboard" : "Deploy a site"}
+            <div className="rounded-[calc(var(--radius)+0.375rem)] border border-border/70 bg-foreground/5 p-0.5">
+              <Button asChild size="lg">
+                <Link href="/oauth/consent">
+                  Get started
+                  <ArrowRightIcon data-icon="inline-end" />
+                </Link>
+              </Button>
+            </div>
+            <Button asChild size="lg" variant="ghost">
+              <Link href="/docs">
+                Read the docs
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a
-                href={siteConfig.links.github}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <GithubIcon data-icon="inline-start" />
-                Star on GitHub
-              </a>
             </Button>
           </div>
         </div>

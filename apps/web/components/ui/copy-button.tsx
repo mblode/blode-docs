@@ -1,0 +1,115 @@
+"use client";
+
+import {
+  Checkmark1Icon as CheckIcon,
+  CopySimpleIcon as CopyIcon,
+} from "blode-icons-react";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
+import { useCallback } from "react";
+import type { MouseEvent } from "react";
+
+import { Button as ButtonPrimitive } from "@/components/animate-ui/primitives/buttons/button";
+import type { ButtonProps as ButtonPrimitiveProps } from "@/components/animate-ui/primitives/buttons/button";
+import { useControlledState } from "@/hooks/use-controlled-state";
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "flex shrink-0 items-center justify-center rounded-md outline-none transition-[box-shadow,_color,_background-color,_border-color,_outline-color,_text-decoration-color,_fill,_stroke] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  {
+    defaultVariants: {
+      size: "default",
+      variant: "default",
+    },
+    variants: {
+      size: {
+        default: "size-9",
+        lg: "size-10 rounded-md",
+        sm: "size-8 rounded-md",
+        xs: "size-7 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
+      },
+      variant: {
+        accent: "bg-accent text-accent-foreground hover:bg-accent/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+        outline:
+          "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+      },
+    },
+  }
+);
+
+type CopyButtonProps = Omit<ButtonPrimitiveProps, "children"> &
+  VariantProps<typeof buttonVariants> & {
+    content: string;
+    copied?: boolean;
+    delay?: number;
+    onCopiedChange?: (copied: boolean, content?: string) => void;
+  };
+
+const CopyButton = ({
+  className,
+  content,
+  copied,
+  onCopiedChange,
+  onClick,
+  variant,
+  size,
+  delay = 3000,
+  ...props
+}: CopyButtonProps) => {
+  const [isCopied, setIsCopied] = useControlledState({
+    onChange: onCopiedChange,
+    value: copied,
+  });
+
+  const handleCopy = useCallback(
+    async (e: MouseEvent<HTMLButtonElement>) => {
+      onClick?.(e);
+      if (copied) {
+        return;
+      }
+      if (content) {
+        try {
+          await navigator.clipboard.writeText(content);
+          setIsCopied(true);
+          onCopiedChange?.(true, content);
+          setTimeout(() => {
+            setIsCopied(false);
+            onCopiedChange?.(false);
+          }, delay);
+        } catch (error) {
+          console.error("Error copying command", error);
+        }
+      }
+    },
+    [onClick, copied, content, setIsCopied, onCopiedChange, delay]
+  );
+
+  const Icon = isCopied ? CheckIcon : CopyIcon;
+
+  return (
+    <ButtonPrimitive
+      className={cn(buttonVariants({ className, size, variant }))}
+      data-slot="copy-button"
+      onClick={handleCopy}
+      {...props}
+    >
+      <span
+        className="inline-flex animate-in fade-in-0 zoom-in-95 duration-200 motion-reduce:animate-none"
+        data-slot="copy-button-icon"
+        key={isCopied ? "check" : "copy"}
+      >
+        <Icon />
+      </span>
+    </ButtonPrimitive>
+  );
+};
+
+export { CopyButton };
