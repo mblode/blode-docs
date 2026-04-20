@@ -131,7 +131,7 @@ export default function HomePage() {
           <TextEffect
             as="p"
             className="mx-auto mt-8 max-w-xl text-balance text-base text-muted-foreground md:text-lg"
-            delay={0.7}
+            delay={0.55}
             per="word"
             preset="fade-in-blur"
             speedSegment={0.2}
@@ -146,7 +146,7 @@ export default function HomePage() {
                 hidden: {},
                 visible: {
                   transition: {
-                    delayChildren: 1,
+                    delayChildren: 0.8,
                     staggerChildren: 0.08,
                   },
                 },
@@ -155,7 +155,7 @@ export default function HomePage() {
           >
             <Button asChild className="h-11 rounded-full px-6" size="lg">
               <Link href="/oauth/consent">
-                Get started — it's free
+                Get started — it’s free
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
@@ -176,7 +176,7 @@ export default function HomePage() {
               hidden: {},
               visible: {
                 transition: {
-                  delayChildren: 1.2,
+                  delayChildren: 0.95,
                   staggerChildren: 0.05,
                 },
               },
@@ -398,13 +398,12 @@ export default function HomePage() {
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-balance text-muted-foreground md:text-lg">
             Sign in with GitHub, pick a repo, pick a template. Your first site
-            is live in under a minute, and every push from then on ships
-            itself.
+            is live in under a minute, and every push from then on ships itself.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button asChild className="h-11 rounded-full px-6" size="lg">
               <Link href="/oauth/consent">
-                Get started — it's free
+                Get started — it’s free
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
