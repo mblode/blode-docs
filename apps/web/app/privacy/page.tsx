@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "Privacy policy for blode.md. What we collect, what we do with it, and how to get in touch.",
+    "Privacy policy for Blode.md. What we collect, what we do with it, and how to get in touch.",
   title: "Privacy | Blode.md",
 };
 
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
                 Scope
               </h2>
               <p>
-                This policy covers blode.md, the docs platform at blode.md, and
+                This policy covers Blode.md, the docs platform at blode.md, and
                 the CLI that publishes to it.
               </p>
             </div>

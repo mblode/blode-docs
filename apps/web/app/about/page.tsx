@@ -9,7 +9,7 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "blode.md is a docs platform that lives in your git repo. Write MDX, push to main, ship docs.",
+    "Blode.md is a docs platform that lives in your git repo. Write MDX, push to main, ship docs.",
   title: "About | Blode.md",
 };
 
@@ -25,7 +25,7 @@ export default function AboutPage() {
             Docs that live in your repo
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            blode.md turns a folder of MDX into a docs site. Write in your
+            Blode.md turns a folder of MDX into a docs site. Write in your
             editor, commit through a pull request, ship on merge.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function AboutPage() {
                 Docs should use the same path.
               </p>
               <p>
-                blode.md keeps the surface small on purpose. No plugin
+                Blode.md keeps the surface small on purpose. No plugin
                 marketplace, no deep config. If a feature does not move docs
                 closer to the code that produced them, it does not ship.
               </p>
@@ -64,7 +64,7 @@ export default function AboutPage() {
             <div>
               <h3 className="h-display font-bold text-xl">Who built it</h3>
               <p className="mt-3 text-muted-foreground">
-                blode.md is built by{" "}
+                Blode.md is built by{" "}
                 <a
                   className="underline underline-offset-4"
                   href={siteConfig.links.author}

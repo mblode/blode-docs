@@ -46,12 +46,12 @@ export const MarketingHeader = () => {
       <div className="container flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-8">
           <Link
-            aria-label="blode.md home"
+            aria-label="Blode.md home"
             className="flex items-center gap-3 transition-opacity hover:opacity-80"
             href="/"
           >
             <span className="font-semibold text-base tracking-tight">
-              blode.md
+              Blode.md
             </span>
           </Link>
           <nav

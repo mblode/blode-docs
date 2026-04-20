@@ -15,7 +15,7 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "blode.md is free and open source under MIT. Use the hosted version, self-host on your own infra, or fork it.",
+    "Blode.md is free and open source under MIT. Use the hosted version, self-host on your own infra, or fork it.",
   title: "Pricing | Blode.md",
 };
 
@@ -72,7 +72,7 @@ export default function PricingPage() {
             Free. Forever.
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            blode.md is open source under MIT. Use the hosted version, self-host
+            Blode.md is open source under MIT. Use the hosted version, self-host
             on your own infra, or fork it. No seats, no page limits, no upsell.
           </p>
         </div>

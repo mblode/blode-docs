@@ -320,7 +320,7 @@ export default function HomePage() {
                 Keep docs under the domain your users already trust
               </h2>
               <p className="measure mt-4 text-muted-foreground">
-                Proxy /docs through your marketing site so blode.md never looks
+                Proxy /docs through your marketing site so Blode.md never looks
                 like a detour. Ready-made configs for Vercel, Cloudflare, Nginx,
                 and Caddy. Paste in, ship it.
               </p>

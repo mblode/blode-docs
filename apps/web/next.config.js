@@ -4,7 +4,26 @@ import { fileURLToPath } from "node:url";
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(appDir, "..", "..");
 
-const docsAppUrl = process.env.DOCS_APP_URL ?? "http://127.0.0.1:3001";
+const rawDocsAppUrl = (process.env.DOCS_APP_URL ?? "").trim();
+const isLocalUrl = /^https?:\/\/(?:localhost|127\.|0\.0\.0\.0|\[::1?\])/i.test(
+  rawDocsAppUrl
+);
+
+// In production, a missing or localhost DOCS_APP_URL would cause Vercel to
+// return DNS_HOSTNAME_RESOLVED_PRIVATE. Skip the rewrites entirely so those
+// paths 404 cleanly instead.
+const shouldProxy =
+  rawDocsAppUrl.length > 0 && (process.env.VERCEL !== "1" || !isLocalUrl);
+
+const docsAppUrl = rawDocsAppUrl || "http://127.0.0.1:3001";
+
+if (process.env.VERCEL === "1" && !shouldProxy) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[apps/web] DOCS_APP_URL is unset or points at localhost; /docs, /app, " +
+      "/oauth, /api, /sites rewrites are disabled for this build."
+  );
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -20,6 +39,9 @@ const nextConfig = {
     ],
   },
   rewrites() {
+    if (!shouldProxy) {
+      return { beforeFiles: [] };
+    }
     return {
       beforeFiles: [
         { destination: `${docsAppUrl}/docs/:path*`, source: "/docs/:path*" },

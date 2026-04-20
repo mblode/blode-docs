@@ -12,13 +12,13 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "How blode.md handles security. HTTPS by default, GitHub OAuth for sign-in, and open source code you can read.",
+    "How Blode.md handles security. HTTPS by default, GitHub OAuth for sign-in, and open source code you can read.",
   title: "Security | Blode.md",
 };
 
 const controls = [
   {
-    description: "Every site on blode.md is served over HTTPS.",
+    description: "Every site on Blode.md is served over HTTPS.",
     title: "HTTPS by default",
   },
   {

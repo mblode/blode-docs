@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "Terms of service for blode.md. The ground rules for using the platform.",
+    "Terms of service for Blode.md. The ground rules for using the platform.",
   title: "Terms | Blode.md",
 };
 
@@ -31,7 +31,7 @@ export default function TermsPage() {
               <h2 className="mb-2 font-semibold text-foreground text-xl">
                 Agreement
               </h2>
-              <p>By using blode.md, you agree to these terms.</p>
+              <p>By using Blode.md, you agree to these terms.</p>
             </div>
 
             <div>
@@ -50,7 +50,7 @@ export default function TermsPage() {
                 Acceptable use
               </h2>
               <p>
-                Do not use blode.md for content that is illegal, abusive, or
+                Do not use Blode.md for content that is illegal, abusive, or
                 that violates someone else&apos;s rights. Do not use it to
                 attack or scrape other services.
               </p>

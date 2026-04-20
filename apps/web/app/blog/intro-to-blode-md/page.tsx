@@ -10,8 +10,8 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   description:
-    "Why we built blode.md — a docs-as-code platform that publishes from GitHub in three commands, free and open source.",
-  title: "Hello, blode.md | Blode.md",
+    "Why we built Blode.md — a docs-as-code platform that publishes from GitHub in three commands, free and open source.",
+  title: "Hello, Blode.md | Blode.md",
 };
 
 const installSnippet = `npm i -g blodemd
@@ -36,14 +36,14 @@ export default function IntroPostPage() {
               Intro
             </Badge>
             <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
-              Hello, blode.md
+              Hello, Blode.md
             </h1>
             <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-              Most docs tools want you to leave your editor. blode.md
+              Most docs tools want you to leave your editor. Blode.md
               doesn&apos;t.
             </p>
             <p className="mt-6 text-muted-foreground text-sm">
-              <time dateTime="2026-04-20">April 20, 2026</time> · The blode.md
+              <time dateTime="2026-04-20">April 20, 2026</time> · The Blode.md
               team
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function IntroPostPage() {
                   flow. We wanted Markdown in a repo and a URL.
                 </p>
                 <p className="text-muted-foreground">
-                  blode.md keeps the surface small on purpose. The pull request
+                  Blode.md keeps the surface small on purpose. The pull request
                   is the review. The merge is the deploy. Docs use the same path
                   your code already does.
                 </p>

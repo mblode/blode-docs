@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { MarketingShell } from "@/components/ui/marketing-shell";
 
 export const metadata: Metadata = {
-  description: "Notes and posts from the team behind blode.md.",
+  description: "Notes and posts from the team behind Blode.md.",
   title: "Blog | Blode.md",
 };
 
@@ -17,7 +17,7 @@ const posts = [
       "Why we built a docs platform that publishes from GitHub in three commands.",
     formattedDate: "April 20, 2026",
     slug: "intro-to-blode-md",
-    title: "Hello, blode.md",
+    title: "Hello, Blode.md",
   },
 ];
 
@@ -33,7 +33,7 @@ export default function BlogPage() {
             Notes from the repo
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            Updates, decisions, and ship notes from the team behind blode.md.
+            Updates, decisions, and ship notes from the team behind Blode.md.
           </p>
         </div>
       </section>
