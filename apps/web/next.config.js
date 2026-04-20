@@ -44,9 +44,10 @@ const nextConfig = {
     }
     return {
       beforeFiles: [
+        { destination: `${docsAppUrl}/docs`, source: "/docs" },
         { destination: `${docsAppUrl}/docs/:path*`, source: "/docs/:path*" },
-        { destination: `${docsAppUrl}/app/:path*`, source: "/app/:path*" },
         { destination: `${docsAppUrl}/app`, source: "/app" },
+        { destination: `${docsAppUrl}/app/:path*`, source: "/app/:path*" },
         { destination: `${docsAppUrl}/oauth/:path*`, source: "/oauth/:path*" },
         { destination: `${docsAppUrl}/api/:path*`, source: "/api/:path*" },
         { destination: `${docsAppUrl}/sites/:path*`, source: "/sites/:path*" },
