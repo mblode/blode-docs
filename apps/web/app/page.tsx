@@ -142,10 +142,7 @@ export default function HomePage() {
               </Button>
             </div>
             <Button asChild size="lg" variant="ghost">
-              <Link href="/docs">
-                Read the docs
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
+              <Link href="/docs">Read the docs</Link>
             </Button>
           </AnimatedGroup>
         </div>
@@ -385,10 +382,7 @@ export default function HomePage() {
               </Button>
             </div>
             <Button asChild size="lg" variant="ghost">
-              <Link href="/docs">
-                Read the docs
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
+              <Link href="/docs">Read the docs</Link>
             </Button>
           </div>
         </div>

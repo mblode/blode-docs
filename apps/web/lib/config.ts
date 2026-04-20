@@ -14,7 +14,7 @@ export const siteConfig = {
     {
       label: "Product",
       links: [
-        { href: "/changelog", label: "Changelog" },
+        { href: "/pricing", label: "Pricing" },
         { href: "/docs", label: "Docs" },
       ],
     },

@@ -1,6 +1,5 @@
 "use client";
 
-import { GithubIcon } from "blode-icons-react";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -21,9 +20,9 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/docs", label: "Docs" },
-  { href: "/#pricing", label: "Pricing" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/blog", label: "Blog" },
-  { href: "/changelog", label: "Changelog" },
+  { external: true, href: siteConfig.links.github, label: "GitHub" },
 ];
 
 export const MarketingHeader = () => {
@@ -59,15 +58,27 @@ export const MarketingHeader = () => {
             aria-label="Primary"
             className="hidden items-center gap-6 lg:flex"
           >
-            {navLinks.map((link) => (
-              <Link
-                className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-                href={link.href}
-                key={link.href}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.external ? (
+                <a
+                  className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                  href={link.href}
+                  key={link.href}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                  href={link.href}
+                  key={link.href}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </nav>
         </div>
         <nav aria-label="Account" className="flex items-center gap-2">
@@ -100,25 +111,25 @@ export const MarketingHeader = () => {
               <div className="flex flex-col gap-1 px-4">
                 {navLinks.map((link) => (
                   <SheetClose asChild key={link.href}>
-                    <Link
-                      className="rounded-md px-2 py-2 text-lg font-medium transition-colors hover:bg-muted"
-                      href={link.href}
-                    >
-                      {link.label}
-                    </Link>
+                    {link.external ? (
+                      <a
+                        className="rounded-md px-2 py-2 text-lg font-medium transition-colors hover:bg-muted"
+                        href={link.href}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        className="rounded-md px-2 py-2 text-lg font-medium transition-colors hover:bg-muted"
+                        href={link.href}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </SheetClose>
                 ))}
-                <SheetClose asChild>
-                  <a
-                    className="flex items-center gap-2 rounded-md px-2 py-2 text-lg font-medium transition-colors hover:bg-muted"
-                    href={siteConfig.links.github}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <GithubIcon />
-                    GitHub
-                  </a>
-                </SheetClose>
                 <SheetClose asChild>
                   <Link
                     className="rounded-md px-2 py-2 text-lg font-medium transition-colors hover:bg-muted sm:hidden"
