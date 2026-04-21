@@ -14,7 +14,7 @@ const renderLink = ({
 }) =>
   external ? (
     <a
-      className="transition-colors hover:text-foreground"
+      className="flex h-7 items-center text-[13px] text-muted-foreground tracking-[-0.13px] transition-colors hover:text-foreground"
       href={href}
       rel="noopener noreferrer"
       target="_blank"
@@ -22,7 +22,10 @@ const renderLink = ({
       {label}
     </a>
   ) : (
-    <Link className="transition-colors hover:text-foreground" href={href}>
+    <Link
+      className="flex h-7 items-center text-[13px] text-muted-foreground tracking-[-0.13px] transition-colors hover:text-foreground"
+      href={href}
+    >
       {label}
     </Link>
   );
@@ -38,14 +41,25 @@ export const SiteFooter = () => {
 
   return (
     <footer className="border-border/60 border-t">
-      <div className="container @container px-4 pt-24 pb-10 text-muted-foreground text-sm">
-        <div className="grid grid-cols-1 gap-10 @md:grid-cols-3 @md:gap-8">
+      <div className="container @container px-4 pt-14 pb-10 md:px-12">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-10 @md:grid-cols-[auto_repeat(3,minmax(0,1fr))] @md:gap-0">
+          <Link
+            aria-label="Blode.md home"
+            className="col-span-2 hidden items-baseline gap-0.5 text-foreground transition-opacity hover:opacity-70 @md:flex @md:col-span-1 @md:px-8"
+            href="/"
+          >
+            <span className="font-semibold text-base tracking-tight">
+              Blode
+            </span>
+            <span className="font-mono text-sm tracking-tight">.md</span>
+          </Link>
+
           {linkGroups.map((group) => (
-            <div className="flex flex-col gap-3" key={group.label}>
-              <h3 className="font-medium text-foreground text-xs uppercase tracking-[0.12em]">
+            <div className="flex flex-col @md:px-8" key={group.label}>
+              <h3 className="mb-5 text-[13px] text-foreground tracking-[-0.13px]">
                 {group.label}
               </h3>
-              <ul className="flex flex-col gap-2.5">
+              <ul className="flex flex-col">
                 {group.links.map((link) => (
                   <li key={link.label}>{renderLink(link)}</li>
                 ))}
@@ -54,11 +68,17 @@ export const SiteFooter = () => {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-col gap-4 border-border/60 border-t pt-8 @md:flex-row @md:items-center @md:justify-between">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="mt-16 flex flex-col gap-4 text-[13px] text-muted-foreground tracking-[-0.13px] @md:flex-row @md:items-center @md:justify-between @md:px-8">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span>© {year}</span>
             {legalGroup?.links.map((link) => (
-              <span key={link.label}>{renderLink(link)}</span>
+              <Link
+                className="transition-colors hover:text-foreground"
+                href={link.href}
+                key={link.label}
+              >
+                {link.label}
+              </Link>
             ))}
           </div>
           <a
@@ -72,19 +92,6 @@ export const SiteFooter = () => {
           </a>
         </div>
       </div>
-
-      <Link
-        aria-label="Blode.md home"
-        className="block border-border/60 border-t transition-opacity hover:opacity-80"
-        href="/"
-      >
-        <div
-          aria-hidden
-          className="h-display container select-none px-4 py-8 text-center font-semibold text-[22vw] text-foreground/[0.08] leading-[0.8] md:py-12 md:text-[18rem]"
-        >
-          Blode.md
-        </div>
-      </Link>
     </footer>
   );
 };

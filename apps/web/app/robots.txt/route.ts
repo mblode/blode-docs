@@ -23,8 +23,7 @@ const AI_CRAWLERS = [
 const CONTENT_SIGNAL = "ai-train=yes, search=yes, ai-input=yes";
 
 const aiCrawlerBlock = AI_CRAWLERS.map(
-  (agent) =>
-    `User-agent: ${agent}\nAllow: /\nContent-Signal: ${CONTENT_SIGNAL}`
+  (agent) => `User-agent: ${agent}\nAllow: /\nContent-Signal: ${CONTENT_SIGNAL}`
 ).join("\n\n");
 
 const body = `User-agent: *

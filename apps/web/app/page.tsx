@@ -126,7 +126,7 @@ export default function HomePage() {
             preset="fade-in-blur"
             speedSegment={0.3}
           >
-            And <span className="text-foreground">their AI</span> understands.
+            And their AI understands.
           </TextEffect>
           <TextEffect
             as="p"
@@ -154,10 +154,7 @@ export default function HomePage() {
             }}
           >
             <Button asChild className="h-11 rounded-full px-6" size="lg">
-              <Link href="/oauth/consent">
-                Get started — it’s free
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
+              <Link href="/oauth/consent">Get started free</Link>
             </Button>
             <Button
               asChild
@@ -402,10 +399,7 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button asChild className="h-11 rounded-full px-6" size="lg">
-              <Link href="/oauth/consent">
-                Get started — it’s free
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
+              <Link href="/oauth/consent">Get started free</Link>
             </Button>
             <Button
               asChild

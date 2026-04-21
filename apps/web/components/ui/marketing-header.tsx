@@ -43,7 +43,7 @@ export const MarketingHeader = () => {
     >
       <div
         className={cn(
-          "flex w-full max-w-[1200px] items-center justify-between rounded-full border px-3 py-2 transition-all duration-300",
+          "flex w-full max-w-[1200px] items-center justify-between rounded-full border pr-2 py-2 transition-all duration-300",
           scrolled
             ? "border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur-xl"
             : "border-transparent bg-transparent"
@@ -52,13 +52,13 @@ export const MarketingHeader = () => {
         <div className="flex items-center gap-1 pl-2">
           <Link
             aria-label="Blode.md home"
-            className="flex items-baseline gap-0.5 rounded-full py-1 transition-opacity hover:opacity-70"
+            className="flex items-baseline rounded-full py-1 transition-opacity hover:opacity-70"
             href="/"
           >
             <span className="font-semibold text-base leading-none tracking-tight">
               Blode
             </span>
-            <span className="font-mono text-muted-foreground text-xs tracking-tight">
+            <span className="font-semibold text-base leading-none tracking-tight">
               .md
             </span>
           </Link>
