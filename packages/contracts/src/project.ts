@@ -1,9 +1,11 @@
 import { z } from "zod";
 
+import { ProjectAnalyticsSchema } from "./analytics.js";
 import { IsoDateSchema } from "./dates.js";
 import { IdSchema, SlugSchema } from "./ids.js";
 
 export const ProjectSchema = z.object({
+  analytics: ProjectAnalyticsSchema.nullable().optional(),
   createdAt: IsoDateSchema,
   deploymentName: z.string().min(1),
   description: z.string().optional(),
@@ -23,6 +25,7 @@ export const ProjectCreateSchema = z.object({
 export type ProjectCreateInput = z.infer<typeof ProjectCreateSchema>;
 
 export const ProjectUpdateSchema = z.object({
+  analytics: ProjectAnalyticsSchema.nullable().optional(),
   deploymentName: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
   name: z.string().min(1).optional(),

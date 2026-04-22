@@ -14,7 +14,10 @@ import {
   isRootRuntimeHost,
   resolveTenant,
 } from "./lib/tenancy";
-import { TENANT_HEADERS } from "./lib/tenant-headers";
+import {
+  encodeTenantAnalyticsHeader,
+  TENANT_HEADERS,
+} from "./lib/tenant-headers";
 import { applyTenantUtilityContextSearchParams } from "./lib/tenant-utility-context";
 
 export const config = {
@@ -253,6 +256,12 @@ export const proxy = async (request: NextRequest) => {
       TENANT_HEADERS.CUSTOM_DOMAINS,
       resolution.tenant.customDomains.join(",")
     );
+  }
+  const encodedAnalytics = encodeTenantAnalyticsHeader(
+    resolution.tenant.analytics
+  );
+  if (encodedAnalytics) {
+    requestHeaders.set(TENANT_HEADERS.ANALYTICS, encodedAnalytics);
   }
 
   const url = request.nextUrl.clone();

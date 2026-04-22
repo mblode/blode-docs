@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ProjectAnalyticsSchema } from "./analytics.js";
 import {
   HostnameSchema,
   IdSchema,
@@ -14,6 +15,7 @@ export type TenantStatus = z.infer<typeof TenantStatusSchema>;
 export const TenantSchema = z.object({
   activeDeploymentId: IdSchema.optional(),
   activeDeploymentManifestUrl: UrlSchema.optional(),
+  analytics: ProjectAnalyticsSchema.optional(),
   customDomains: z.array(HostnameSchema),
   description: z.string().optional(),
   id: IdSchema,

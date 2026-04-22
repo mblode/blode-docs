@@ -76,6 +76,7 @@
   },
   "devDependencies": {
     "@repo/common": "*",
+    "@repo/contracts": "*",
     "@repo/models": "*",
     "@repo/previewing": "*",
     "@repo/typescript-config": "*",

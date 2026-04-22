@@ -21,6 +21,7 @@ export type UserRecord = Pick<
 
 export type ProjectRecord = Pick<
   ProjectRow,
+  | "analytics"
   | "createdAt"
   | "deploymentName"
   | "description"

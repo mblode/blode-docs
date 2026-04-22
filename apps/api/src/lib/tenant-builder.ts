@@ -30,6 +30,7 @@ export const buildTenant = async (
   return {
     activeDeploymentId: deployment?.manifestUrl ? deployment.id : undefined,
     activeDeploymentManifestUrl: deployment?.manifestUrl ?? undefined,
+    analytics: project.analytics ?? undefined,
     customDomains,
     description: project.description ?? undefined,
     id: project.id,

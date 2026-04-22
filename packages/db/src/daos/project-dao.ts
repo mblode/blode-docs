@@ -1,4 +1,5 @@
 // oxlint-disable eslint/class-methods-use-this
+import type { ProjectAnalytics } from "@repo/contracts";
 import { and, desc, eq } from "drizzle-orm";
 
 import { assertRecord } from "../assert-record.js";
@@ -16,6 +17,7 @@ export interface ProjectCreateInput {
 }
 
 export interface ProjectUpdateInput {
+  analytics?: ProjectAnalytics | null;
   name?: string;
   deploymentName?: string;
   description?: string | null;

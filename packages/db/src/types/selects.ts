@@ -17,6 +17,7 @@ export const userSelect = {
 } as const;
 
 export const projectSelect = {
+  analytics: projects.analytics,
   createdAt: projects.createdAt,
   deploymentName: projects.deploymentName,
   description: projects.description,

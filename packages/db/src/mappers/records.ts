@@ -28,6 +28,7 @@ export const mapUser = (record: UserRecord): User => ({
 });
 
 export const mapProject = (record: ProjectRecord): Project => ({
+  analytics: record.analytics ?? null,
   createdAt: toIso(record.createdAt),
   deploymentName: record.deploymentName,
   description: record.description ?? undefined,

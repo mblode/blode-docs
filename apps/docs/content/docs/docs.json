@@ -58,6 +58,7 @@
               "features/custom-domains",
               "features/search",
               "features/seo",
+              "features/analytics",
               "features/openapi",
               "features/collections",
               "features/dev-server"
@@ -122,7 +123,8 @@
               "cli/new",
               "cli/push",
               "cli/dev",
-              "cli/validate"
+              "cli/validate",
+              "cli/analytics"
             ]
           }
         ]

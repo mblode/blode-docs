@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable eslint-plugin-react-perf/jsx-no-new-function-as-prop -- deferred useCallback refactor
-import type { Project } from "@repo/contracts";
+import type { Project, ProjectAnalytics } from "@repo/contracts";
 import { LinkIcon } from "blode-icons-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -24,6 +24,10 @@ import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
 const DETAILS_ANCHOR = "project-details";
+const ANALYTICS_ANCHOR = "analytics";
+
+const GA4_REGEX = /^G-[A-Z0-9]{4,20}$/;
+const POSTHOG_KEY_REGEX = /^phc_[A-Za-z0-9]{20,}$/;
 
 const SectionTitle = ({
   anchor,
@@ -51,7 +55,7 @@ interface ProjectSettingsFormProps {
   project: Project;
 }
 
-export const ProjectSettingsForm = ({
+const ProjectDetailsCard = ({
   accessToken,
   project,
 }: ProjectSettingsFormProps) => {
@@ -149,3 +153,164 @@ export const ProjectSettingsForm = ({
     </Card>
   );
 };
+
+const buildAnalyticsPayload = (
+  ga4Id: string,
+  posthogKey: string,
+  posthogHost: string
+): ProjectAnalytics | null => {
+  const payload: ProjectAnalytics = {};
+  if (ga4Id.trim()) {
+    payload.ga4 = { measurementId: ga4Id.trim() };
+  }
+  if (posthogKey.trim()) {
+    payload.posthog = {
+      projectKey: posthogKey.trim(),
+      ...(posthogHost.trim() ? { host: posthogHost.trim() } : {}),
+    };
+  }
+  return payload.ga4 || payload.posthog ? payload : null;
+};
+
+const validateAnalytics = (
+  ga4Id: string,
+  posthogKey: string,
+  posthogHost: string
+): string | null => {
+  const ga4 = ga4Id.trim();
+  if (ga4 && !GA4_REGEX.test(ga4)) {
+    return "GA4 measurement IDs look like G-XXXXXXXXXX.";
+  }
+  const key = posthogKey.trim();
+  if (key && !POSTHOG_KEY_REGEX.test(key)) {
+    return "PostHog project keys start with phc_. Personal API keys (phx_) are not supported.";
+  }
+  const host = posthogHost.trim();
+  if (host) {
+    try {
+      new URL(host);
+    } catch {
+      return "PostHog host must be a valid URL.";
+    }
+  }
+  return null;
+};
+
+const AnalyticsCard = ({ accessToken, project }: ProjectSettingsFormProps) => {
+  const router = useRouter();
+  const initial = project.analytics ?? null;
+  const [ga4Id, setGa4Id] = useState(initial?.ga4?.measurementId ?? "");
+  const [posthogKey, setPosthogKey] = useState(
+    initial?.posthog?.projectKey ?? ""
+  );
+  const [posthogHost, setPosthogHost] = useState(initial?.posthog?.host ?? "");
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = useCallback(async () => {
+    const validationError = validateAnalytics(ga4Id, posthogKey, posthogHost);
+    if (validationError) {
+      setErrorMessage(validationError);
+      setSaved(false);
+      return;
+    }
+    setErrorMessage(null);
+    setSaved(false);
+    setSaving(true);
+    try {
+      await apiFetch(`/projects/${project.id}`, {
+        accessToken,
+        body: {
+          analytics: buildAnalyticsPayload(ga4Id, posthogKey, posthogHost),
+        },
+        method: "PATCH",
+      });
+      setSaved(true);
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : "Failed to save changes.";
+      setErrorMessage(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [accessToken, ga4Id, posthogHost, posthogKey, project.id, router]);
+
+  return (
+    <Card id={ANALYTICS_ANCHOR}>
+      <CardHeader className="gap-2 px-6 pt-2">
+        <SectionTitle anchor={ANALYTICS_ANCHOR}>Analytics</SectionTitle>
+        <p className="text-muted-foreground text-sm">
+          Bring your own Google Analytics 4 or PostHog. We inject the scripts on
+          every tenant page. Leave a field empty to disable that provider.
+        </p>
+      </CardHeader>
+      <CardContent className="px-6">
+        <FieldGroup className="gap-4">
+          <Field>
+            <FieldLabel htmlFor="ga4">Google Analytics 4</FieldLabel>
+            <Input
+              className="w-[300px] max-w-full"
+              id="ga4"
+              onChange={(event) => setGa4Id(event.target.value)}
+              placeholder="G-XXXXXXXXXX"
+              value={ga4Id}
+            />
+            <FieldDescription>
+              Measurement ID. Find it in GA4 → Admin → Data streams.
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="posthog-key">PostHog project key</FieldLabel>
+            <Input
+              className="w-[300px] max-w-full"
+              id="posthog-key"
+              onChange={(event) => setPosthogKey(event.target.value)}
+              placeholder="phc_..."
+              value={posthogKey}
+            />
+            <FieldDescription>
+              Project API key. Find it in PostHog → Project settings.
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="posthog-host">PostHog host</FieldLabel>
+            <Input
+              className="w-[300px] max-w-full"
+              id="posthog-host"
+              onChange={(event) => setPosthogHost(event.target.value)}
+              placeholder="https://us.i.posthog.com"
+              value={posthogHost}
+            />
+            <FieldDescription>
+              Optional. Defaults to https://us.i.posthog.com. Use
+              https://eu.i.posthog.com for EU cloud.
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
+      </CardContent>
+      <CardFooter className="justify-between px-6">
+        <div className="min-h-5 text-sm">
+          {errorMessage && <FieldError>{errorMessage}</FieldError>}
+          {!errorMessage && saved && (
+            <span className="text-muted-foreground">Saved.</span>
+          )}
+        </div>
+        <Button disabled={saving} onClick={handleSave} type="button">
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+export const ProjectSettingsForm = ({
+  accessToken,
+  project,
+}: ProjectSettingsFormProps) => (
+  <>
+    <ProjectDetailsCard accessToken={accessToken} project={project} />
+    <AnalyticsCard accessToken={accessToken} project={project} />
+  </>
+);

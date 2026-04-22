@@ -16,6 +16,7 @@ import chalk from "chalk";
 import { Command, InvalidArgumentError } from "commander";
 import open from "open";
 
+import { registerAnalyticsCommand } from "./analytics/command.js";
 import { resolveAuthToken, resolveTokenStatus } from "./auth-session.js";
 import {
   BLODE_API_URL_ENV,
@@ -1123,5 +1124,7 @@ program
         port: options.port,
       })
   );
+
+registerAnalyticsCommand(program);
 
 program.parse();

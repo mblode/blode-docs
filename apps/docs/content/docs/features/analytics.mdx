@@ -1,0 +1,61 @@
+---
+title: Analytics
+description: Bring your own Google Analytics 4 and PostHog tokens.
+---
+
+Blode.md does not ship a proprietary analytics tool. Instead, we inject the analytics you already trust — Google Analytics 4 and PostHog — into every page of your tenant docs. Paste your keys into the dashboard, and the scripts load on the next request. There is nothing to wire up in your content.
+
+## Add a provider
+
+1. Open the dashboard, pick your project, and go to **Settings → Analytics**.
+2. Fill in the provider you want:
+   - **Google Analytics 4** — paste your measurement ID, e.g. `G-ABC123DEFG`. Find it in GA4 → Admin → Data streams.
+   - **PostHog** — paste your project API key (starts with `phc_`). Find it in PostHog → Project settings. Personal API keys (`phx_`) are not supported.
+   - **PostHog host** — optional. Defaults to `https://us.i.posthog.com`. Use `https://eu.i.posthog.com` if your project lives in the EU cloud.
+3. Save. The next request on your tenant domain loads the scripts.
+
+Leave a field empty to disable that provider without touching the other.
+
+## How it works
+
+When tenant analytics are configured, every request through the docs proxy carries a compact, tenant-scoped header that the root layout reads on the server. We inject:
+
+- `<GoogleAnalytics>` from `@next/third-parties/google`, which handles App Router SPA pageviews for you.
+- A small PostHog provider that initializes `posthog-js` with `capture_pageview: false` and emits a `$pageview` event on every client-side navigation.
+
+Both providers only load when `VERCEL_ENV === "production"`, so local dev previews and preview deployments never pollute your numbers.
+
+<Callout type="info">
+  GA4 and PostHog keys are public client-side tokens — they are designed to be
+  shipped to the browser. Blode.md treats them as tenant configuration, not
+  secrets, and surfaces them in the dashboard as-is.
+</Callout>
+
+## Consent Mode v2
+
+When GA4 is configured, we ship a default-denied Consent Mode v2 bootstrap:
+
+```js
+gtag("consent", "default", {
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied",
+  analytics_storage: "denied",
+  wait_for_update: 500,
+});
+```
+
+This keeps you compliant with EU traffic until you install a full Consent Management Platform. When you are ready, emit your own `gtag('consent', 'update', …)` calls from your CMP.
+
+## Managing from the CLI
+
+The same config is available through `blodemd analytics`:
+
+```bash
+blodemd analytics get --project my-docs
+blodemd analytics set ga4 G-ABC123DEFG --project my-docs
+blodemd analytics set posthog phc_abc... --host https://eu.i.posthog.com --project my-docs
+blodemd analytics unset posthog --project my-docs
+```
+
+See the [CLI reference](/cli/analytics) for all options.

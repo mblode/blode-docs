@@ -1,7 +1,9 @@
+import type { ProjectAnalytics } from "@repo/contracts";
 import {
   bigint,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -55,6 +57,7 @@ export const users = pgTable(
 export const projects = pgTable(
   "projects",
   {
+    analytics: jsonb("analytics").$type<ProjectAnalytics>(),
     createdAt: timestampColumn("created_at").defaultNow().notNull(),
     deploymentName: text("deployment_name").notNull(),
     description: text("description"),
