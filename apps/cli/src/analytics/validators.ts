@@ -1,7 +1,7 @@
 import { InvalidArgumentError } from "commander";
 
-export const GA4_MEASUREMENT_ID_REGEX = /^G-[A-Z0-9]{4,20}$/;
-export const POSTHOG_PROJECT_KEY_REGEX = /^phc_[A-Za-z0-9]{20,}$/;
+const GA4_MEASUREMENT_ID_REGEX = /^G-[A-Z0-9]{4,20}$/;
+const POSTHOG_PROJECT_KEY_REGEX = /^phc_[A-Za-z0-9]{20,}$/;
 
 export const parseGa4MeasurementId = (value: string): string => {
   const trimmed = value.trim();
