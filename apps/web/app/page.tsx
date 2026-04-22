@@ -406,8 +406,8 @@ export default function HomePage() {
             <span className="text-muted-foreground">your AI needs.</span>
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-balance text-muted-foreground md:text-lg">
-            Sign in with GitHub, pick a repo, pick a template. Live in under a
-            minute. Every push ships itself from there.
+            Sign in with GitHub, pick a repo, point us at your docs folder. Live
+            in under a minute. Every push ships itself from there.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button asChild className="h-11 rounded-full px-6" size="lg">
