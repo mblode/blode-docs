@@ -66,3 +66,5 @@ Copy `.env.example` to `.env.local` before running the API. Required variables i
 Additional context is available in the files below. Consult the relevant file when working in a related area — see each description for scope.
 
 - `.claude/knowledge/incident-troubleshooting.md` — Incident debugging and recovery. Known failure modes, debugging approaches, runbooks, recovery steps.
+- `.claude/knowledge/local-dev-setup.md` — Local Development Setup. Node 22 requirement for vitest, test commands, Drizzle push workflow.
+- `.claude/knowledge/architecture-boundaries.md` — Architecture & System Boundaries. Dual Tenant type, tenant header flow, edge-config sync site, analytics scope.
