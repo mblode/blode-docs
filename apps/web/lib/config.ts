@@ -31,6 +31,11 @@ export const siteConfig = {
         { href: "/docs/guides/proxy-vercel", label: "Proxy guides" },
         { href: "/docs/cli", label: "CLI" },
         { href: "/docs/api/overview", label: "API" },
+        {
+          external: true,
+          href: "https://github.com/mblode/blodemd",
+          label: "GitHub",
+        },
       ],
     },
     {

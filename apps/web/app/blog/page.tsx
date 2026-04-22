@@ -25,8 +25,8 @@ export default function BlogPage() {
   return (
     <MarketingShell>
       <section className="pt-20 pb-16 md:pt-28 md:pb-24">
-        <div className="container">
-          <Badge className="mb-4 font-mono" variant="outline">
+        <div className="container flex flex-col items-center text-center">
+          <Badge className="mb-4" variant="outline">
             Blog
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
@@ -40,24 +40,22 @@ export default function BlogPage() {
 
       <section className="pb-24 md:pb-32">
         <div className="container">
-          <ul className="flex flex-col divide-y divide-border">
+          <ul className="measure mx-auto flex flex-col divide-y divide-border">
             {posts.map((post) => (
               <li key={post.slug}>
                 <Link
-                  className="group flex flex-col gap-3 py-8 transition-colors first:pt-0"
+                  className="group flex flex-col gap-3 py-8 first:pt-0"
                   href={`/blog/${post.slug}`}
                 >
                   <RelativeTime
                     className="text-muted-foreground text-sm"
                     date={post.date}
                   />
-                  <h2 className="h-display font-bold text-2xl transition-colors group-hover:text-primary md:text-3xl">
+                  <h2 className="h-display font-bold text-2xl decoration-foreground/40 underline-offset-4 transition-colors group-hover:underline md:text-3xl">
                     {post.title}
                   </h2>
-                  <p className="measure text-muted-foreground">
-                    {post.excerpt}
-                  </p>
-                  <span className="inline-flex items-center gap-2 text-sm transition-colors group-hover:text-primary">
+                  <p className="text-muted-foreground">{post.excerpt}</p>
+                  <span className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors group-hover:text-foreground">
                     Read post
                     <ArrowRightIcon data-icon="inline-end" />
                   </span>

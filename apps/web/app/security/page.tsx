@@ -37,7 +37,7 @@ export default function SecurityPage() {
     <MarketingShell>
       <section className="pt-20 pb-16 md:pt-28 md:pb-24">
         <div className="container">
-          <Badge className="mb-4 font-mono" variant="outline">
+          <Badge className="mb-4" variant="outline">
             Security
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
@@ -68,7 +68,7 @@ export default function SecurityPage() {
       <section className="border-border border-t py-24 md:py-32">
         <div className="container">
           <div className="max-w-2xl">
-            <Badge className="mb-4 font-mono" variant="outline">
+            <Badge className="mb-4" variant="outline">
               Reporting an issue
             </Badge>
             <h2 className="h-display text-balance font-bold text-3xl md:text-4xl">

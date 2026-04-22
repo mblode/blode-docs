@@ -1,5 +1,6 @@
 "use client";
 
+import { FileTextIcon } from "blode-icons-react";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -49,17 +50,20 @@ export const MarketingHeader = () => {
             : "border-transparent bg-transparent"
         )}
       >
-        <div className="flex items-center gap-1 pl-2">
+        <div className="flex items-center gap-1 pl-5">
           <Link
             aria-label="Blode.md home"
-            className="flex items-baseline rounded-full py-1 transition-opacity hover:opacity-70"
+            className="flex items-center gap-1.5 rounded-full py-1 transition-opacity hover:opacity-70"
             href="/"
           >
-            <span className="font-semibold text-base leading-none tracking-tight">
-              Blode
-            </span>
-            <span className="font-semibold text-base leading-none tracking-tight">
-              .md
+            <FileTextIcon className="size-4" />
+            <span className="flex items-baseline">
+              <span className="font-semibold text-base leading-none tracking-tight">
+                Blode
+              </span>
+              <span className="font-semibold text-base leading-none tracking-tight">
+                .md
+              </span>
             </span>
           </Link>
         </div>

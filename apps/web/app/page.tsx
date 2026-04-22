@@ -22,11 +22,12 @@ import { HeroMedia } from "@/components/ui/hero-media";
 import { MarketingShell } from "@/components/ui/marketing-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TextEffect } from "@/components/ui/text-effect";
+import { TextReveal } from "@/components/ui/text-reveal";
 
 const features = [
   {
     Icon: GithubIcon,
-    description: "Install once. Every push to your branch deploys in seconds.",
+    description: "Every push rebuilds in seconds. No pipeline to maintain.",
     title: "GitHub auto-deploy",
   },
   {
@@ -38,23 +39,24 @@ const features = [
   {
     Icon: CodeIcon,
     description:
-      "30+ components out of the box: callouts, tabs, code groups, API refs.",
+      "30+ components out of the box. Content people skim and agents parse.",
     title: "MDX components",
   },
   {
     Icon: MagnifyingGlassIcon,
-    description: "Full-text search across every page. No plugin, no config.",
+    description: "One search index. Same results for people and agents.",
     title: "Search",
   },
   {
     Icon: LayersTwoIcon,
     description:
-      "Docs, blogs, changelogs, and courses in one project, one domain.",
+      "Docs, blogs, changelogs, and courses on one domain. One source of truth.",
     title: "Content types",
   },
   {
     Icon: BookIcon,
-    description: "Point at an OpenAPI spec, ship an interactive API reference.",
+    description:
+      "Point at an OpenAPI spec. Ship a reference developers and agents can follow.",
     title: "API reference",
   },
 ];
@@ -107,7 +109,7 @@ export default function HomePage() {
             }}
           >
             <span className="inline-block size-1.5 rounded-full bg-foreground/60" />
-            <span>Docs that ship with every commit</span>
+            <span>Docs are AI infrastructure now</span>
           </AnimatedGroup>
           <TextEffect
             as="h1"
@@ -116,7 +118,7 @@ export default function HomePage() {
             preset="fade-in-blur"
             speedSegment={0.3}
           >
-            Docs your users love.
+            The knowledge layer
           </TextEffect>
           <TextEffect
             as="p"
@@ -126,7 +128,7 @@ export default function HomePage() {
             preset="fade-in-blur"
             speedSegment={0.3}
           >
-            And their AI understands.
+            your AI runs on.
           </TextEffect>
           <TextEffect
             as="p"
@@ -136,8 +138,8 @@ export default function HomePage() {
             preset="fade-in-blur"
             speedSegment={0.2}
           >
-            Ship Markdown docs from GitHub in minutes. Versioned, searchable,
-            and built so the LLMs your users ask can actually read them.
+            AI agents learn your product from your docs. Blode.md keeps them in
+            your repo, versioned with the code, readable by people and machines.
           </TextEffect>
           <AnimatedGroup
             className="mt-10 flex flex-wrap items-center justify-center gap-3"
@@ -184,6 +186,13 @@ export default function HomePage() {
         </AnimatedGroup>
       </section>
 
+      <section className="border-t border-border">
+        <TextReveal>
+          A folder of Markdown becomes the knowledge layer your users read and
+          their agents run on. On your domain. Rebuilt on every commit.
+        </TextReveal>
+      </section>
+
       <section
         className="border-t border-border py-24 md:py-32"
         id="how-it-works"
@@ -195,12 +204,12 @@ export default function HomePage() {
                 How it works
               </p>
               <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-                Git in, docs out
+                Knowledge that ships with the code
               </h2>
               <p className="measure mt-4 text-muted-foreground">
-                Point us at a repo from the browser or the terminal, and we
-                handle the MDX build, the search index, the domain, and every
-                deploy after that. No dashboard to babysit. No pipeline to own.
+                Docs that drift from the code start telling agents the wrong
+                thing. Blode.md ships from the same commit. Same review, same
+                merge, same deploy.
               </p>
             </div>
             <Tabs className="min-w-0" defaultValue="github">
@@ -305,12 +314,11 @@ export default function HomePage() {
               What you get
             </p>
             <h2 className="h-display text-balance text-3xl font-bold md:text-4xl">
-              Every piece of a modern docs site, included
+              Everything the knowledge layer needs
             </h2>
             <p className="measure mt-4 text-muted-foreground">
-              One MDX project, one domain, one price. The components,
-              infrastructure, and workflow are already taken care of, so you can
-              spend your time on the writing.
+              One MDX project, one domain, one price. Components, hosting, and
+              the workflow to keep people and agents on the same page.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -340,9 +348,10 @@ export default function HomePage() {
                 Keep docs under the domain your users already trust
               </h2>
               <p className="measure mt-4 text-muted-foreground">
-                Proxy /docs through your marketing site so Blode.md never looks
-                like a detour. Ready-made configs for Vercel, Cloudflare, Nginx,
-                and Caddy. Paste in, ship it.
+                Proxy /docs through your marketing site. Blode.md never looks
+                like a detour, to your users or the agents they send. Ready-made
+                configs for Vercel, Cloudflare, Nginx and Caddy. Paste in, ship
+                it.
               </p>
               <div className="mt-6">
                 <Button asChild variant="outline">
@@ -390,12 +399,12 @@ export default function HomePage() {
             Ship today
           </p>
           <h2 className="h-display mx-auto max-w-4xl text-balance text-5xl font-semibold md:text-6xl lg:text-7xl">
-            Make the next commit{" "}
-            <span className="text-muted-foreground">a deploy.</span>
+            Ship the knowledge layer{" "}
+            <span className="text-muted-foreground">your AI needs.</span>
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-balance text-muted-foreground md:text-lg">
-            Sign in with GitHub, pick a repo, pick a template. Your first site
-            is live in under a minute, and every push from then on ships itself.
+            Sign in with GitHub, pick a repo, pick a template. Live in under a
+            minute. Every push ships itself from there.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button asChild className="h-11 rounded-full px-6" size="lg">

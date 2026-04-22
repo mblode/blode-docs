@@ -15,7 +15,7 @@ export default function TermsPage() {
     <MarketingShell>
       <section className="pt-20 pb-16 md:pt-28 md:pb-24">
         <div className="container">
-          <Badge className="mb-4 font-mono" variant="outline">
+          <Badge className="mb-4" variant="outline">
             Terms
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">

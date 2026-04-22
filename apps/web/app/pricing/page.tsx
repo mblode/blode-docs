@@ -71,7 +71,7 @@ const plans: Plan[] = [
 const faqs = [
   {
     answer:
-      "None. The CLI, renderer, and API are MIT. Hosting costs us, but we'd rather earn trust now and figure out paid tiers later.",
+      "None. Docs your AI depends on should be yours to inspect and own, so the CLI, renderer and API are MIT. Hosting costs us. We'd rather earn trust now and work out paid tiers later.",
     question: "What's the catch?",
   },
   {
@@ -94,7 +94,7 @@ const PlanCard = ({ plan }: { plan: Plan }) => (
           {plan.eyebrow}
         </p>
         {plan.recommended ? (
-          <Badge className="font-mono text-xs" variant="secondary">
+          <Badge className="text-xs" variant="secondary">
             Recommended
           </Badge>
         ) : null}
@@ -143,16 +143,17 @@ export default function PricingPage() {
     <MarketingShell>
       <section className="pt-20 pb-16 md:pt-28 md:pb-24">
         <div className="container">
-          <Badge className="mb-4 font-mono" variant="outline">
+          <Badge className="mb-4" variant="outline">
             Pricing
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
             Open source. Zero seats.
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            Blode.md ships as an MIT-licensed CLI and renderer. Use the hosted
-            version for zero setup, or self-host on any Postgres and any Node
-            host. Same binary either way.
+            The docs your AI runs on shouldn&apos;t be rented. Blode.md is an
+            MIT-licensed CLI and renderer. Use the hosted version for zero
+            setup, or self-host on any Postgres and any Node host. Same binary
+            either way.
           </p>
         </div>
       </section>

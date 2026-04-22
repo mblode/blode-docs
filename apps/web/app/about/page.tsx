@@ -18,15 +18,16 @@ export default function AboutPage() {
     <MarketingShell>
       <section className="pt-20 pb-16 md:pt-28 md:pb-24">
         <div className="container">
-          <Badge className="mb-4 font-mono" variant="outline">
+          <Badge className="mb-4" variant="outline">
             About
           </Badge>
           <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
-            Docs that live in your repo
+            Your docs are your AI interface.
           </h1>
           <p className="measure mt-6 text-balance text-lg text-muted-foreground md:text-xl">
-            Blode.md turns a folder of MDX into a docs site. Write in your
-            editor, commit through a pull request, ship on merge.
+            Docs used to be pages people scanned. They still are. They are also
+            how every AI agent learns your product. Blode.md keeps that
+            interface where it belongs, next to the code.
           </p>
         </div>
       </section>
@@ -35,23 +36,23 @@ export default function AboutPage() {
         <div className="container">
           <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:items-start">
             <div className="min-w-0">
-              <Badge className="mb-4 font-mono" variant="outline">
+              <Badge className="mb-4" variant="outline">
                 Why
               </Badge>
               <h2 className="h-display text-balance font-bold text-3xl md:text-4xl">
-                Docs belong next to code
+                The knowledge layer belongs with the code
               </h2>
             </div>
             <div className="measure flex flex-col gap-6 text-muted-foreground">
               <p>
-                A separate CMS pulls writing out of the loop your team already
-                runs. The pull request is the review. The merge is the deploy.
-                Docs should use the same path.
+                Docs in a separate CMS drift. Agents reading drifted docs give
+                the wrong answer. The pull request is the review. The merge is
+                the deploy. Docs should use the same path.
               </p>
               <p>
-                Blode.md keeps the surface small on purpose. No plugin
-                marketplace, no deep config. If a feature does not move docs
-                closer to the code that produced them, it does not ship.
+                Blode.md keeps the surface small. No plugin marketplace, no deep
+                config. If a feature widens the gap between code and docs, it
+                does not ship.
               </p>
             </div>
           </div>

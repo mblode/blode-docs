@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ArrowRightIcon } from "blode-icons-react";
+import { ArrowRightIcon, ChevronLeftIcon } from "blode-icons-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -25,15 +25,15 @@ export default function IntroPostPage() {
     <MarketingShell>
       <article>
         <section className="pt-20 pb-12 md:pt-28 md:pb-16">
-          <div className="container">
+          <div className="container flex flex-col items-center text-center">
             <Link
-              className="mb-10 inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
+              className="mb-10 inline-flex items-center gap-1 text-muted-foreground text-sm transition-colors hover:text-foreground"
               href="/blog"
             >
-              <ArrowLeftIcon />
+              <ChevronLeftIcon />
               All posts
             </Link>
-            <Badge className="mb-6 font-mono" variant="outline">
+            <Badge className="mb-6" variant="outline">
               Intro
             </Badge>
             <h1 className="h-display max-w-3xl text-balance font-bold text-4xl md:text-6xl">
@@ -43,7 +43,7 @@ export default function IntroPostPage() {
               Most docs tools want you to leave your editor. Blode.md
               doesn&apos;t.
             </p>
-            <p className="mt-6 flex flex-wrap items-center gap-x-2 text-muted-foreground text-sm">
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 text-muted-foreground text-sm">
               <RelativeTime date="2026-04-20" />
               <span aria-hidden="true">·</span>
               <span>Matthew Blode</span>
@@ -53,7 +53,7 @@ export default function IntroPostPage() {
 
         <section className="pb-16 md:pb-24">
           <div className="container">
-            <div className="measure flex flex-col gap-10 text-base leading-relaxed">
+            <div className="measure mx-auto flex flex-col gap-10 text-base leading-relaxed">
               <div className="flex flex-col gap-4">
                 <h2 className="h-display font-bold text-2xl md:text-3xl">
                   Why this exists
