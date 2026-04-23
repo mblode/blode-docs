@@ -10,6 +10,17 @@ const cleanEnv = (value) => {
 
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(appDir, "..", "..");
+const rawDashboardAppUrl = cleanEnv(process.env.DASHBOARD_APP_URL);
+const rawPlatformRootDomain = cleanEnv(process.env.PLATFORM_ROOT_DOMAIN);
+const platformRootDomain = rawPlatformRootDomain || "blode.md";
+const isVercelRuntime = process.env.VERCEL === "1";
+// Keep docs able to proxy `/app` and `/oauth` when apex traffic lands here
+// directly or an upstream rewrite misroutes dashboard requests to docs.
+const dashboardAppUrl =
+  rawDashboardAppUrl ||
+  (isVercelRuntime
+    ? `https://app.${platformRootDomain}`
+    : "http://127.0.0.1:3002");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -77,17 +88,41 @@ const nextConfig = {
           },
         ]
       : [];
-    return [
-      ...assetRewrite,
-      {
-        destination: "/sites/:tenant/llms.mdx/:path*",
-        source: "/sites/:tenant/:path*.md",
-      },
-      {
-        destination: "/sites/:tenant/llms.mdx/:path*",
-        source: "/sites/:tenant/:path*.mdx",
-      },
-    ];
+    return {
+      afterFiles: [
+        {
+          destination: "/sites/:tenant/llms.mdx/:path*",
+          source: "/sites/:tenant/:path*.md",
+        },
+        {
+          destination: "/sites/:tenant/llms.mdx/:path*",
+          source: "/sites/:tenant/:path*.mdx",
+        },
+      ],
+      beforeFiles: [
+        ...assetRewrite,
+        { destination: `${dashboardAppUrl}/app`, source: "/app" },
+        {
+          destination: `${dashboardAppUrl}/app/:path*`,
+          source: "/app/:path*",
+        },
+        {
+          destination: `${dashboardAppUrl}/oauth/:path*`,
+          source: "/oauth/:path*",
+        },
+        {
+          destination: `${dashboardAppUrl}/_next/:path*`,
+          has: [
+            {
+              key: "referer",
+              type: "header",
+              value: ".*\\/(app|oauth)(?:\\/.*)?$",
+            },
+          ],
+          source: "/_next/:path*",
+        },
+      ],
+    };
   },
   transpilePackages: [
     "@repo/common",

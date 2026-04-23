@@ -34,8 +34,8 @@ describe("tenancy helpers", () => {
     expect(isReservedPath("/robots.txt")).toBe(true);
     expect(isReservedPath("/logos/example-mark-dark.svg")).toBe(true);
     expect(isReservedPath("/api/overview")).toBe(true);
-    expect(isReservedPath("/oauth/consent")).toBe(false);
-    expect(isReservedPath("/app")).toBe(false);
+    expect(isReservedPath("/oauth/consent")).toBe(true);
+    expect(isReservedPath("/app")).toBe(true);
     expect(isReservedPath("/example/sitemap.xml")).toBe(false);
   });
 

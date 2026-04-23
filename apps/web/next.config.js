@@ -1,8 +1,20 @@
 const rawDocsAppUrl = (process.env.DOCS_APP_URL ?? "").trim();
 const rawDashboardAppUrl = (process.env.DASHBOARD_APP_URL ?? "").trim();
-const docsAppUrl = rawDocsAppUrl || "http://127.0.0.1:3001";
+const rawPlatformRootDomain = (process.env.PLATFORM_ROOT_DOMAIN ?? "").trim();
+const platformRootDomain = rawPlatformRootDomain || "blode.md";
+const isVercelRuntime = process.env.VERCEL === "1";
+const docsAppUrl =
+  rawDocsAppUrl ||
+  (isVercelRuntime
+    ? `https://docs.${platformRootDomain}`
+    : "http://127.0.0.1:3001");
+// Dashboard traffic must not fall back to docs. If it does, `/app` gets
+// treated as tenant/docs traffic and 404s instead of reaching auth.
 const dashboardAppUrl =
-  rawDashboardAppUrl || rawDocsAppUrl || "http://127.0.0.1:3002";
+  rawDashboardAppUrl ||
+  (isVercelRuntime
+    ? `https://app.${platformRootDomain}`
+    : "http://127.0.0.1:3002");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
