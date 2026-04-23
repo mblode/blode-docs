@@ -4,12 +4,12 @@ This file reflects the repo target after the dashboard split as of April 23, 202
 
 ## Active Projects
 
-| Surface            | Vercel Project      | Root Directory | Build Command                               | Output Directory       | Production URL          |
-| ------------------ | ------------------- | -------------- | ------------------------------------------- | ---------------------- | ----------------------- |
-| Web frontend       | `blodemd-web`       | `.`            | `npx turbo run build --filter=web...`       | `apps/web/.next`       | `https://blode.md`      |
-| Docs frontend      | `blodemd-docs`      | `.`            | `npx turbo run build --filter=docs...`      | `apps/docs/.next`      | `https://docs.blode.md` |
-| Dashboard frontend | `blodemd-dashboard` | `.`            | `npx turbo run build --filter=dashboard...` | `apps/dashboard/.next` | `https://app.blode.md`  |
-| API                | `blodemd-api`       | `apps/api`     | `npx turbo run build --filter=api...`       | `dist`                 | `https://api.blode.md`  |
+| Surface            | Vercel Project      | Root Directory   | Build Command                          | Output Directory  | Production URL          |
+| ------------------ | ------------------- | ---------------- | -------------------------------------- | ----------------- | ----------------------- |
+| Web frontend       | `blodemd-web`       | `.`              | `npx turbo run build --filter=web...`  | `apps/web/.next`  | `https://blode.md`      |
+| Docs frontend      | `blodemd-docs`      | `.`              | `npx turbo run build --filter=docs...` | `apps/docs/.next` | `https://docs.blode.md` |
+| Dashboard frontend | `blodemd-dashboard` | `apps/dashboard` | `bash ./scripts/vercel-build.sh`       | `.next`           | `https://app.blode.md`  |
+| API                | `blodemd-api`       | `apps/api`       | `npx turbo run build --filter=api...`  | `dist`            | `https://api.blode.md`  |
 
 ## Domain Notes
 
@@ -76,6 +76,11 @@ If you need to relink any project in Vercel:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_JWT_SECRET`
+
+`blodemd-dashboard` runs `npm run db:push:ci --workspace=packages/db` as part of
+production builds before Next.js compiles. That keeps the production schema in
+sync with the deployed dashboard code and prevents schema drift from breaking
+`/app`.
 
 ### `blodemd-api`
 

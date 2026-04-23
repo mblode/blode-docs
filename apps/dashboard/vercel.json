@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx turbo run build --filter=dashboard...",
+  "buildCommand": "bash ./scripts/vercel-build.sh",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["sin1"]

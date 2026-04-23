@@ -36,10 +36,10 @@ Use this when recreating the split frontend topology from scratch.
 2. Import `mblode/blodemd`.
 3. Configure:
    - **Project Name**: `blodemd-dashboard`
-   - **Root Directory**: `.`
+   - **Root Directory**: `apps/dashboard`
    - **Framework Preset**: Next.js
-   - **Build Command**: `npx turbo run build --filter=dashboard...`
-   - **Output Directory**: `apps/dashboard/.next`
+   - **Build Command**: `bash ./scripts/vercel-build.sh`
+   - **Output Directory**: `.next`
 4. Add `app.blode.md` as a production domain.
 5. Keep the project build settings in sync with [apps/dashboard/vercel.json](/Users/mblode/Code/mblode/blodemd/apps/dashboard/vercel.json).
 
@@ -79,6 +79,9 @@ Use this when recreating the split frontend topology from scratch.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_JWT_SECRET`
 - optional `PLATFORM_ASSET_PREFIX`
+
+Production dashboard builds run `npm run db:push:ci --workspace=packages/db`
+before the app build, so `DATABASE_URL` must be present in the Vercel project.
 
 ### `blodemd-api`
 
