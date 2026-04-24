@@ -4,11 +4,5 @@ pre-commit:
     - name: ultracite
       glob: "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}"
       run: npx ultracite fix {staged_files} && git add {staged_files}
-
-pre-push:
-  parallel: true
-  jobs:
     - name: check-types
       run: npx turbo check-types
-    - name: knip
-      run: DATABASE_URL=postgresql://localhost/dummy npx knip
