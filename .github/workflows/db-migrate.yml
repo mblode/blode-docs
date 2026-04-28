@@ -1,0 +1,22 @@
+name: DB migrate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm --workspace @repo/db run db:migrate
+        env:
+          # Drizzle prefers the direct (:5432) URL because the pgbouncer pool
+          # in transaction mode breaks prepared statements. Either DIRECT_URL
+          # or DATABASE_URL works; if both are set, DIRECT_URL wins.
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

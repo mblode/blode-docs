@@ -64,6 +64,11 @@ if (command === "push") {
   process.exit(0);
 }
 
+if (command === "migrate") {
+  runScript("./scripts/migrate.mjs");
+  process.exit(0);
+}
+
 if (command === "seed") {
   const tsxBin = resolve(packageRoot, "../../node_modules/.bin/tsx");
   const result = spawnSync(tsxBin, [resolve(packageRoot, "seed.ts")], {
@@ -77,4 +82,6 @@ if (command === "seed") {
   process.exit(result.status ?? 1);
 }
 
-throw new Error("Unsupported command. Use 'push', 'seed', or 'print-url'.");
+throw new Error(
+  "Unsupported command. Use 'migrate', 'push', 'seed', or 'print-url'."
+);
