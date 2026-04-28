@@ -1,9 +1,6 @@
 import type { Deployment, Project } from "@repo/contracts";
 import { mapDeployment } from "@repo/db";
-import {
-  BranchIcon,
-  GitCommitVerticalIcon,
-} from "blode-icons-react";
+import { BranchIcon, GitCommitVerticalIcon } from "blode-icons-react";
 import { Suspense } from "react";
 
 import { Badge } from "@/components/ui/badge";
