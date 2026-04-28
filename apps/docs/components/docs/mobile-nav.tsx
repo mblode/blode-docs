@@ -109,82 +109,86 @@ export const MobileNav = ({
         side="bottom"
         sideOffset={14}
       >
-        <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
-          {tabs?.length ? (
-            <div className="flex flex-col gap-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Sections
-              </div>
-              <div className="flex flex-col gap-3">
-                {tabs.map((tab, index) => {
-                  const href =
-                    (tab.href ? resolveHref(tab.href, basePath) : undefined) ??
-                    (tab.slugPrefix
-                      ? toDocHref(tab.slugPrefix, basePath)
-                      : undefined);
-                  if (!href) {
-                    return null;
-                  }
-                  const isActive = index === activeTabIndex;
-
-                  return (
-                    <MobileLink
-                      className={isActive ? "text-primary" : ""}
-                      href={href}
-                      key={tab.label}
-                      onOpenChange={setOpen}
-                      rel={
-                        tab.href && isExternalHref(tab.href)
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
-                      target={
-                        tab.href && isExternalHref(tab.href)
-                          ? "_blank"
-                          : undefined
-                      }
-                    >
-                      {tab.label}
-                    </MobileLink>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-          {globalLinks.length > 0 ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3">
-                {globalLinks.map((link) => (
-                  <MobileLink
-                    href={link.href}
-                    key={link.label}
-                    onOpenChange={setOpen}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    {link.label}
-                  </MobileLink>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          {entries.map((entry) => {
-            if (entry.type === "page") {
-              return renderPageLink(entry);
-            }
-
-            return (
-              <div className="flex flex-col gap-4" key={entry.title}>
+        {open ? (
+          <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
+            {tabs?.length ? (
+              <div className="flex flex-col gap-4">
                 <div className="text-sm font-medium text-muted-foreground">
-                  {entry.title}
+                  Sections
                 </div>
                 <div className="flex flex-col gap-3">
-                  {entry.items.map((item) => renderPageLink(item))}
+                  {tabs.map((tab, index) => {
+                    const href =
+                      (tab.href
+                        ? resolveHref(tab.href, basePath)
+                        : undefined) ??
+                      (tab.slugPrefix
+                        ? toDocHref(tab.slugPrefix, basePath)
+                        : undefined);
+                    if (!href) {
+                      return null;
+                    }
+                    const isActive = index === activeTabIndex;
+
+                    return (
+                      <MobileLink
+                        className={isActive ? "text-primary" : ""}
+                        href={href}
+                        key={tab.label}
+                        onOpenChange={setOpen}
+                        rel={
+                          tab.href && isExternalHref(tab.href)
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
+                        target={
+                          tab.href && isExternalHref(tab.href)
+                            ? "_blank"
+                            : undefined
+                        }
+                      >
+                        {tab.label}
+                      </MobileLink>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ) : null}
+            {globalLinks.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
+                  {globalLinks.map((link) => (
+                    <MobileLink
+                      href={link.href}
+                      key={link.label}
+                      onOpenChange={setOpen}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {link.label}
+                    </MobileLink>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {entries.map((entry) => {
+              if (entry.type === "page") {
+                return renderPageLink(entry);
+              }
+
+              return (
+                <div className="flex flex-col gap-4" key={entry.title}>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    {entry.title}
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {entry.items.map((item) => renderPageLink(item))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );

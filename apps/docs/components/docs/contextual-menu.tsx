@@ -414,39 +414,43 @@ export const ContextualMenu = ({
       </div>
 
       <PopoverContent align="end" className="w-[320px] rounded-xl p-1">
-        {resolved.slice(1).map((item) => {
-          const itemFeedback =
-            feedback?.id === item.key ? feedback.state : null;
-          const itemLabel = getFeedbackLabel(itemFeedback, item.title);
-          const itemDescription = getFeedbackDescription(
-            itemFeedback,
-            item.description
-          );
-          const ItemIcon = getFeedbackIcon(itemFeedback, item.icon);
+        {menuOpen
+          ? resolved.slice(1).map((item) => {
+              const itemFeedback =
+                feedback?.id === item.key ? feedback.state : null;
+              const itemLabel = getFeedbackLabel(itemFeedback, item.title);
+              const itemDescription = getFeedbackDescription(
+                itemFeedback,
+                item.description
+              );
+              const ItemIcon = getFeedbackIcon(itemFeedback, item.icon);
 
-          return (
-            <MenuItem
-              href={item.type === "link" ? item.href : undefined}
-              key={item.key}
-              onSelect={
-                item.type === "action" ? actionHandlers[item.key] : closeMenu
-              }
-            >
-              <MenuIcon>
-                <ItemIcon aria-hidden="true" className="size-[18px]" />
-              </MenuIcon>
-              <div className="flex-1">
-                <div className="font-medium">
-                  {itemLabel}
-                  {item.type === "link" ? <ExternalArrow /> : null}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {itemDescription}
-                </div>
-              </div>
-            </MenuItem>
-          );
-        })}
+              return (
+                <MenuItem
+                  href={item.type === "link" ? item.href : undefined}
+                  key={item.key}
+                  onSelect={
+                    item.type === "action"
+                      ? actionHandlers[item.key]
+                      : closeMenu
+                  }
+                >
+                  <MenuIcon>
+                    <ItemIcon aria-hidden="true" className="size-[18px]" />
+                  </MenuIcon>
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {itemLabel}
+                      {item.type === "link" ? <ExternalArrow /> : null}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {itemDescription}
+                    </div>
+                  </div>
+                </MenuItem>
+              );
+            })
+          : null}
       </PopoverContent>
     </Popover>
   );

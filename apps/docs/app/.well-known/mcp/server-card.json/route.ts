@@ -10,6 +10,7 @@ export const revalidate = 3600;
 const serverCard = {
   $schema:
     "https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/server-card.schema.json",
+  authentication: { type: "none" as const },
   capabilities: {
     prompts: { listChanged: false },
     resources: { listChanged: true, subscribe: false },

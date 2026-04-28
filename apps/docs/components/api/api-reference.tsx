@@ -92,9 +92,35 @@ export const ApiReference = ({
       {requestBody?.content ? (
         <section className="mt-7 grid gap-3">
           <h2>Request Body</h2>
-          <pre className="overflow-x-auto rounded-lg bg-code p-3 text-code-foreground">
-            {JSON.stringify(requestBody.content, null, 2)}
-          </pre>
+          <div className="grid gap-2">
+            {Object.entries(requestBody.content).map(([mediaType, value]) => {
+              const { schema } = value as { schema?: unknown };
+              const ref =
+                schema &&
+                typeof schema === "object" &&
+                "$ref" in schema &&
+                typeof (schema as { $ref?: unknown }).$ref === "string"
+                  ? ((schema as { $ref: string }).$ref.split("/").pop() ??
+                    "object")
+                  : null;
+              const type =
+                schema &&
+                typeof schema === "object" &&
+                "type" in schema &&
+                typeof (schema as { type?: unknown }).type === "string"
+                  ? (schema as { type: string }).type
+                  : "object";
+              return (
+                <div
+                  className="flex justify-between rounded-lg border border-border bg-background/60 p-2.5"
+                  key={mediaType}
+                >
+                  <span className="font-mono">{mediaType}</span>
+                  <span className="text-muted-foreground">{ref ?? type}</span>
+                </div>
+              );
+            })}
+          </div>
         </section>
       ) : null}
 

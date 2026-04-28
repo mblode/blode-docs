@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  absolutiseInternalLinks,
   buildTenantLlmsFullTxt,
   buildTenantLlmsTxt,
   buildTenantRobotsTxt,
@@ -269,6 +270,81 @@ describe("sanitizePlaceholderUrls", () => {
     const input = "See [Docs](https://blode.md/docs) and https://blode.md/llm.";
     expect(sanitizePlaceholderUrls(input)).toBe(input);
   });
+
+  it("strips reserved-TLD placeholder URLs", () => {
+    const linkInput = "Hit [API](https://api.your-domain.test) for data.";
+    const bareInput = "Try https://staging.acme.invalid/path next.";
+
+    expect(sanitizePlaceholderUrls(linkInput)).toBe("Hit API for data.");
+    expect(sanitizePlaceholderUrls(bareInput)).toBe(
+      "Try `https://staging.acme.invalid/path` next."
+    );
+  });
+
+  it("strips localhost placeholder URLs", () => {
+    expect(
+      sanitizePlaceholderUrls("Run http://localhost:3030/health to check.")
+    ).toBe("Run `http://localhost:3030/health` to check.");
+  });
+
+  it("strips yourdomain placeholder URLs", () => {
+    expect(
+      sanitizePlaceholderUrls(
+        "Visit [the site](https://www.yourdomain.com/docs) to begin."
+      )
+    ).toBe("Visit the site to begin.");
+    expect(
+      sanitizePlaceholderUrls(
+        "After deploying, hit https://yourdomain.com/docs ok."
+      )
+    ).toBe("After deploying, hit `https://yourdomain.com/docs` ok.");
+  });
+
+  it("strips acme.blode.md placeholder URLs", () => {
+    expect(
+      sanitizePlaceholderUrls('const TARGET = "https://acme.blode.md";')
+    ).toBe('const TARGET = "`https://acme.blode.md`";');
+  });
+
+  it("strips github.com/example placeholder URLs", () => {
+    expect(
+      sanitizePlaceholderUrls('"href": "https://github.com/example/docs/repo"')
+    ).toBe('"href": "`https://github.com/example/docs/repo`"');
+  });
+});
+
+describe("absolutiseInternalLinks", () => {
+  it("rewrites root-relative markdown links with the origin", () => {
+    const input = "See [Navigation](/configuration/navigation) for more.";
+    expect(absolutiseInternalLinks(input, "https://docs.example.com", "")).toBe(
+      "See [Navigation](https://docs.example.com/configuration/navigation) for more."
+    );
+  });
+
+  it("prefixes links with the tenant base path when set", () => {
+    const input = "See [Navigation](/configuration/navigation).";
+    expect(
+      absolutiseInternalLinks(input, "https://yourdomain.com", "/docs")
+    ).toBe(
+      "See [Navigation](https://yourdomain.com/docs/configuration/navigation)."
+    );
+  });
+
+  it("does not double-prefix paths that already include the base path", () => {
+    const input = "See [Navigation](/docs/configuration/navigation).";
+    expect(
+      absolutiseInternalLinks(input, "https://yourdomain.com", "/docs")
+    ).toBe(
+      "See [Navigation](https://yourdomain.com/docs/configuration/navigation)."
+    );
+  });
+
+  it("leaves absolute http(s) links alone", () => {
+    const input = "Visit [GitHub](https://github.com/mblode/blodemd).";
+    expect(absolutiseInternalLinks(input, "https://docs.example.com", "")).toBe(
+      input
+    );
+  });
 });
 
 describe("buildTenantLlmsFullTxt placeholder sanitization", () => {
@@ -300,5 +376,36 @@ describe("buildTenantLlmsFullTxt placeholder sanitization", () => {
     expect(output).not.toContain("](https://example.com/changelog)");
     expect(output).toContain("See Changelog and call");
     expect(output).toContain("`https://api.example.com/users`");
+  });
+
+  it("rewrites root-relative internal links to absolute URLs", async () => {
+    const docsPath = await createTempUtilityRoot({
+      "docs.json": JSON.stringify(
+        {
+          $schema: "https://blode.md/docs.json",
+          name: "Example Docs",
+          navigation: {
+            groups: [{ group: "Docs", pages: ["intro"] }],
+          },
+        },
+        null,
+        2
+      ),
+      "intro.mdx":
+        "---\ntitle: Intro\n---\n\nSee [Navigation](/configuration/navigation) for setup.\n",
+    });
+    const runtimeTenant = {
+      ...tenant,
+      customDomains: [],
+      docsPath,
+      primaryDomain: "example.blode.md",
+    };
+
+    const output = await buildTenantLlmsFullTxt(runtimeTenant);
+
+    expect(output).toContain(
+      "[Navigation](https://example.blode.md/configuration/navigation)"
+    );
+    expect(output).not.toContain("[Navigation](/configuration/navigation)");
   });
 });

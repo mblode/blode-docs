@@ -218,6 +218,76 @@ const loadTenantUrlData = async (tenant: Tenant) =>
     async () => await buildTenantUrlData(tenant)
   );
 
+const getSchemaTypeLabel = (schema: unknown): string => {
+  if (!schema || typeof schema !== "object") {
+    return "any";
+  }
+  const record = schema as Record<string, unknown>;
+  if (typeof record.$ref === "string") {
+    const last = record.$ref.split("/").pop();
+    return last ?? "object";
+  }
+  if (typeof record.type === "string") {
+    if (record.type === "array" && record.items) {
+      return `${getSchemaTypeLabel(record.items)}[]`;
+    }
+    return record.type;
+  }
+  if (Array.isArray(record.oneOf) || Array.isArray(record.anyOf)) {
+    const variants = (record.oneOf ?? record.anyOf) as unknown[];
+    return variants.map(getSchemaTypeLabel).join(" | ");
+  }
+  return "object";
+};
+
+const formatParameterLine = (parameter: Record<string, unknown>): string => {
+  const name = String(parameter.name ?? "");
+  const location = parameter.in ? ` (${parameter.in})` : "";
+  const required = parameter.required ? "required" : "optional";
+  const type = getSchemaTypeLabel(parameter.schema);
+  const description =
+    typeof parameter.description === "string" && parameter.description
+      ? ` — ${parameter.description.split("\n")[0]}`
+      : "";
+  return `- \`${name}\`${location}: ${type}, ${required}${description}`;
+};
+
+const formatRequestBody = (body: Record<string, unknown>): string => {
+  const required = body.required ? "required" : "optional";
+  const content = (body.content as Record<string, unknown> | undefined) ?? {};
+  const mediaTypes = Object.keys(content);
+  if (mediaTypes.length === 0) {
+    return `${required} body`;
+  }
+  return mediaTypes
+    .map((mediaType) => {
+      const mediaEntry = content[mediaType] as
+        | Record<string, unknown>
+        | undefined;
+      const schemaLabel = getSchemaTypeLabel(mediaEntry?.schema);
+      return `- ${mediaType} (${required}): ${schemaLabel}`;
+    })
+    .join("\n");
+};
+
+const formatResponses = (responses: Record<string, unknown>): string =>
+  Object.entries(responses)
+    .map(([status, value]) => {
+      const response = (value as Record<string, unknown>) ?? {};
+      const description =
+        typeof response.description === "string" && response.description
+          ? response.description.split("\n")[0]
+          : "";
+      const content =
+        (response.content as Record<string, unknown> | undefined) ?? {};
+      const mediaTypes = Object.keys(content);
+      const mediaSuffix = mediaTypes.length
+        ? ` [${mediaTypes.join(", ")}]`
+        : "";
+      return `- ${status}${mediaSuffix}${description ? ` — ${description}` : ""}`;
+    })
+    .join("\n");
+
 const formatOpenApiPageText = (entry: OpenApiEntry): string => {
   const parts = [
     `Method: ${entry.operation.method}`,
@@ -232,18 +302,18 @@ const formatOpenApiPageText = (entry: OpenApiEntry): string => {
   }
   if (entry.operation.parameters.length) {
     parts.push(
-      `Parameters:\n${JSON.stringify(entry.operation.parameters, null, 2)}`
+      `## Parameters\n\n${entry.operation.parameters
+        .map(formatParameterLine)
+        .join("\n")}`
     );
   }
   if (entry.operation.requestBody) {
     parts.push(
-      `Request Body:\n${JSON.stringify(entry.operation.requestBody, null, 2)}`
+      `## Request body\n\n${formatRequestBody(entry.operation.requestBody)}`
     );
   }
   if (entry.operation.responses) {
-    parts.push(
-      `Responses:\n${JSON.stringify(entry.operation.responses, null, 2)}`
-    );
+    parts.push(`## Responses\n\n${formatResponses(entry.operation.responses)}`);
   }
 
   return parts.join("\n\n");
@@ -303,8 +373,15 @@ const resolveLlmPages = (
 const FRONTMATTER_REGEX = /^---\s*\n[\s\S]*?\n---\s*\n?/;
 const LEADING_H1_REGEX = /^#\s+([^\r\n]+)(?:\r?\n(?:\r?\n)?)?/;
 
-const PLACEHOLDER_URL_PATTERN =
-  "https?://(?:[a-z0-9-]+\\.)*example\\.(?:com|org|net)\\b[^\\s)\\]\"'<>]*|https?://discord\\.gg/example\\b[^\\s)\\]\"'<>]*";
+const PLACEHOLDER_URL_PATTERN = [
+  "https?://(?:[a-z0-9-]+\\.)*example\\.(?:com|org|net)\\b[^\\s)\\]\"'<>]*",
+  "https?://discord\\.gg/example\\b[^\\s)\\]\"'<>]*",
+  "https?://(?:[a-z0-9-]+\\.)+(?:test|invalid)(?:[/?#:][^\\s)\\]\"'<>]*)?",
+  "https?://localhost(?::\\d+)?[^\\s)\\]\"'<>]*",
+  "https?://(?:[a-z0-9-]+\\.)*your[-_]?domain\\.[a-z]+\\b[^\\s)\\]\"'<>]*",
+  "https?://acme\\.blode\\.md\\b[^\\s)\\]\"'<>]*",
+  "https?://github\\.com/example/[^\\s)\\]\"'<>]*",
+].join("|");
 const PLACEHOLDER_URL_RE = new RegExp(PLACEHOLDER_URL_PATTERN, "gi");
 const PLACEHOLDER_MARKDOWN_LINK_RE = new RegExp(
   `\\[([^\\]]+)\\]\\((?:${PLACEHOLDER_URL_PATTERN})\\)`,
@@ -315,6 +392,27 @@ export const sanitizePlaceholderUrls = (text: string): string =>
   text
     .replace(PLACEHOLDER_MARKDOWN_LINK_RE, "$1")
     .replace(PLACEHOLDER_URL_RE, (match) => `\`${match}\``);
+
+const INTERNAL_MARKDOWN_LINK_RE = /(\[[^\]]+\])\((\/[^)\s]*)\)/g;
+
+export const absolutiseInternalLinks = (
+  source: string,
+  origin: string,
+  basePath: string
+): string => {
+  const normalizedBase = basePath
+    ? `/${basePath}`.replaceAll(/\/+/g, "/").replace(/\/$/, "")
+    : "";
+  return source.replace(INTERNAL_MARKDOWN_LINK_RE, (_match, label, path) => {
+    const alreadyPrefixed =
+      normalizedBase &&
+      (path === normalizedBase || path.startsWith(`${normalizedBase}/`));
+    const absolutePath = alreadyPrefixed
+      ? path
+      : `${normalizedBase}${path}`.replaceAll(/\/+/g, "/");
+    return `${label}(${origin}${absolutePath})`;
+  });
+};
 
 const stripFrontmatter = (source: string) =>
   source.replace(FRONTMATTER_REGEX, "").trim();
@@ -463,12 +561,13 @@ export const buildTenantRobotsTxt = (
   return `User-agent: *
 Allow: /
 Content-Signal: ai-train=no, search=yes, ai-input=yes
-Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 
 # LLM-friendly content
-# ${origin}${toDocHref("llms.txt", basePath)} - Index of all documentation pages
-# ${origin}${toDocHref("llms-full.txt", basePath)} - Full documentation content
 # Append .md to any page URL for raw markdown
+# ${origin}${toDocHref("llms-full.txt", basePath)} - Full documentation content
+# ${origin}${toDocHref("llms.txt", basePath)} - Index of all documentation pages
+
+Sitemap: ${origin}${toDocHref("sitemap.xml", basePath)}
 
 # Agent Skills
 # ${origin}${toDocHref(".well-known/skills/index.json", basePath)} - Discover installable agent skills`;
@@ -559,11 +658,9 @@ export const buildTenantLlmsFullTxt = async (
   const basePath = getCanonicalDocBasePath(tenant, context);
   const parts = data.pages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
-    return formatMarkdownPageSection(
-      page.title,
-      url,
-      sanitizePlaceholderUrls(page.content)
-    );
+    const cleaned = sanitizePlaceholderUrls(page.content);
+    const absolute = absolutiseInternalLinks(cleaned, origin, basePath);
+    return formatMarkdownPageSection(page.title, url, absolute);
   });
 
   return parts.join("\n\n");
@@ -683,7 +780,9 @@ export const buildTenantLlmsSegment = async (
 
   const parts = segmentPages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
-    return formatMarkdownPageSection(page.title, url, page.content);
+    const cleaned = sanitizePlaceholderUrls(page.content);
+    const absolute = absolutiseInternalLinks(cleaned, origin, basePath);
+    return formatMarkdownPageSection(page.title, url, absolute);
   });
 
   return [

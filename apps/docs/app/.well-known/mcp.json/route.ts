@@ -7,6 +7,7 @@ export const revalidate = 3600;
 const body = {
   $schema:
     "https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/server-card.schema.json",
+  authentication: { type: "none" },
   name: "blodemd",
   serverCard: "/.well-known/mcp/server-card.json",
   transport: {

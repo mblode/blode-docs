@@ -5,6 +5,14 @@ description: Ship beautiful docs from your terminal. Write MDX locally, deploy w
 
 Blode.md is a docs-as-code platform. You write documentation as MDX files in your repository, configure navigation and branding in a single `docs.json` file, and deploy with `blodemd push`.
 
+<Callout type="info">
+  **For agents:** these docs are fully public — no authentication, no rate
+  limits, no signed URLs. Programmatic clients can fetch
+  [`/llms-full.txt`](https://docs.blode.md/llms-full.txt) for the complete
+  corpus, [`/llms.txt`](https://docs.blode.md/llms.txt) for the page index, or
+  append `.md` to any page URL for the raw markdown.
+</Callout>
+
 ## How it works
 
 <Steps>
