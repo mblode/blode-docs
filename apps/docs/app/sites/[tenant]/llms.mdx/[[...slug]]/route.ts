@@ -25,15 +25,15 @@ export const GET = async (
   }
 
   const slugKey = slug.join("/") || "index";
-  const content = await getLlmPageText(tenant, slugKey);
-  if (!content) {
-    return new NextResponse("Not found", { status: 404 });
-  }
-
   const requestContext = getTenantRequestContextFromHeaders(
     tenant,
     await headers()
   );
+  const content = await getLlmPageText(tenant, slugKey, requestContext);
+  if (!content) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
   const llmsTxtUrl = `${getCanonicalOrigin(tenant, requestContext)}${getCanonicalDocBasePath(tenant, requestContext)}/llms.txt`;
   const blockquote =
     `> ## Documentation Index\n` +

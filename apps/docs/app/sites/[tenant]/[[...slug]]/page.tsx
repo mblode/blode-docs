@@ -2,7 +2,6 @@ import { CloudUploadIcon, TriangleExclamationIcon } from "blode-icons-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { DocShell } from "@/components/docs/doc-shell";
 import {
@@ -25,16 +24,6 @@ import {
 
 export const preferredRegion = "home";
 export const revalidate = 3600;
-
-const DocContentFallback = () => (
-  <div className="grid gap-4">
-    <div className="h-5 w-3/4 rounded-md bg-border/60" />
-    <div className="h-4 w-full rounded-md bg-border/40" />
-    <div className="h-4 w-[92%] rounded-md bg-border/40" />
-    <div className="h-4 w-[84%] rounded-md bg-border/40" />
-    <div className="h-40 rounded-xl border border-dashed border-border/70 bg-muted/30" />
-  </div>
-);
 
 const getTenantRequestContext = async (
   tenantSlug: string,
@@ -353,17 +342,13 @@ const DocPage = async ({
   } else {
     ({ rawContent } = shell);
     ({ toc } = shell);
-    content = (
-      <Suspense fallback={<DocContentFallback />}>
-        <DocContent
-          basePath={basePath}
-          rawContent={rawContent}
-          slugKey={slugKey}
-          tenantSlug={tenantSlug}
-          toc={toc}
-        />
-      </Suspense>
-    );
+    content = await DocContent({
+      basePath,
+      rawContent,
+      slugKey,
+      tenantSlug,
+      toc,
+    });
   }
 
   const canonicalOrigin = getCanonicalOrigin(shell.tenant, requestContext);

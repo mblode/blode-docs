@@ -645,17 +645,23 @@ export const buildTenantLlmsFullTxt = async (
   tenant: Tenant,
   context: TenantRequestContext = {}
 ) => {
+  const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
+
   const prebuilt = await loadTenantUtilityTemplate(
     tenant,
     PREBUILT_UTILITY_LLMS_FULL_PATH
   );
   if (prebuilt) {
-    return renderUtilityTemplate(prebuilt, tenant, context);
+    const rendered = renderUtilityTemplate(prebuilt, tenant, context);
+    return absolutiseInternalLinks(
+      sanitizePlaceholderUrls(rendered),
+      origin,
+      basePath
+    );
   }
 
   const data = await loadTenantUtilityIndex(tenant);
-  const origin = getCanonicalOrigin(tenant, context);
-  const basePath = getCanonicalDocBasePath(tenant, context);
   const parts = data.pages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
     const cleaned = sanitizePlaceholderUrls(page.content);
@@ -666,13 +672,24 @@ export const buildTenantLlmsFullTxt = async (
   return parts.join("\n\n");
 };
 
-export const getLlmPageText = async (tenant: Tenant, slug: string) => {
+export const getLlmPageText = async (
+  tenant: Tenant,
+  slug: string,
+  context: TenantRequestContext = {}
+) => {
+  const origin = getCanonicalOrigin(tenant, context);
+  const basePath = getCanonicalDocBasePath(tenant, context);
+
   const prebuilt = await loadTenantUtilityTemplate(
     tenant,
     getPrebuiltUtilityLlmPagePath(slug)
   );
   if (prebuilt) {
-    return prebuilt;
+    return absolutiseInternalLinks(
+      sanitizePlaceholderUrls(prebuilt),
+      origin,
+      basePath
+    );
   }
 
   const data = await loadTenantUtilityIndex(tenant);
@@ -682,7 +699,11 @@ export const getLlmPageText = async (tenant: Tenant, slug: string) => {
   if (!page) {
     return null;
   }
-  return formatMarkdownPage(page.title, page.content);
+  return absolutiseInternalLinks(
+    sanitizePlaceholderUrls(formatMarkdownPage(page.title, page.content)),
+    origin,
+    basePath
+  );
 };
 
 export const buildTenantSkillsIndex = async (
