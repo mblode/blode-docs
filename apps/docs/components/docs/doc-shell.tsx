@@ -323,7 +323,7 @@ export const DocShell = ({
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {innerContent}
             </div>
-            <div className="lg:col-start-1 lg:row-start-1">
+            <div className="self-stretch lg:col-start-1 lg:row-start-1">
               <DocSidebar
                 activeTabIndex={activeTabIndex ?? 0}
                 anchors={anchors}
