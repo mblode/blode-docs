@@ -429,5 +429,3 @@ export const SearchDialog = ({
     </Dialog>
   );
 };
-
-export default SearchDialog;

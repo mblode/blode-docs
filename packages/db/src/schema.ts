@@ -52,7 +52,7 @@ export const users = pgTable(
     uniqueIndex("users_auth_id_key").on(table.authId),
     uniqueIndex("users_email_key").on(table.email),
   ]
-);
+).enableRLS();
 
 export const projects = pgTable(
   "projects",
@@ -73,7 +73,7 @@ export const projects = pgTable(
     uniqueIndex("projects_slug_key").on(table.slug),
     index("projects_user_id_idx").on(table.userId),
   ]
-);
+).enableRLS();
 
 export const domains = pgTable(
   "domains",
@@ -94,7 +94,7 @@ export const domains = pgTable(
     uniqueIndex("domains_hostname_key").on(table.hostname),
     index("domains_project_id_idx").on(table.projectId),
   ]
-);
+).enableRLS();
 
 export const deployments = pgTable(
   "deployments",
@@ -123,7 +123,7 @@ export const deployments = pgTable(
       table.createdAt.desc()
     ),
   ]
-);
+).enableRLS();
 
 export const gitProviderEnum = pgEnum("git_provider", ["github"]);
 
@@ -146,7 +146,7 @@ export const gitConnections = pgTable(
     updatedAt: timestampColumn("updated_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("git_connections_project_id_key").on(table.projectId)]
-);
+).enableRLS();
 
 export const githubInstallations = pgTable(
   "github_installations",
@@ -169,4 +169,4 @@ export const githubInstallations = pgTable(
     index("github_installations_user_id_idx").on(table.userId),
     index("github_installations_installation_id_idx").on(table.installationId),
   ]
-);
+).enableRLS();

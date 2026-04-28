@@ -22,11 +22,9 @@ export interface AuthFileData {
   session?: StoredAuthSession;
 }
 
-export type AuthSource = "stored";
-
 export interface ResolvedAuthToken {
   token: string;
-  source: AuthSource;
+  source: "stored";
   expiresAt: string | null;
   user: StoredSessionUser | null;
 }
