@@ -287,14 +287,29 @@ export const proxy = async (request: NextRequest) => {
     "public, s-maxage=3600, stale-while-revalidate=86400"
   );
   // Multi-tenant: same path may serve different content per Host or Accept header
-  response.headers.set("Vary", "Host, accept");
+  response.headers.set("Vary", "Accept, Host");
 
   // Advertise the llms.txt index and skills to AI agents via standard HTTP headers
   const llmsBasePath = resolution.basePath || "";
-  response.headers.set(
-    "Link",
-    `<${llmsBasePath}/llms.txt>; rel="llms-txt", <${llmsBasePath}/llms-full.txt>; rel="llms-full-txt", <${llmsBasePath}/.well-known/skills/index.json>; rel="skills"`
-  );
+  const linkParts = [
+    `<${llmsBasePath}/llms.txt>; rel="llms-txt"`,
+    `<${llmsBasePath}/llms-full.txt>; rel="llms-full-txt"`,
+    `<${llmsBasePath}/.well-known/skills/index.json>; rel="skills"`,
+  ];
+
+  // Per-page markdown alternate: only when the request resolves to the doc HTML
+  // shell (not utility txt, JSON page, or markdown content-negotiated branch).
+  const isDocHtmlBranch =
+    !utilityRewritePath && effectiveMarkdownSlug === null && !acceptsJson;
+  if (isDocHtmlBranch) {
+    const docSlug = stripBasePath(pathname, resolution.basePath);
+    const relativeSlug =
+      docSlug === "/" ? "index" : docSlug.replace(/^\//, "") || "index";
+    const markdownHref = toMarkdownDocHref(relativeSlug, resolution.basePath);
+    linkParts.push(`<${markdownHref}>; rel="alternate"; type="text/markdown"`);
+  }
+
+  response.headers.set("Link", linkParts.join(", "));
   response.headers.set("X-Llms-Txt", `${llmsBasePath}/llms.txt`);
 
   return response;
