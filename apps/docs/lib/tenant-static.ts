@@ -675,21 +675,14 @@ export const buildTenantLlmsFullTxt = async (
 export const getLlmPageText = async (
   tenant: Tenant,
   slug: string,
-  context: TenantRequestContext = {}
+  _context: TenantRequestContext = {}
 ) => {
-  const origin = getCanonicalOrigin(tenant, context);
-  const basePath = getCanonicalDocBasePath(tenant, context);
-
   const prebuilt = await loadTenantUtilityTemplate(
     tenant,
     getPrebuiltUtilityLlmPagePath(slug)
   );
   if (prebuilt) {
-    return absolutiseInternalLinks(
-      sanitizePlaceholderUrls(prebuilt),
-      origin,
-      basePath
-    );
+    return prebuilt;
   }
 
   const data = await loadTenantUtilityIndex(tenant);
@@ -699,11 +692,7 @@ export const getLlmPageText = async (
   if (!page) {
     return null;
   }
-  return absolutiseInternalLinks(
-    sanitizePlaceholderUrls(formatMarkdownPage(page.title, page.content)),
-    origin,
-    basePath
-  );
+  return formatMarkdownPage(page.title, page.content);
 };
 
 export const buildTenantSkillsIndex = async (
