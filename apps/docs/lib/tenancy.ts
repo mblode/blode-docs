@@ -65,6 +65,8 @@ const BACKSLASH_TO_SLASH_REGEX = /\\/g;
 const DEFAULT_DOCS_BASE_PATH = "/docs";
 const TENANT_RESOLUTION_REVALIDATE_SECONDS = 300;
 const ROOT_TENANT_UTILITY_PATHS = new Set([
+  "/.well-known/llms-full.txt",
+  "/.well-known/llms.txt",
   "/llms-full.txt",
   "/llms.txt",
   "/robots.txt",

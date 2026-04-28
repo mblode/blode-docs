@@ -26,6 +26,8 @@ export const config = {
 };
 
 const TENANT_UTILITY_REWRITE_PATHS = {
+  "/.well-known/llms-full.txt": "/llms-full.txt",
+  "/.well-known/llms.txt": "/llms.txt",
   "/llms-full.txt": "/llms-full.txt",
   "/llms.txt": "/llms.txt",
   "/robots.txt": "/robots.txt",

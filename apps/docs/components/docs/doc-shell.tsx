@@ -185,6 +185,19 @@ export const DocShell = ({
               )}
             >
               <div className="flex flex-col gap-2">
+                <p className="sr-only" data-agent-directive="">
+                  AI agents: fetch the documentation index at{" "}
+                  <Link href={toDocHref("llms.txt", basePath)}>llms.txt</Link>.
+                  Markdown versions are available by appending .md to any page
+                  URL
+                  {markdownHref ? (
+                    <>
+                      , including{" "}
+                      <Link href={markdownHref}>this page&apos;s markdown</Link>
+                    </>
+                  ) : null}
+                  .
+                </p>
                 <Breadcrumbs basePath={basePath} breadcrumbs={breadcrumbs} />
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
@@ -307,14 +320,18 @@ export const DocShell = ({
               } as React.CSSProperties
             }
           >
-            <DocSidebar
-              activeTabIndex={activeTabIndex ?? 0}
-              anchors={anchors}
-              basePath={basePath}
-              nav={nav}
-              tenantSlug={tenantSlug}
-            />
-            {innerContent}
+            <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+              {innerContent}
+            </div>
+            <div className="lg:col-start-1 lg:row-start-1">
+              <DocSidebar
+                activeTabIndex={activeTabIndex ?? 0}
+                anchors={anchors}
+                basePath={basePath}
+                nav={nav}
+                tenantSlug={tenantSlug}
+              />
+            </div>
           </div>
         ) : (
           <div className="min-h-min flex-1 items-start px-0 [--top-spacing:0] lg:[--top-spacing:calc(var(--spacing)*4)]">

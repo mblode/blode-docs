@@ -350,6 +350,18 @@ describe("buildUtilityIndex", () => {
       )?.content
     ).toContain("# Guide (__BLODEMD_DOCS_ROOT__/guide)\n\nShip it.");
     expect(
+      artifacts.find((artifact) => artifact.path === PREBUILT_UTILITY_LLMS_PATH)
+        ?.content
+    ).toContain("[Guide](__BLODEMD_DOCS_ROOT__/guide.md)");
+    expect(
+      artifacts.find((artifact) => artifact.path === PREBUILT_UTILITY_LLMS_PATH)
+        ?.content
+    ).toContain("Full content: __BLODEMD_DOCS_ROOT__/llms-full.txt");
+    expect(
+      artifacts.find((artifact) => artifact.path === "_utility/llms/docs.txt")
+        ?.content
+    ).toContain("# Example Docs - Docs");
+    expect(
       artifacts.find(
         (artifact) => artifact.path === getPrebuiltUtilityLlmPagePath("guide")
       )?.content

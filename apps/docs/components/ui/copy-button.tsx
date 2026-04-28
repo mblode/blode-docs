@@ -102,6 +102,7 @@ const CopyButton = ({
       {...props}
     >
       <span
+        aria-hidden="true"
         className="inline-flex animate-in fade-in-0 zoom-in-95 duration-200 motion-reduce:animate-none"
         data-slot="copy-button-icon"
         key={isCopied ? "check" : "copy"}

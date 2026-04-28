@@ -65,6 +65,7 @@ const nextConfig = {
           source: "/oauth/:path*",
         },
         { destination: `${docsAppUrl}/api/:path*`, source: "/api/:path*" },
+        { destination: `${docsAppUrl}/docs.json`, source: "/docs.json" },
         { destination: `${docsAppUrl}/sites/:path*`, source: "/sites/:path*" },
         {
           destination: `${docsAppUrl}/.well-known/:path*`,

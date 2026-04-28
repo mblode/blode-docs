@@ -5,6 +5,7 @@ import type { UtilityIndex } from "@repo/previewing";
 import {
   buildContentIndex,
   buildPageMetadataMap,
+  formatOpenApiPageContent,
   getPrebuiltUtilityLlmPagePath,
   loadContentSource,
   loadPrebuiltContentIndex,
@@ -12,7 +13,10 @@ import {
   loadSiteConfig,
   PREBUILT_UTILITY_LLMS_FULL_PATH,
   PREBUILT_UTILITY_LLMS_PATH,
+  PREBUILT_UTILITY_LLMS_SEGMENT_PREFIX,
   PREBUILT_UTILITY_SITEMAP_PATH,
+  prepareLlmsFullContent,
+  toAgentMarkdown,
   UTILITY_DOCS_ROOT_TOKEN,
 } from "@repo/previewing";
 
@@ -218,107 +222,6 @@ const loadTenantUrlData = async (tenant: Tenant) =>
     async () => await buildTenantUrlData(tenant)
   );
 
-const getSchemaTypeLabel = (schema: unknown): string => {
-  if (!schema || typeof schema !== "object") {
-    return "any";
-  }
-  const record = schema as Record<string, unknown>;
-  if (typeof record.$ref === "string") {
-    const last = record.$ref.split("/").pop();
-    return last ?? "object";
-  }
-  if (typeof record.type === "string") {
-    if (record.type === "array" && record.items) {
-      return `${getSchemaTypeLabel(record.items)}[]`;
-    }
-    return record.type;
-  }
-  if (Array.isArray(record.oneOf) || Array.isArray(record.anyOf)) {
-    const variants = (record.oneOf ?? record.anyOf) as unknown[];
-    return variants.map(getSchemaTypeLabel).join(" | ");
-  }
-  return "object";
-};
-
-const formatParameterLine = (parameter: Record<string, unknown>): string => {
-  const name = String(parameter.name ?? "");
-  const location = parameter.in ? ` (${parameter.in})` : "";
-  const required = parameter.required ? "required" : "optional";
-  const type = getSchemaTypeLabel(parameter.schema);
-  const description =
-    typeof parameter.description === "string" && parameter.description
-      ? ` — ${parameter.description.split("\n")[0]}`
-      : "";
-  return `- \`${name}\`${location}: ${type}, ${required}${description}`;
-};
-
-const formatRequestBody = (body: Record<string, unknown>): string => {
-  const required = body.required ? "required" : "optional";
-  const content = (body.content as Record<string, unknown> | undefined) ?? {};
-  const mediaTypes = Object.keys(content);
-  if (mediaTypes.length === 0) {
-    return `${required} body`;
-  }
-  return mediaTypes
-    .map((mediaType) => {
-      const mediaEntry = content[mediaType] as
-        | Record<string, unknown>
-        | undefined;
-      const schemaLabel = getSchemaTypeLabel(mediaEntry?.schema);
-      return `- ${mediaType} (${required}): ${schemaLabel}`;
-    })
-    .join("\n");
-};
-
-const formatResponses = (responses: Record<string, unknown>): string =>
-  Object.entries(responses)
-    .map(([status, value]) => {
-      const response = (value as Record<string, unknown>) ?? {};
-      const description =
-        typeof response.description === "string" && response.description
-          ? response.description.split("\n")[0]
-          : "";
-      const content =
-        (response.content as Record<string, unknown> | undefined) ?? {};
-      const mediaTypes = Object.keys(content);
-      const mediaSuffix = mediaTypes.length
-        ? ` [${mediaTypes.join(", ")}]`
-        : "";
-      return `- ${status}${mediaSuffix}${description ? ` — ${description}` : ""}`;
-    })
-    .join("\n");
-
-const formatOpenApiPageText = (entry: OpenApiEntry): string => {
-  const parts = [
-    `Method: ${entry.operation.method}`,
-    `Path: ${entry.operation.path}`,
-  ];
-
-  if (entry.operation.description) {
-    parts.push(entry.operation.description);
-  }
-  if (entry.operation.tags.length) {
-    parts.push(`Tags: ${entry.operation.tags.join(", ")}`);
-  }
-  if (entry.operation.parameters.length) {
-    parts.push(
-      `## Parameters\n\n${entry.operation.parameters
-        .map(formatParameterLine)
-        .join("\n")}`
-    );
-  }
-  if (entry.operation.requestBody) {
-    parts.push(
-      `## Request body\n\n${formatRequestBody(entry.operation.requestBody)}`
-    );
-  }
-  if (entry.operation.responses) {
-    parts.push(`## Responses\n\n${formatResponses(entry.operation.responses)}`);
-  }
-
-  return parts.join("\n\n");
-};
-
 const resolveLlmPages = (
   data: Awaited<ReturnType<typeof loadTenantUrlData>>
 ): (
@@ -381,6 +284,7 @@ const PLACEHOLDER_URL_PATTERN = [
   "https?://(?:[a-z0-9-]+\\.)*your[-_]?domain\\.[a-z]+\\b[^\\s)\\]\"'<>]*",
   "https?://acme\\.blode\\.md\\b[^\\s)\\]\"'<>]*",
   "https?://github\\.com/example/[^\\s)\\]\"'<>]*",
+  "https?://(?:us|eu)\\.i\\.posthog\\.com\\b[^\\s)\\]\"'<>]*",
 ].join("|");
 const PLACEHOLDER_URL_RE = new RegExp(PLACEHOLDER_URL_PATTERN, "gi");
 const PLACEHOLDER_MARKDOWN_LINK_RE = new RegExp(
@@ -388,12 +292,14 @@ const PLACEHOLDER_MARKDOWN_LINK_RE = new RegExp(
   "gi"
 );
 
+const defangUrl = (value: string) => value.replace(/^https?:\/\//i, "");
+
 export const sanitizePlaceholderUrls = (text: string): string =>
   text
     .replace(PLACEHOLDER_MARKDOWN_LINK_RE, "$1")
-    .replace(PLACEHOLDER_URL_RE, (match) => `\`${match}\``);
+    .replace(PLACEHOLDER_URL_RE, (match) => `\`${defangUrl(match)}\``);
 
-const INTERNAL_MARKDOWN_LINK_RE = /(\[[^\]]+\])\((\/[^)\s]*)\)/g;
+const INTERNAL_MARKDOWN_LINK_RE = /(!?\[[^\]]+\])\((\/[^)\s]*)\)/g;
 
 export const absolutiseInternalLinks = (
   source: string,
@@ -432,26 +338,33 @@ const stripMatchingLeadingH1 = (source: string, title: string) => {
   return trimmed.slice(headingLine.length).trim();
 };
 
-const formatMarkdownPage = (title: string, source: string) => {
+const formatMarkdownPage = (
+  title: string,
+  source: string,
+  description?: string
+) => {
   const content = stripMatchingLeadingH1(source, title);
+  const descriptionBlock = description ? `\n\n${description}` : "";
   if (!content) {
-    return `# ${title}`;
+    return `# ${title}${descriptionBlock}`;
   }
 
-  return `# ${title}\n\n${content}`;
+  return `# ${title}${descriptionBlock}\n\n${content}`;
 };
 
 const formatMarkdownPageSection = (
   title: string,
   url: string,
-  source: string
+  source: string,
+  description?: string
 ) => {
   const content = stripMatchingLeadingH1(source, title);
+  const descriptionBlock = description ? `\n\n${description}` : "";
   if (!content) {
-    return `# ${title} (${url})`;
+    return `# ${title} (${url})${descriptionBlock}`;
   }
 
-  return `# ${title} (${url})\n\n${content}`;
+  return `# ${title} (${url})${descriptionBlock}\n\n${content}`;
 };
 
 const buildRuntimeUtilityIndex = async (
@@ -462,7 +375,7 @@ const buildRuntimeUtilityIndex = async (
     resolveLlmPages(data).map(async (page) => {
       if (page.kind === "openapi") {
         return {
-          content: formatOpenApiPageText(page.entry),
+          content: formatOpenApiPageContent(page.entry.operation),
           description: page.description,
           slug: page.slug,
           title: page.title,
@@ -474,7 +387,7 @@ const buildRuntimeUtilityIndex = async (
         page.relativePath
       );
       return {
-        content: stripFrontmatter(raw),
+        content: toAgentMarkdown(stripFrontmatter(raw)),
         description: page.description,
         slug: page.slug,
         title: page.title,
@@ -654,19 +567,19 @@ export const buildTenantLlmsFullTxt = async (
   );
   if (prebuilt) {
     const rendered = renderUtilityTemplate(prebuilt, tenant, context);
-    return absolutiseInternalLinks(
-      sanitizePlaceholderUrls(rendered),
-      origin,
-      basePath
-    );
+    return prepareLlmsFullContent(rendered, origin, basePath);
   }
 
   const data = await loadTenantUtilityIndex(tenant);
   const parts = data.pages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
-    const cleaned = sanitizePlaceholderUrls(page.content);
-    const absolute = absolutiseInternalLinks(cleaned, origin, basePath);
-    return formatMarkdownPageSection(page.title, url, absolute);
+    const content = prepareLlmsFullContent(page.content, origin, basePath);
+    return formatMarkdownPageSection(
+      page.title,
+      url,
+      content,
+      page.description
+    );
   });
 
   return parts.join("\n\n");
@@ -692,7 +605,11 @@ export const getLlmPageText = async (
   if (!page) {
     return null;
   }
-  return formatMarkdownPage(page.title, page.content);
+  return formatMarkdownPage(
+    page.title,
+    toAgentMarkdown(page.content),
+    page.description
+  );
 };
 
 export const buildTenantSkillsIndex = async (
@@ -764,6 +681,14 @@ export const buildTenantLlmsSegment = async (
   segmentName: string,
   context: TenantRequestContext = {}
 ): Promise<string | null> => {
+  const prebuilt = await loadTenantUtilityTemplate(
+    tenant,
+    `${PREBUILT_UTILITY_LLMS_SEGMENT_PREFIX}${segmentName}.txt`
+  );
+  if (prebuilt) {
+    return renderUtilityTemplate(prebuilt, tenant, context);
+  }
+
   const data = await loadTenantUrlData(tenant);
   const segments = getNavGroupSegments(data);
   const segmentSlugs = segments.get(segmentName);
@@ -790,9 +715,13 @@ export const buildTenantLlmsSegment = async (
 
   const parts = segmentPages.map((page) => {
     const url = `${origin}${toDocHref(page.slug, basePath)}`;
-    const cleaned = sanitizePlaceholderUrls(page.content);
-    const absolute = absolutiseInternalLinks(cleaned, origin, basePath);
-    return formatMarkdownPageSection(page.title, url, absolute);
+    const content = prepareLlmsFullContent(page.content, origin, basePath);
+    return formatMarkdownPageSection(
+      page.title,
+      url,
+      content,
+      page.description
+    );
   });
 
   return [

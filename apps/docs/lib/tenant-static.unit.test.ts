@@ -251,7 +251,7 @@ describe("sanitizePlaceholderUrls", () => {
   it("wraps bare placeholder URLs in backticks", () => {
     const input = "Call https://api.example.com/users to fetch users.";
     const output = sanitizePlaceholderUrls(input);
-    expect(output).toBe("Call `https://api.example.com/users` to fetch users.");
+    expect(output).toBe("Call `api.example.com/users` to fetch users.");
   });
 
   it("handles discord.gg/example placeholder URLs", () => {
@@ -262,7 +262,7 @@ describe("sanitizePlaceholderUrls", () => {
       "Join our community today."
     );
     expect(sanitizePlaceholderUrls(bareInput)).toBe(
-      "Visit `https://discord.gg/example` for help."
+      "Visit `discord.gg/example` for help."
     );
   });
 
@@ -277,14 +277,14 @@ describe("sanitizePlaceholderUrls", () => {
 
     expect(sanitizePlaceholderUrls(linkInput)).toBe("Hit API for data.");
     expect(sanitizePlaceholderUrls(bareInput)).toBe(
-      "Try `https://staging.acme.invalid/path` next."
+      "Try `staging.acme.invalid/path` next."
     );
   });
 
   it("strips localhost placeholder URLs", () => {
     expect(
       sanitizePlaceholderUrls("Run http://localhost:3030/health to check.")
-    ).toBe("Run `http://localhost:3030/health` to check.");
+    ).toBe("Run `localhost:3030/health` to check.");
   });
 
   it("strips yourdomain placeholder URLs", () => {
@@ -297,19 +297,19 @@ describe("sanitizePlaceholderUrls", () => {
       sanitizePlaceholderUrls(
         "After deploying, hit https://yourdomain.com/docs ok."
       )
-    ).toBe("After deploying, hit `https://yourdomain.com/docs` ok.");
+    ).toBe("After deploying, hit `yourdomain.com/docs` ok.");
   });
 
   it("strips acme.blode.md placeholder URLs", () => {
     expect(
       sanitizePlaceholderUrls('const TARGET = "https://acme.blode.md";')
-    ).toBe('const TARGET = "`https://acme.blode.md`";');
+    ).toBe('const TARGET = "`acme.blode.md`";');
   });
 
   it("strips github.com/example placeholder URLs", () => {
     expect(
       sanitizePlaceholderUrls('"href": "https://github.com/example/docs/repo"')
-    ).toBe('"href": "`https://github.com/example/docs/repo`"');
+    ).toBe('"href": "`github.com/example/docs/repo`"');
   });
 });
 
@@ -375,7 +375,7 @@ describe("buildTenantLlmsFullTxt placeholder sanitization", () => {
 
     expect(output).not.toContain("](https://example.com/changelog)");
     expect(output).toContain("See Changelog and call");
-    expect(output).toContain("`https://api.example.com/users`");
+    expect(output).toContain("`api.example.com/users`");
   });
 
   it("rewrites root-relative internal links to absolute URLs", async () => {
