@@ -14,20 +14,28 @@ export const HOME_DESCRIPTION =
 /** Inner pages set a bare title and the root layout appends the product. */
 export const TITLE_TEMPLATE = `%s | ${SITE_NAME}`;
 
-export const CANONICAL_PATHS = [
-  "/",
-  "/about",
-  "/blog",
-  "/changelog",
-  "/compare/mintlify",
-  "/free-online-llms-txt-resources",
-  "/pricing",
-  "/privacy",
-  "/security",
-  "/terms",
-] as const;
+/**
+ * Canonical marketing pages and the date each was last materially changed.
+ * Bump the date when the page's copy changes; it feeds the sitemap `lastmod`,
+ * which Google only trusts when it moves with the content rather than with
+ * every deploy.
+ */
+export const CANONICAL_PAGES = {
+  "/": "2026-09-06",
+  "/about": "2026-08-14",
+  "/blog": "2026-08-14",
+  "/changelog": "2026-08-14",
+  "/compare/mintlify": "2026-09-06",
+  "/free-online-llms-txt-resources": "2026-08-14",
+  "/pricing": "2026-08-14",
+  "/privacy": "2026-08-14",
+  "/security": "2026-08-14",
+  "/terms": "2026-08-14",
+} as const;
 
-export type CanonicalPath = (typeof CANONICAL_PATHS)[number];
+export type CanonicalPath = keyof typeof CANONICAL_PAGES;
+
+export const CANONICAL_PATHS = Object.keys(CANONICAL_PAGES) as CanonicalPath[];
 
 export const marketingUrl = (path: string) => `${MARKETING_ORIGIN}${path}`;
 

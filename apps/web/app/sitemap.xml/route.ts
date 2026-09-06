@@ -2,41 +2,37 @@ import { NextResponse } from "next/server";
 
 import { blogPosts } from "@/lib/blog";
 import { educationalResources } from "@/lib/educational-resources";
-import { CANONICAL_PATHS, marketingUrl } from "@/lib/marketing-site";
+import {
+  CANONICAL_PAGES,
+  CANONICAL_PATHS,
+  marketingUrl,
+} from "@/lib/marketing-site";
 
 export const GET = () => {
-  // Prerendered, so this cannot read the clock. `BUILD_DATE` is stamped in
-  // next.config.js and moves on every deploy, which is when the canonical
-  // pages can actually change.
-  const today = process.env.BUILD_DATE;
   const canonicalSet = new Set<string>(CANONICAL_PATHS);
   const entries = [
     ...CANONICAL_PATHS.map((path) => ({
-      lastmod: today,
+      lastmod: CANONICAL_PAGES[path],
       path,
-      priority: path === "/" ? "1.0" : "0.7",
     })),
     ...blogPosts.map((post) => ({
       lastmod: post.date,
       path: `/blog/${post.slug}`,
-      priority: "0.6",
     })),
     ...educationalResources
       .filter((resource) => !canonicalSet.has(resource.path))
       .map((resource) => ({
         lastmod: resource.updatedAt,
         path: resource.path,
-        priority: "0.6",
       })),
   ];
 
+  // No `changefreq` or `priority`: Google ignores both.
   const urls = entries
     .map(
-      ({ lastmod, path, priority }) => `  <url>
+      ({ lastmod, path }) => `  <url>
     <loc>${marketingUrl(path)}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>${priority}</priority>
   </url>`
     )
     .join("\n");

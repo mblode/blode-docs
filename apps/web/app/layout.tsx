@@ -42,6 +42,13 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-title": SITE_NAME,
   },
   publisher: "Matthew Blode",
+  robots: {
+    googleBot: {
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   title: {
     default: HOME_TITLE,
     template: TITLE_TEMPLATE,

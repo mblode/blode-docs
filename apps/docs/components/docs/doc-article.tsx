@@ -256,6 +256,18 @@ export const DocArticle = ({
                   ) : null}
                 </nav>
               ) : null}
+              <p
+                className="mt-10 text-muted-foreground text-xs"
+                data-markdown-ignore=""
+              >
+                Published with{" "}
+                <a
+                  className="underline underline-offset-4 hover:text-foreground"
+                  href="https://blode.md"
+                >
+                  Blode.md
+                </a>
+              </p>
             </div>
           </div>
           {hasToc ? (

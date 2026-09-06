@@ -38,7 +38,7 @@ const prefersMarkdown = (accept: string | null): boolean => {
   return md.q >= html.q;
 };
 
-export const proxy = (request: NextRequest) => {
+export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
   const slug = SLUG_BY_PATH[pathname];
   if (!slug) {
@@ -47,9 +47,18 @@ export const proxy = (request: NextRequest) => {
   if (!prefersMarkdown(request.headers.get("accept"))) {
     return NextResponse.next();
   }
+  // Fetched and returned as a constructed Response rather than rewritten:
+  // Next replaces `Vary` on a rewrite with its RSC list, so the CDN would
+  // serve this Markdown to the next HTML request for the same URL.
   const url = request.nextUrl.clone();
   url.pathname = `/markdown/${slug}`;
-  return NextResponse.rewrite(url);
+  const upstream = await fetch(url);
+  const headers = new Headers(upstream.headers);
+  headers.set("Vary", "Accept");
+  return new NextResponse(upstream.body, {
+    headers,
+    status: upstream.status,
+  });
 };
 
 export const config = {

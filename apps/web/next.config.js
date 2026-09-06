@@ -99,10 +99,6 @@ const marketingSecurityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   cacheComponents: true,
-  // The sitemap stamps `lastmod` with today's date, and a prerender cannot read
-  // the clock. next.config runs in Node at build time, outside any prerender,
-  // so stamping it here is safe.
-  env: { BUILD_DATE: new Date().toISOString().slice(0, 10) },
   experimental: {
     // A bail-out from prerendering throws. Without this every cached GET logs a
     // stack trace during the build that means nothing.

@@ -25,7 +25,7 @@ const glideMono = localFont({
 
 export const metadata: Metadata = {
   description:
-    "Documentation should ship as fast as code. blode.md is a terminal-native docs platform — write MDX, push from your CLI, deploy on every merge.",
+    "Blode.md: git-native docs, published on merge. Write MDX in the repo, review it in the pull request, and the merge publishes the site.",
   metadataBase: new URL("https://blode.md"),
   openGraph: {
     siteName: "Blode.md",
@@ -33,6 +33,13 @@ export const metadata: Metadata = {
   },
   other: {
     "apple-mobile-web-app-title": "Blode.md",
+  },
+  robots: {
+    googleBot: {
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   title: "Blode.md",
   twitter: {
