@@ -69,6 +69,23 @@ export const reportCommandError = (
 ): void => {
   const cliError = toCliError(error);
 
+  // Under --json the failure is data too: a caller parsing stdout gets an
+  // envelope with a stable `code` instead of an empty stream and an exit code.
+  if (options?.json) {
+    process.stdout.write(
+      `${JSON.stringify({
+        code: cliError.code,
+        error: true,
+        hint: cliError.hint,
+        message: cliError.message,
+        ...(cliError.status === null ? {} : { status: cliError.status }),
+      })}\n`
+    );
+    process.stderr.write(`${prefix}: ${cliError.message}\n`);
+    process.exitCode = cliError.exitCode;
+    return;
+  }
+
   if (isInteractive(options?.json)) {
     log.error(`${prefix}: ${cliError.message}`);
     if (cliError.hint) {

@@ -1,13 +1,18 @@
 import fs from "node:fs/promises";
 
-import { intro, log } from "@clack/prompts";
+import { intro } from "@clack/prompts";
 import chalk from "chalk";
 import type { Command } from "commander";
 import open from "open";
 
-import { resolveAuthToken, resolveTokenStatus } from "../auth-session.js";
+import {
+  resolveApiKeyCredential,
+  resolveAuthToken,
+  resolveTokenStatus,
+} from "../auth-session.js";
 import { reportCommandError } from "../command-utils.js";
 import {
+  BLODE_API_KEY_ENV,
   BLODE_API_URL_ENV,
   CREDENTIALS_FILE,
   DEFAULT_API_URL,
@@ -20,6 +25,7 @@ import { EXIT_CODES } from "../errors.js";
 import { requestJson } from "../http.js";
 import { waitForOAuthCode } from "../oauth-callback.js";
 import { exchangeAuthorizationCode } from "../oauth-token.js";
+import { createReporter } from "../output.js";
 import {
   createCodeChallenge,
   createCodeVerifier,
@@ -32,6 +38,24 @@ import {
   tokenResponseToStoredSession,
 } from "../supabase.js";
 import { parsePort, parsePositiveInteger } from "../validation.js";
+
+/** Which credential `blodemd push` would actually authenticate with. */
+export type CredentialSource = "api-key" | "session";
+
+/**
+ * The precedence `push` applies (see `resolveAuthHeaders` in push.ts): the
+ * `--api-key` flag, then `BLODEMD_API_KEY`, then the stored login session.
+ * Every command that reports or uses credentials must agree with it, otherwise
+ * `whoami` describes a session that `push` never touches.
+ */
+
+/** Exactly what `whoami --json` prints, so callers can depend on the shape. */
+export interface WhoamiPayload {
+  email: string | null;
+  expiresAt: string | null;
+  loggedIn: boolean;
+  source: CredentialSource;
+}
 
 const fetchUserEmail = async (
   apiUrl: string,
@@ -66,7 +90,10 @@ export const registerAuthCommands = (program: Command): void => {
     .option("--no-open", "Print URL instead of opening the browser")
     .action(
       async (options: { port: string; timeout: string; open: boolean }) => {
-        intro(chalk.bold("blodemd login"));
+        const reporter = createReporter();
+        if (reporter.interactive) {
+          intro(chalk.bold("blodemd login"));
+        }
 
         try {
           // OAuth 2.1 authorization code flow with PKCE (GitHub via Supabase)
@@ -105,14 +132,14 @@ export const registerAuthCommands = (program: Command): void => {
           });
 
           if (options.open) {
-            log.info("Opening browser for authentication...");
-            log.info(
+            reporter.info("Opening browser for authentication...");
+            reporter.info(
               `If the browser doesn't open, visit: ${chalk.cyan(authUrl.toString())}`
             );
             await open(authUrl.toString());
           } else {
-            log.info("Open this URL to continue authentication:");
-            log.info(chalk.cyan(authUrl.toString()));
+            reporter.info("Open this URL to continue authentication:");
+            reporter.info(chalk.cyan(authUrl.toString()));
           }
 
           const code = await callbackPromise;
@@ -135,12 +162,18 @@ export const registerAuthCommands = (program: Command): void => {
             ));
 
           if (email) {
-            log.success(`Logged in as ${chalk.cyan(email)}`);
+            reporter.success(`Logged in as ${chalk.cyan(email)}`);
           } else {
-            log.success("Logged in successfully.");
+            reporter.success("Logged in successfully.");
           }
 
-          log.info("Done");
+          if (resolveApiKeyCredential()) {
+            reporter.warn(
+              `${BLODE_API_KEY_ENV} is set, so "blodemd push" will keep using that API key instead of this session.`
+            );
+          }
+
+          reporter.info("Done");
         } catch (error: unknown) {
           reportCommandError("Login failed", error);
         }
@@ -151,7 +184,10 @@ export const registerAuthCommands = (program: Command): void => {
     .command("logout")
     .description("Remove stored credentials")
     .action(async () => {
-      intro(chalk.bold("blodemd logout"));
+      const reporter = createReporter();
+      if (reporter.interactive) {
+        intro(chalk.bold("blodemd logout"));
+      }
 
       try {
         let existing = false;
@@ -165,11 +201,11 @@ export const registerAuthCommands = (program: Command): void => {
         await clearStoredCredentials();
 
         if (existing) {
-          log.success("Credentials removed.");
+          reporter.success("Credentials removed.");
         } else {
-          log.info("No stored credentials found.");
+          reporter.info("No stored credentials found.");
         }
-        log.info("Done");
+        reporter.info("Done");
       } catch (error: unknown) {
         reportCommandError("Logout failed", error);
       }
@@ -177,13 +213,39 @@ export const registerAuthCommands = (program: Command): void => {
 
   program
     .command("whoami")
-    .description("Show current authentication")
-    .action(async () => {
+    .description("Show the credential blodemd would authenticate with")
+    .option("--api-key <token>", "API key (env: BLODEMD_API_KEY)")
+    .option("--json", "output machine-readable JSON (implies non-interactive)")
+    .action(async (options: { apiKey?: string; json?: boolean }) => {
+      const reporter = createReporter({ json: options.json });
+
       try {
+        // Report the credential `push` would pick, not whichever one happens to
+        // be stored on disk.
+        if (resolveApiKeyCredential(options.apiKey)) {
+          const origin = options.apiKey ? "--api-key" : BLODE_API_KEY_ENV;
+          reporter.info(
+            `Using the API key from ${origin}. A project-scoped key carries no user identity, and any stored session is ignored.`
+          );
+          reporter.json({
+            email: null,
+            expiresAt: null,
+            loggedIn: true,
+            source: "api-key",
+          } satisfies WhoamiPayload);
+          return;
+        }
+
         const resolved = await resolveAuthToken();
 
         if (!resolved) {
-          log.warn('Not logged in. Run "blodemd login" to authenticate.');
+          reporter.warn('Not logged in. Run "blodemd login" to authenticate.');
+          reporter.json({
+            email: null,
+            expiresAt: null,
+            loggedIn: false,
+            source: "session",
+          } satisfies WhoamiPayload);
           process.exitCode = EXIT_CODES.AUTH_REQUIRED;
           return;
         }
@@ -198,18 +260,25 @@ export const registerAuthCommands = (program: Command): void => {
           ));
 
         if (email) {
-          log.info(`Logged in as ${chalk.cyan(email)}`);
+          reporter.info(`Logged in as ${chalk.cyan(email)}`);
         } else {
-          log.info("Logged in (could not fetch user details).");
+          reporter.info("Logged in (could not fetch user details).");
         }
 
         if (resolved.expiresAt && status.expired) {
-          log.warn(
+          reporter.warn(
             'Session has expired. Run "blodemd login" to re-authenticate.'
           );
         }
+
+        reporter.json({
+          email,
+          expiresAt: resolved.expiresAt,
+          loggedIn: true,
+          source: "session",
+        } satisfies WhoamiPayload);
       } catch (error: unknown) {
-        reportCommandError("Whoami failed", error);
+        reportCommandError("Whoami failed", error, { json: options.json });
       }
     });
 };

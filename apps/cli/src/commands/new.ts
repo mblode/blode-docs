@@ -10,6 +10,7 @@ import {
   parseScaffoldTemplate,
   reportCommandError,
 } from "../command-utils.js";
+import { EXIT_CODES } from "../errors.js";
 import {
   findExistingPaths,
   writeFileIfMissing,
@@ -38,6 +39,15 @@ import type { ScaffoldTemplate } from "../scaffold.js";
 
 const isInteractiveTerminal = () =>
   process.stdin.isTTY === true && process.stdout.isTTY === true;
+
+/**
+ * Every cancel path exits non-zero (EXIT_CODES.CANCELLED) so a CI gate or an
+ * agent cannot read a declined scaffold as a successful one.
+ */
+const reportCancelled = (): void => {
+  process.exitCode = EXIT_CODES.CANCELLED;
+  log.warn("Cancelled");
+};
 
 const promptForNoArgDirectoryAction = async (): Promise<
   NoArgInteractiveAction | undefined
@@ -327,7 +337,7 @@ const scaffoldDocsSite = async (
     );
 
     if (!selectedDirectory) {
-      log.warn("Cancelled");
+      reportCancelled();
       return;
     }
 
@@ -341,7 +351,7 @@ const scaffoldDocsSite = async (
         skipNonEmptyConfirmation: selectedDirectory.skipNonEmptyConfirmation,
       }))
     ) {
-      log.warn("Cancelled");
+      reportCancelled();
       return;
     }
 
@@ -352,7 +362,7 @@ const scaffoldDocsSite = async (
     );
 
     if (!projectSlug) {
-      log.warn("Cancelled");
+      reportCancelled();
       return;
     }
 
@@ -363,7 +373,7 @@ const scaffoldDocsSite = async (
     );
 
     if (!displayName) {
-      log.warn("Cancelled");
+      reportCancelled();
       return;
     }
 

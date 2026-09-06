@@ -33,13 +33,24 @@ export const registerValidateCommand = (program: Command): void => {
         reporter.json({ valid: true, warnings });
       } catch (error: unknown) {
         // A CliError with the VALIDATION exit code means docs.json itself is
-        // invalid; emit the structured failure payload before reporting.
-        if (
-          options.json &&
-          error instanceof CliError &&
-          error.exitCode === EXIT_CODES.VALIDATION
-        ) {
-          reporter.json({ errors: error.message.split("\n"), valid: false });
+        // invalid. That failure is this command's own result shape, so emit it
+        // as the single stdout line and keep `reportCommandError` on stderr
+        // only: two JSON lines for one failure is not parseable output.
+        const isInvalidConfig =
+          error instanceof CliError && error.exitCode === EXIT_CODES.VALIDATION;
+        if (options.json && isInvalidConfig) {
+          const cliError = error as CliError;
+          reporter.json({
+            code: cliError.code,
+            error: true,
+            errors: cliError.message.split("\n"),
+            hint: cliError.hint,
+            message: cliError.message,
+            valid: false,
+          });
+          process.stderr.write(`Validation failed: ${cliError.message}\n`);
+          process.exitCode = cliError.exitCode;
+          return;
         }
         reportCommandError("Validation failed", error, { json: options.json });
       }

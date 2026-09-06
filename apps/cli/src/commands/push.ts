@@ -2,7 +2,7 @@ import { confirm, intro, isCancel } from "@clack/prompts";
 import chalk from "chalk";
 import type { Command } from "commander";
 
-import { resolveAuthToken } from "../auth-session.js";
+import { resolveApiKeyCredential, resolveAuthToken } from "../auth-session.js";
 import {
   collectFiles,
   readGitValue,
@@ -17,6 +17,7 @@ import {
   DEFAULT_API_URL,
 } from "../constants.js";
 import { resolveDocsRoot } from "../dev/resolve-root.js";
+import { CliError, EXIT_CODES } from "../errors.js";
 import { requestJson } from "../http.js";
 import { createReporter } from "../output.js";
 import type { Reporter } from "../output.js";
@@ -29,16 +30,71 @@ import { loadValidatedSiteConfig } from "../site-config.js";
 import type { DeploymentResponse } from "../types.js";
 import { createUploadBatches } from "../upload.js";
 
-interface PushConfig {
-  project: string;
-  projectDisplayName: string;
+export interface PushOptions {
+  apiKey?: string;
+  apiUrl?: string;
+  branch?: string;
+  dryRun?: boolean;
+  json?: boolean;
+  message?: string;
+  project?: string;
+  yes?: boolean;
+}
+
+/** Everything the push target is made of, before any credential is resolved. */
+interface PushTarget {
   apiUrl: string;
-  authHeaders: Record<string, string>;
-  canAutoCreate: boolean;
   branch: string;
   commitMessage?: string;
+  project: string;
+  projectDisplayName: string;
   usedLegacyNameFallback: boolean;
 }
+
+export interface PushDryRunPayload {
+  apiUrl: string;
+  branch: string;
+  commitMessage: string | null;
+  dryRun: true;
+  fileCount: number;
+  project: string;
+  root: string;
+}
+
+/**
+ * A clack prompt needs a real terminal on *both* ends. An agent commonly runs
+ * with piped stdin and an inherited TTY stdout: guarding on stdout alone would
+ * reach the prompt and then block forever on a read that can never be answered.
+ */
+export const canPromptForConfirmation = (
+  reporterInteractive: boolean
+): boolean =>
+  reporterInteractive &&
+  process.stdin.isTTY === true &&
+  process.stdout.isTTY === true;
+
+/** Every cancel path exits non-zero so a CI gate cannot read it as success. */
+const reportCancelled = (reporter: Reporter): void => {
+  process.exitCode = EXIT_CODES.CANCELLED;
+  reporter.info("Cancelled");
+};
+
+export const buildDryRunPayload = (input: {
+  apiUrl: string;
+  branch: string;
+  commitMessage?: string;
+  fileCount: number;
+  project: string;
+  root: string;
+}): PushDryRunPayload => ({
+  apiUrl: input.apiUrl,
+  branch: input.branch,
+  commitMessage: input.commitMessage ?? null,
+  dryRun: true,
+  fileCount: input.fileCount,
+  project: input.project,
+  root: input.root,
+});
 
 // Resolve auth in the documented order: --api-key flag, BLODEMD_API_KEY env,
 // then stored `blodemd login` credentials. A project-scoped deploy key and a
@@ -47,7 +103,7 @@ interface PushConfig {
 const resolveAuthHeaders = async (
   apiKeyOption?: string
 ): Promise<{ headers: Record<string, string>; canAutoCreate: boolean }> => {
-  const apiKey = (apiKeyOption ?? process.env[BLODE_API_KEY_ENV])?.trim();
+  const apiKey = resolveApiKeyCredential(apiKeyOption);
   if (apiKey) {
     return {
       canAutoCreate: false,
@@ -68,16 +124,12 @@ const resolveAuthHeaders = async (
   };
 };
 
-const resolvePushConfig = async (
+// Deliberately credential-free so `--dry-run` can reuse it: resolving a stored
+// session may refresh and rewrite the token on disk, which a dry run must not do.
+const resolvePushTarget = (
   config: { name?: string; slug?: string },
-  options: {
-    apiKey?: string;
-    apiUrl?: string;
-    branch?: string;
-    message?: string;
-    project?: string;
-  }
-): Promise<PushConfig> => {
+  options: PushOptions
+): PushTarget => {
   const { project, usedLegacyNameFallback } = resolveProjectTarget({
     cliProject: options.project,
     config,
@@ -114,15 +166,9 @@ const resolvePushConfig = async (
     throw new Error(`Invalid project slug "${project}". ${projectSlugError}`);
   }
 
-  const { headers: authHeaders, canAutoCreate } = await resolveAuthHeaders(
-    options.apiKey
-  );
-
   return {
     apiUrl,
-    authHeaders,
     branch,
-    canAutoCreate,
     commitMessage,
     project,
     projectDisplayName: config.name?.trim() || project,
@@ -130,41 +176,49 @@ const resolvePushConfig = async (
   };
 };
 
-const autoCreateProject = async (
-  project: string,
-  projectDisplayName: string,
-  apiUrl: string,
-  headers: Record<string, string>,
-  canAutoCreate: boolean,
-  reporter: Reporter
-): Promise<boolean> => {
+const autoCreateProject = async (params: {
+  apiUrl: string;
+  canAutoCreate: boolean;
+  headers: Record<string, string>;
+  project: string;
+  projectDisplayName: string;
+  reporter: Reporter;
+  yes: boolean;
+}): Promise<boolean> => {
+  const { apiUrl, canAutoCreate, headers, project, reporter, yes } = params;
+
   if (!canAutoCreate) {
     throw new Error(
       `Project "${project}" not found. Create it at blode.md or login with "blodemd login" to auto-create.`
     );
   }
 
-  // Auto-create is an interactive confirmation; in --json/CI/non-TTY mode we
-  // must not prompt (it would corrupt stdout and can't be answered). Fail with
-  // a deterministic, actionable error instead.
-  if (!reporter.interactive) {
+  // Auto-create mutates the account: it creates a project and mints a deploy
+  // key. Without --yes that needs an answerable prompt, which requires a real
+  // terminal on stdin and stdout. Otherwise fail deterministically.
+  if (!(yes || canPromptForConfirmation(reporter.interactive))) {
     throw new Error(
-      `Project "${project}" not found. Create it in the dashboard or run \`blodemd push\` in an interactive terminal to auto-create it.`
+      `Project "${project}" not found. Create it in the dashboard, re-run with --yes to create it automatically, or run \`blodemd push\` in an interactive terminal.`
     );
   }
 
-  const shouldCreate = await confirm({
-    message: `Project "${project}" doesn't exist. Create it?`,
-  });
+  if (!yes) {
+    const shouldCreate = await confirm({
+      message: `Project "${project}" doesn't exist. Create it?`,
+    });
 
-  if (isCancel(shouldCreate) || !shouldCreate) {
-    return false;
+    if (isCancel(shouldCreate) || !shouldCreate) {
+      return false;
+    }
   }
 
   const createResult = await requestJson<{ id: string; slug: string }>(
     new URL("/projects", apiUrl).toString(),
     {
-      body: JSON.stringify({ name: projectDisplayName, slug: project }),
+      body: JSON.stringify({
+        name: params.projectDisplayName,
+        slug: project,
+      }),
       headers,
       method: "POST",
     },
@@ -226,6 +280,176 @@ const uploadFiles = async (
   reporter.success(`Uploaded ${chalk.cyan(String(files.length))} files`);
 };
 
+const collectDeployableFiles = async (
+  root: string,
+  reporter: Reporter
+): Promise<string[]> => {
+  reporter.step("Collecting files");
+  const files = await collectFiles(root);
+  if (files.length === 0) {
+    throw new Error("No files found to deploy.");
+  }
+  reporter.success(`Found ${chalk.cyan(String(files.length))} files`);
+  return files;
+};
+
+const validateAndResolve = async (
+  dir: string | undefined,
+  options: PushOptions,
+  reporter: Reporter
+): Promise<{ root: string; target: PushTarget }> => {
+  const root = await resolveDocsRoot(dir);
+
+  reporter.step("Validating configuration");
+  const { config, warnings } = await loadValidatedSiteConfig(root);
+  reporter.success("Configuration valid");
+  for (const warning of warnings) {
+    reporter.warn(warning);
+  }
+
+  const target = resolvePushTarget(config, options);
+  // The config loader emits the identical warning, so only add it when it did
+  // not — otherwise the operator sees the same deprecation line twice.
+  if (
+    target.usedLegacyNameFallback &&
+    !warnings.includes(LEGACY_PROJECT_NAME_FALLBACK_WARNING)
+  ) {
+    reporter.warn(LEGACY_PROJECT_NAME_FALLBACK_WARNING);
+  }
+
+  return { root, target };
+};
+
+const runDryRun = async (
+  dir: string | undefined,
+  options: PushOptions,
+  reporter: Reporter
+): Promise<void> => {
+  const { root, target } = await validateAndResolve(dir, options, reporter);
+  const files = await collectDeployableFiles(root, reporter);
+
+  const payload = buildDryRunPayload({
+    apiUrl: target.apiUrl,
+    branch: target.branch,
+    commitMessage: target.commitMessage,
+    fileCount: files.length,
+    project: target.project,
+    root,
+  });
+
+  reporter.info(
+    `Dry run: would deploy ${chalk.cyan(String(payload.fileCount))} files to project ${chalk.cyan(payload.project)} on branch ${chalk.cyan(payload.branch)}`
+  );
+  reporter.info("Dry run: nothing was created, uploaded, or published");
+  reporter.json(payload);
+};
+
+const runPush = async (
+  dir: string | undefined,
+  options: PushOptions,
+  reporter: Reporter
+): Promise<void> => {
+  const { root, target } = await validateAndResolve(dir, options, reporter);
+  const { apiUrl, branch, commitMessage, project, projectDisplayName } = target;
+  const { headers: authHeaders, canAutoCreate } = await resolveAuthHeaders(
+    options.apiKey
+  );
+
+  const files = await collectDeployableFiles(root, reporter);
+
+  const headers = {
+    ...authHeaders,
+    "Content-Type": "application/json",
+  };
+
+  const apiPath = (suffix: string): string =>
+    new URL(
+      `/projects/slug/${project}/deployments${suffix}`,
+      apiUrl
+    ).toString();
+
+  const createDeploymentBody = JSON.stringify({ branch, commitMessage });
+
+  // Try creating the deployment — if 404, offer to create the project
+  reporter.step("Creating deployment");
+  let deployment: DeploymentResponse;
+  try {
+    deployment = await requestJson<DeploymentResponse>(
+      apiPath(""),
+      { body: createDeploymentBody, headers, method: "POST" },
+      "Failed to create deployment"
+    );
+  } catch (error: unknown) {
+    // The transport throws a typed CliError carrying the HTTP status, so a
+    // 404 is a status check rather than a substring search over the message.
+    if (!(error instanceof CliError && error.status === 404)) {
+      throw error;
+    }
+
+    reporter.stop("Project not found");
+
+    const created = await autoCreateProject({
+      apiUrl,
+      canAutoCreate,
+      headers,
+      project,
+      projectDisplayName,
+      reporter,
+      yes: options.yes === true,
+    });
+    if (!created) {
+      reportCancelled(reporter);
+      return;
+    }
+
+    reporter.step("Creating deployment");
+    deployment = await requestJson<DeploymentResponse>(
+      apiPath(""),
+      { body: createDeploymentBody, headers, method: "POST" },
+      "Failed to create deployment"
+    );
+  }
+  reporter.success(`Deployment ${chalk.cyan(deployment.id)} created`);
+
+  await uploadFiles(files, root, apiPath, deployment.id, headers, reporter);
+
+  reporter.step("Finalizing deployment");
+  const finalized = await requestJson<DeploymentResponse>(
+    apiPath(`/${deployment.id}/finalize`),
+    {
+      body: JSON.stringify({ promote: true }),
+      headers,
+      method: "POST",
+    },
+    "Failed to finalize deployment"
+  );
+  reporter.success("Deployment finalized");
+
+  reporter.success(`Published ${chalk.cyan(finalized.id)}`);
+  if (finalized.manifestUrl) {
+    reporter.info(`Manifest: ${finalized.manifestUrl}`);
+  }
+  if (typeof finalized.fileCount === "number") {
+    reporter.info(`Files: ${finalized.fileCount}`);
+  }
+
+  reporter.info("Done");
+
+  reporter.json({
+    deploymentId: finalized.id,
+    fileCount: finalized.fileCount ?? files.length,
+    manifestUrl: finalized.manifestUrl ?? null,
+  });
+};
+
+const DRY_RUN_HELP = `
+Dry run:
+  --dry-run validates docs.json, resolves the project and branch, and reports
+  the file count that would be deployed. It writes nothing: no project is
+  created, no deploy key is minted, no deployment is created, and no file is
+  uploaded. It needs no credentials and calls no API.
+`;
+
 export const registerPushCommand = (program: Command): void => {
   program
     .command("push")
@@ -236,151 +460,32 @@ export const registerPushCommand = (program: Command): void => {
     .option("--api-url <url>", "API URL (env: BLODEMD_API_URL)")
     .option("--branch <name>", "git branch (env: BLODEMD_BRANCH)")
     .option("--message <msg>", "deploy message (env: BLODEMD_COMMIT_MESSAGE)")
+    .option(
+      "--dry-run",
+      "preview only: report the target project, branch, and file count, then exit without writing anything"
+    )
+    .option(
+      "-y, --yes",
+      "create the project without prompting if it does not exist"
+    )
     .option("--json", "output machine-readable JSON (implies non-interactive)")
-    .action(
-      async (
-        dir: string | undefined,
-        options: {
-          apiKey?: string;
-          apiUrl?: string;
-          branch?: string;
-          json?: boolean;
-          message?: string;
-          project?: string;
-        }
-      ) => {
-        const reporter = createReporter({ json: options.json });
-        if (reporter.interactive) {
-          intro(chalk.bold("blodemd push"));
-        }
-
-        try {
-          const root = await resolveDocsRoot(dir);
-
-          reporter.step("Validating configuration");
-          const { config, warnings } = await loadValidatedSiteConfig(root);
-          reporter.success("Configuration valid");
-          for (const warning of warnings) {
-            reporter.warn(warning);
-          }
-
-          const {
-            project,
-            projectDisplayName,
-            apiUrl,
-            authHeaders,
-            canAutoCreate,
-            branch,
-            commitMessage,
-            usedLegacyNameFallback,
-          } = await resolvePushConfig(config, options);
-
-          if (usedLegacyNameFallback) {
-            reporter.warn(LEGACY_PROJECT_NAME_FALLBACK_WARNING);
-          }
-
-          reporter.step("Collecting files");
-          const files = await collectFiles(root);
-          if (files.length === 0) {
-            throw new Error("No files found to deploy.");
-          }
-          reporter.success(`Found ${chalk.cyan(String(files.length))} files`);
-
-          const headers = {
-            ...authHeaders,
-            "Content-Type": "application/json",
-          };
-
-          const apiPath = (suffix: string): string =>
-            new URL(
-              `/projects/slug/${project}/deployments${suffix}`,
-              apiUrl
-            ).toString();
-
-          const createDeploymentBody = JSON.stringify({
-            branch,
-            commitMessage,
-          });
-
-          // Try creating the deployment — if 404, offer to create the project
-          reporter.step("Creating deployment");
-          let deployment: DeploymentResponse;
-          try {
-            deployment = await requestJson<DeploymentResponse>(
-              apiPath(""),
-              { body: createDeploymentBody, headers, method: "POST" },
-              "Failed to create deployment"
-            );
-          } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : "";
-            if (!errorMessage.includes("404")) {
-              throw error;
-            }
-
-            reporter.stop("Project not found");
-
-            const created = await autoCreateProject(
-              project,
-              projectDisplayName,
-              apiUrl,
-              headers,
-              canAutoCreate,
-              reporter
-            );
-            if (!created) {
-              reporter.info("Cancelled");
-              return;
-            }
-
-            reporter.step("Creating deployment");
-            deployment = await requestJson<DeploymentResponse>(
-              apiPath(""),
-              { body: createDeploymentBody, headers, method: "POST" },
-              "Failed to create deployment"
-            );
-          }
-          reporter.success(`Deployment ${chalk.cyan(deployment.id)} created`);
-
-          await uploadFiles(
-            files,
-            root,
-            apiPath,
-            deployment.id,
-            headers,
-            reporter
-          );
-
-          reporter.step("Finalizing deployment");
-          const finalized = await requestJson<DeploymentResponse>(
-            apiPath(`/${deployment.id}/finalize`),
-            {
-              body: JSON.stringify({ promote: true }),
-              headers,
-              method: "POST",
-            },
-            "Failed to finalize deployment"
-          );
-          reporter.success("Deployment finalized");
-
-          reporter.success(`Published ${chalk.cyan(finalized.id)}`);
-          if (finalized.manifestUrl) {
-            reporter.info(`Manifest: ${finalized.manifestUrl}`);
-          }
-          if (typeof finalized.fileCount === "number") {
-            reporter.info(`Files: ${finalized.fileCount}`);
-          }
-
-          reporter.info("Done");
-
-          reporter.json({
-            deploymentId: finalized.id,
-            fileCount: finalized.fileCount ?? files.length,
-            manifestUrl: finalized.manifestUrl ?? null,
-          });
-        } catch (error: unknown) {
-          reporter.stop("Failed");
-          reportCommandError("Push failed", error, { json: options.json });
-        }
+    .addHelpText("after", DRY_RUN_HELP)
+    .action(async (dir: string | undefined, options: PushOptions) => {
+      const reporter = createReporter({ json: options.json });
+      if (reporter.interactive) {
+        intro(chalk.bold("blodemd push"));
       }
-    );
+
+      try {
+        if (options.dryRun) {
+          await runDryRun(dir, options, reporter);
+          return;
+        }
+
+        await runPush(dir, options, reporter);
+      } catch (error: unknown) {
+        reporter.stop("Failed");
+        reportCommandError("Push failed", error, { json: options.json });
+      }
+    });
 };

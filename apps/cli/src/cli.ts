@@ -6,6 +6,7 @@ import { registerDevCommand } from "./commands/dev.js";
 import { registerNewCommand } from "./commands/new.js";
 import { registerProjectsCommand } from "./commands/projects.js";
 import { registerPushCommand } from "./commands/push.js";
+import { registerSchemaCommand } from "./commands/schema.js";
 import { registerValidateCommand } from "./commands/validate.js";
 import { toCliError } from "./errors.js";
 import { assertSupportedNodeVersion, readCliVersion } from "./runtime.js";
@@ -25,10 +26,27 @@ registerPushCommand(program);
 registerProjectsCommand(program);
 registerDevCommand(program);
 registerAnalyticsCommand(program);
+registerSchemaCommand(program);
 
 program.addHelpText(
   "after",
-  "\nExample:\n  $ blodemd push ./docs --project my-docs\n"
+  `
+Example:
+  $ blodemd push ./docs --project my-docs
+
+Environment:
+  BLODEMD_API_KEY     API key, used ahead of a stored login session
+  BLODEMD_PROJECT     Default --project slug
+  BLODEMD_API_URL     API origin (defaults to the hosted API)
+
+Exit codes:
+  0  success
+  1  error
+  2  cancelled
+  3  invalid input or config
+  4  authentication required
+  5  network failure
+`
 );
 
 // Top-level boundary: turn any thrown CliError (or wrapped error) into a clean

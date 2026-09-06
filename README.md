@@ -78,6 +78,27 @@ Then scaffold and deploy in plain language:
 /blodemd push docs/ --project my-project
 ```
 
+## Environment and exit codes
+
+| Variable          | Purpose                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| `BLODEMD_API_KEY` | API key. Used ahead of a stored login session, so CI needs no `blodemd login`. |
+| `BLODEMD_PROJECT` | Default value for `--project`.                                                 |
+| `BLODEMD_API_URL` | API origin. Defaults to the hosted API.                                        |
+
+Every command exits with one of these, so a CI gate can branch on the number:
+
+| Code | Meaning                                |
+| ---- | -------------------------------------- |
+| `0`  | Success                                |
+| `1`  | Error                                  |
+| `2`  | Cancelled, including a declined prompt |
+| `3`  | Invalid input or config                |
+| `4`  | Authentication required                |
+| `5`  | Network failure                        |
+
+With `--json`, a failure is data too: the command writes one line to stdout shaped `{"error":true,"code":"AUTH_REQUIRED","message":"...","hint":"..."}`. Branch on `code`, which is stable, rather than on `message`, which is written for a human.
+
 ## Notes
 
 - Node.js 24.
