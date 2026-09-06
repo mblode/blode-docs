@@ -162,7 +162,10 @@ export const generateMetadata = async ({
       type: "website",
       url: canonicalUrl,
     },
-    robots: noindex ? { index: false } : undefined,
+    // Only declare `robots` when there is something to say: an explicit
+    // `undefined` still counts as a declaration and wipes the root layout's
+    // googleBot preview caps for the page.
+    ...(noindex ? { robots: { index: false } } : {}),
     title,
     twitter: {
       card: "summary_large_image",
