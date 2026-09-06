@@ -508,7 +508,9 @@ export const finalizeDeploymentManifest = async (input: {
         configResult.config,
         utilityIndex
       );
-      const artifacts = buildUtilityArtifacts(utilityIndex);
+      const artifacts = buildUtilityArtifacts(utilityIndex, {
+        publishedAt,
+      });
 
       const uploadResults = await Promise.all([
         putJson(

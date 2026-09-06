@@ -151,7 +151,8 @@ export const getPrebuiltUtilityLlmPagePath = (slug: string) => {
 };
 
 export const buildUtilityArtifacts = (
-  index: UtilityIndex
+  index: UtilityIndex,
+  options: { publishedAt?: string } = {}
 ): UtilityArtifact[] => {
   const segments = index.segments ?? [];
   const segmentLines =
@@ -181,11 +182,19 @@ export const buildUtilityArtifacts = (
     }),
   ];
 
+  // A publish rewrites every file, so the publish time is the last-modified
+  // date of every page in this sitemap. Omitted when the caller does not supply
+  // one: an absent `lastmod` reads as unknown, while a build or request time
+  // teaches Google to ignore the field sitewide.
+  const lastmod = options.publishedAt
+    ? `<lastmod>${options.publishedAt}</lastmod>`
+    : "";
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${index.pages
   .map(
-    (page) => `  <url><loc>${toUtilityTemplatedDocUrl(page.slug)}</loc></url>`
+    (page) =>
+      `  <url><loc>${toUtilityTemplatedDocUrl(page.slug)}</loc>${lastmod}</url>`
   )
   .join("\n")}
 </urlset>`;

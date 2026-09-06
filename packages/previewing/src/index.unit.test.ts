@@ -328,7 +328,20 @@ describe("buildUtilityIndex", () => {
       ])
     );
 
-    const artifacts = buildUtilityArtifacts(utilityIndex);
+    const artifacts = buildUtilityArtifacts(utilityIndex, {
+      publishedAt: "2026-09-07T04:05:06.000Z",
+    });
+    const sitemapContent = artifacts.find(
+      (artifact) => artifact.path === PREBUILT_UTILITY_SITEMAP_PATH
+    )?.content;
+    expect(sitemapContent).toContain(
+      "<lastmod>2026-09-07T04:05:06.000Z</lastmod>"
+    );
+    expect(
+      buildUtilityArtifacts(utilityIndex).find(
+        (artifact) => artifact.path === PREBUILT_UTILITY_SITEMAP_PATH
+      )?.content
+    ).not.toContain("<lastmod>");
     expect(artifacts.map((artifact) => artifact.path)).toContain(
       PREBUILT_UTILITY_SITEMAP_PATH
     );
