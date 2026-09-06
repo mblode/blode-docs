@@ -2,18 +2,6 @@ import { platformRootDomain } from "./env";
 
 export const MARKETING_ORIGIN = `https://${platformRootDomain}`;
 
-export const MARKETING_CANONICAL_PATHS = [
-  "/",
-  "/about",
-  "/blog",
-  "/changelog",
-  "/free-online-llms-txt-resources",
-  "/pricing",
-  "/privacy",
-  "/security",
-  "/terms",
-] as const;
-
 export const MARKETING_API_CATALOG_PATH = "/.well-known/api-catalog";
 export const MARKETING_SKILLS_INDEX_PATH =
   "/.well-known/agent-skills/index.json";

@@ -46,6 +46,13 @@ interface DeploymentManifestFile {
 
 interface DeploymentManifest {
   files: DeploymentManifestFile[];
+  /**
+   * When this deployment was published, ISO 8601. A publish rewrites every
+   * file, so this is the last-modified date of every page it serves, and it
+   * is what the tenant sitemap reports as `lastmod`. Older manifests omit it;
+   * consumers must treat it as optional.
+   */
+  publishedAt: string;
   version: 1;
 }
 
@@ -425,8 +432,12 @@ export const finalizeDeploymentManifest = async (input: {
     );
   }
 
+  // One timestamp for both writes: the temporary manifest below is overwritten
+  // by the final one, and a second `new Date()` would make them disagree.
+  const publishedAt = new Date().toISOString();
+
   // Build and upload pre-built content index for fast runtime loading
-  const tempManifest: DeploymentManifest = { files, version: 1 };
+  const tempManifest: DeploymentManifest = { files, publishedAt, version: 1 };
   const tempManifestBlob = await put(
     getManifestPath(input.projectSlug, input.deploymentId),
     JSON.stringify(tempManifest, null, 2),
@@ -546,6 +557,7 @@ export const finalizeDeploymentManifest = async (input: {
 
   const manifest: DeploymentManifest = {
     files,
+    publishedAt,
     version: 1,
   };
   const manifestBlob = await put(

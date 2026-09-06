@@ -422,13 +422,21 @@ export const buildTenantSitemapXml = async (
   const { pages } = await loadTenantUtilityIndex(tenant);
   const origin = await getCanonicalOrigin(tenant, context);
   const basePath = await getCanonicalDocBasePath(tenant, context);
+  // A publish rewrites every file, so the deployment's publish time is the
+  // last-modified date of every page it serves. Older manifests have no such
+  // date and a local checkout cannot know one: omit `lastmod` entirely rather
+  // than substitute a build or request time, which is the pattern that makes
+  // Google ignore `lastmod` sitewide.
+  const publishedAt =
+    (await getTenantContentSource(tenant).publishedAt?.()) ?? null;
+  const lastmod = publishedAt ? `<lastmod>${publishedAt}</lastmod>` : "";
   const urls = pages.map(
     (page) => `${origin}${toDocHref(page.slug, basePath)}`
   );
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((url) => `  <url><loc>${url}</loc></url>`).join("\n")}
+${urls.map((url) => `  <url><loc>${url}</loc>${lastmod}</url>`).join("\n")}
 </urlset>`;
 };
 

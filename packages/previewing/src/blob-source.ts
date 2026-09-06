@@ -11,6 +11,8 @@ interface BlobManifestFile {
 
 interface BlobManifest {
   files: BlobManifestFile[];
+  /** ISO 8601 publish time. Absent on manifests written before it existed. */
+  publishedAt?: string;
 }
 
 type FetchInitWithNext = RequestInit & {
@@ -51,7 +53,10 @@ const normalizeRelativePath = (value: string) =>
 export class BlobContentSource implements ContentSource {
   private readonly manifestUrl: string;
   private readonly cacheTag?: string;
-  private manifestPromise?: Promise<Map<string, string>>;
+  private manifestPromise?: Promise<{
+    files: Map<string, string>;
+    publishedAt: string | null;
+  }>;
 
   constructor(manifestUrl: string, cacheTag?: string) {
     this.manifestUrl = manifestUrl;
@@ -71,7 +76,10 @@ export class BlobContentSource implements ContentSource {
     };
   }
 
-  private async loadManifest(): Promise<Map<string, string>> {
+  private async loadManifest(): Promise<{
+    files: Map<string, string>;
+    publishedAt: string | null;
+  }> {
     if (!this.manifestPromise) {
       this.manifestPromise = (async () => {
         const response = await fetch(this.manifestUrl, this.getFetchOptions());
@@ -86,12 +94,18 @@ export class BlobContentSource implements ContentSource {
           throw new Error("Deployment manifest is invalid.");
         }
 
-        return new Map(
-          manifest.files.map((file) => [
-            normalizeRelativePath(file.path),
-            file.url,
-          ])
-        );
+        return {
+          files: new Map(
+            manifest.files.map((file) => [
+              normalizeRelativePath(file.path),
+              file.url,
+            ])
+          ),
+          publishedAt:
+            typeof manifest.publishedAt === "string"
+              ? manifest.publishedAt
+              : null,
+        };
       })();
     }
 
@@ -117,7 +131,7 @@ export class BlobContentSource implements ContentSource {
     const prefix = normalizeDirectory(directory);
 
     const files: string[] = [];
-    for (const file of manifest.keys()) {
+    for (const file of manifest.files.keys()) {
       if (prefix && !file.startsWith(prefix)) {
         continue;
       }
@@ -144,12 +158,17 @@ export class BlobContentSource implements ContentSource {
 
   async exists(relativePath: string): Promise<boolean> {
     const manifest = await this.loadManifest();
-    return manifest.has(normalizeRelativePath(relativePath));
+    return manifest.files.has(normalizeRelativePath(relativePath));
+  }
+
+  async publishedAt(): Promise<string | null> {
+    const manifest = await this.loadManifest();
+    return manifest.publishedAt;
   }
 
   async resolveUrl(relativePath: string): Promise<string | null> {
     const manifest = await this.loadManifest();
-    return manifest.get(normalizeRelativePath(relativePath)) ?? null;
+    return manifest.files.get(normalizeRelativePath(relativePath)) ?? null;
   }
 
   async readCompiledMdx(
