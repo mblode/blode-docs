@@ -10,7 +10,7 @@ import { marketingUrl, pageMetadata } from "@/lib/marketing-site";
 import { breadcrumbNode, pageJsonLd, webPageNode } from "@/lib/structured-data";
 
 const blogDescription =
-  "Notes, deep dives, and product updates from the Blode.md team. The terminal-native docs platform that ships documentation from your git repo.";
+  "Notes, deep dives, and product updates from the Blode.md team: git-native docs, published on merge.";
 const blogTitle = "Blog, updates, and product notes";
 
 export const metadata = pageMetadata({

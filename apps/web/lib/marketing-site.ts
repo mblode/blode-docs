@@ -26,6 +26,7 @@ export const CANONICAL_PAGES = {
   "/blog": "2026-08-14",
   "/changelog": "2026-08-14",
   "/compare/mintlify": "2026-09-06",
+  "/docs-as-code": "2026-09-06",
   "/free-online-llms-txt-resources": "2026-08-14",
   "/pricing": "2026-08-14",
   "/privacy": "2026-08-14",

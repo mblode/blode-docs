@@ -2,7 +2,7 @@
 
 # [Blode.md](https://blode.md)
 
-**Beautiful documentation sites from MDX, scaffolded and deployed from your terminal**
+**Git-native docs, published on merge**
 
 Write your docs as MDX files next to your code, then push them live with one command.
 

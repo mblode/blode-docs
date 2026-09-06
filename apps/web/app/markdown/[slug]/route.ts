@@ -12,6 +12,7 @@ const SLUGS = [
   "blog",
   "changelog",
   "compare-mintlify",
+  "docs-as-code",
   "free-online-llms-txt-resources",
   "pricing",
   "privacy",

@@ -12,13 +12,13 @@ Job of the page: decide.
 
 | Field                   | Value                                                                                                                                                                                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Primary keyword         | docs-as-code platform                                                                                                                                                                                                                |
-| Search volume           | No data (no keyword tool bound; Ahrefs exists only as manual CSV exports)                                                                                                                                                            |
-| Exact prompt volume     | No data (no AI-visibility tool bound)                                                                                                                                                                                                |
-| Secondary keywords      | git-native documentation (No data), MDX documentation hosting (No data), publish docs on merge (No data)                                                                                                                             |
+| Primary keyword         | docs as code                                                                                                                                                                                                                         |
+| Search volume           | 1,900/mo worldwide, 320/mo US (DataForSEO Google Ads, English, trailing 12-month average, pulled 2026-09-06)                                                                                                                         |
+| Exact prompt volume     | No data (no AI-visibility tool bound; Profound not held)                                                                                                                                                                             |
+| Secondary keywords      | documentation as code (1,300 worldwide / 260 US), api documentation tool (1,900 / 480), documentation platform (880 / 480, HIGH competition), mdx documentation (90 / 30), open source documentation platform (90 / 20)              |
 | Search Console evidence | 0 impressions on any query containing docs, documentation, mdx, mintlify, docusaurus, readme, gitbook or llms across blode.md and blode.co, 90 days to 2026-09-03 (PostHog warehouse sync of both GSC properties, pulled 2026-09-06) |
-| Brand search            | "blode": 938 impressions / 0 clicks on blode.md, 1650 / 2 on blode.co, 90 days (same source). Measured branded search impressions, not branded web mentions or YouTube mentions.                                                     |
-| Title                   | Docs-as-code platform: MDX in git, published on merge                                                                                                                                                                                |
+| Brand search            | "blode": 938 impressions / 0 clicks on blode.md, 1,650 / 2 on blode.co, 90 days (same source). Measured branded search impressions, not branded web mentions or YouTube mentions.                                                    |
+| Title                   | Docs as code: MDX in git, published on merge                                                                                                                                                                                         |
 | H1                      | Docs as code, hosted                                                                                                                                                                                                                 |
 | Meta description        | Keep docs as MDX in the repo, review them in the pull request, and let the merge publish the site plus the Markdown agents read.                                                                                                     |
 | Canonical               | https://blode.md/docs-as-code                                                                                                                                                                                                        |
@@ -62,12 +62,31 @@ Evaluator questions first, product-specific after.
 
 ## Evidence
 
-| Keyword                   | Search volume                               | Exact prompt volume | Source, scope, window                                                                                                   |
-| ------------------------- | ------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| docs-as-code platform     | No data                                     | No data             | No keyword or AI-visibility tool bound, 2026-09-06                                                                      |
-| git-native documentation  | No data                                     | No data             | same                                                                                                                    |
-| MDX documentation hosting | No data                                     | No data             | same                                                                                                                    |
-| mintlify alternative      | No data                                     | No data             | same; SERP checked by hand 2026-09-06: GitBook, Ferndesk, Documentation.AI, HelpKit, Hyperdocs, Mintlify's own rebuttal |
-| blode (brand)             | 938 impressions (blode.md), 1650 (blode.co) | n/a                 | Google Search Console via PostHog warehouse, global, 90 days to 2026-09-03, pulled 2026-09-06                           |
+All volumes: DataForSEO Google Ads search volume, English, trailing 12-month average, pulled 2026-09-06. "Worldwide" is the no-location query; "US" is location_code 2840. No AI-visibility tool is bound, so every prompt-volume cell reads No data.
 
-Binding Ahrefs or Semrush (API key or a signed-in browser session) is the only way to fill the volume column; the numbers above are the complete set that exists today.
+| Keyword                            | Worldwide  | US      | Competition              |
+| ---------------------------------- | ---------- | ------- | ------------------------ |
+| mintlify                           | 27,100     | 8,100   | LOW                      |
+| docs as code                       | 1,900      | 320     | LOW                      |
+| api documentation tool             | 1,900      | 480     | LOW                      |
+| documentation as code              | 1,300      | 260     | LOW                      |
+| documentation platform             | 880        | 480     | HIGH                     |
+| docusaurus alternative             | 590        | 90      | LOW                      |
+| mintlify alternative               | 480        | 140     | LOW worldwide, MEDIUM US |
+| developer documentation tool       | 140        | 30      | MEDIUM                   |
+| mdx documentation                  | 90         | 30      | LOW                      |
+| open source documentation platform | 90         | 20      | LOW                      |
+| self hosted documentation          | not pulled | 30      | LOW                      |
+| git documentation tool             | not pulled | 10      | LOW                      |
+| readme alternative                 | not pulled | 10      | MEDIUM                   |
+| docs as code platform              | No data    | No data | -                        |
+| llms.txt                           | No data    | No data | -                        |
+
+"docs as code platform" and "llms.txt" return no volume at all. That is why the primary is the bare "docs as code": it is the phrase with demand, and the page disambiguates by intent rather than by piling on a modifier nobody types.
+
+| Brand            | Impressions | Clicks | Source                                                                                        |
+| ---------------- | ----------- | ------ | --------------------------------------------------------------------------------------------- |
+| blode (blode.md) | 938         | 0      | Google Search Console via PostHog warehouse, global, 90 days to 2026-09-03, pulled 2026-09-06 |
+| blode (blode.co) | 1,650       | 2      | same                                                                                          |
+
+SERP for "mintlify alternative" checked by hand 2026-09-06: GitBook, Ferndesk, Documentation.AI, HelpKit, Hyperdocs, and Mintlify's own rebuttal page. Every competitor holds a dedicated URL; blode.md's `/compare/mintlify` shipped the same day.

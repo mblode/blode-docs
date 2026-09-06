@@ -18,7 +18,7 @@ import {
 } from "@/lib/structured-data";
 
 const introDescription =
-  "Why we built Blode.md, a docs-as-code platform that publishes from GitHub in three commands. Free, open source, and designed to keep docs next to your code.";
+  "Why we built Blode.md: git-native docs, published on merge. Free, MIT licensed, and designed to keep docs next to the code they describe.";
 const introTitle = "Introducing the Blode.md docs platform";
 const introPath = "/blog/intro-to-blode-md";
 

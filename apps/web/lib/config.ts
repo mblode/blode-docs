@@ -15,6 +15,7 @@ export const siteConfig = {
       label: "Product",
       links: [
         { href: "/pricing", label: "Pricing" },
+        { href: "/docs-as-code", label: "Docs as code" },
         { href: "/docs", label: "Docs" },
       ],
     },

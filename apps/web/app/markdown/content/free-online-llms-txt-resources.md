@@ -86,7 +86,7 @@ Live references worth reading: the FastHTML docs index linked from [llmstxt.org]
 
 - [llms_txt2ctx](https://github.com/AnswerDotAI/llms-txt): CLI/Python helper that expands an llms.txt index into context files (as described on llmstxt.org).
 - Framework generators such as vitepress-plugin-llms and docusaurus-plugin-llms are listed on [llmstxt.org](https://llmstxt.org/). Use those listings rather than package-registry pages that block crawlers.
-- [Blode.md](https://blode.md/): terminal-native docs. Write MDX, push from the CLI, and ship sites that already expose `llms.txt` / `llms-full.txt` / `.md` alternates. See [pricing](https://blode.md/pricing).
+- [Blode.md](https://blode.md/): git-native docs, published on merge. Sites ship `llms.txt` / `llms-full.txt` / `.md` alternates from the same deploy. See [pricing](https://blode.md/pricing).
 
 ## Related docs on Blode.md
 

@@ -474,9 +474,9 @@ export default function FreeOnlineLlmsTxtResourcesPage() {
                   <Link className="underline underline-offset-4" href="/">
                     Blode.md
                   </Link>
-                  : terminal-native docs. Write MDX, push from the CLI, and ship
-                  sites that already expose <code>llms.txt</code> /{" "}
-                  <code>llms-full.txt</code> / <code>.md</code> alternates. See{" "}
+                  : git-native docs, published on merge. Sites ship{" "}
+                  <code>llms.txt</code> / <code>llms-full.txt</code> /{" "}
+                  <code>.md</code> alternates. See{" "}
                   <Link
                     className="underline underline-offset-4"
                     href="/pricing"

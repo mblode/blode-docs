@@ -5,7 +5,9 @@ import { MARKETING_CANONICAL_PATHS, marketingUrl } from "@/lib/marketing-site";
 const body = [
   "# Blode.md",
   "",
-  "> The answer they read matches the commit you merged.",
+  "> Blode.md: git-native docs, published on merge.",
+  ">",
+  "> Write MDX in the repo, review it in the pull request, and the merge publishes the site.",
   "",
   "## Pages",
   ...MARKETING_CANONICAL_PATHS.map((path) => {
