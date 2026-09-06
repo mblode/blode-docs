@@ -5,4 +5,5 @@
  */
 export { ERROR_CODES, EXIT_CODES } from "./errors.js";
 export type { ErrorCode } from "./errors.js";
+export type { CredentialSource, WhoamiPayload } from "./commands/auth.js";
 export type { DeploymentResponse } from "./types.js";

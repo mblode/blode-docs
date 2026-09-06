@@ -30,7 +30,7 @@ import { loadValidatedSiteConfig } from "../site-config.js";
 import type { DeploymentResponse } from "../types.js";
 import { createUploadBatches } from "../upload.js";
 
-export interface PushOptions {
+interface PushOptions {
   apiKey?: string;
   apiUrl?: string;
   branch?: string;
