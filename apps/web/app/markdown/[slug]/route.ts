@@ -11,6 +11,7 @@ const SLUGS = [
   "about",
   "blog",
   "changelog",
+  "compare-mintlify",
   "free-online-llms-txt-resources",
   "pricing",
   "privacy",
@@ -21,6 +22,12 @@ const SLUGS = [
 type Slug = (typeof SLUGS)[number];
 
 const ALLOWED = new Set<string>(SLUGS);
+
+/** Slugs whose canonical path is not simply `/${slug}`. */
+const CANONICAL_PATH_BY_SLUG: Partial<Record<Slug, string>> = {
+  "compare-mintlify": "/compare/mintlify",
+  home: "/",
+};
 
 export const generateStaticParams = () => SLUGS.map((slug) => ({ slug }));
 
@@ -49,7 +56,7 @@ export const GET = async (
     return new NextResponse("Not found", { status: 404 });
   }
   const body = await readMarkdown(slug as Slug);
-  const canonicalPath = slug === "home" ? "/" : `/${slug}`;
+  const canonicalPath = CANONICAL_PATH_BY_SLUG[slug as Slug] ?? `/${slug}`;
   return new NextResponse(body, {
     headers: {
       "CDN-Cache-Control":

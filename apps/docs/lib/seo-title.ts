@@ -1,5 +1,4 @@
 const MAX_TITLE_LENGTH = 60;
-const SHORT_PAGE_TITLE_LIMIT = 35;
 
 export interface BuildDocsSeoTitleInput {
   baseTitle: string;
@@ -25,13 +24,16 @@ const truncateAtWordBoundary = (text: string, maxLength: number): string => {
 };
 
 /**
- * Build a docs page SEO title that prefers a short pageTitle + description
- * composition when the H1 alone is thin, while staying under ~60 characters
- * including the site suffix from the title template.
+ * Build a docs page SEO title: the page title plus the site suffix, kept under
+ * ~60 characters so the SERP does not clip it.
+ *
+ * The page title stands alone. An earlier version appended the description when
+ * the title was short, which produced clipped mash-ups like
+ * `Quickstart: Install the Blode.md CLI,... · Blode.md` on nearly every page.
+ * The description already has its own tag; the title's job is the page name.
  */
 export const buildDocsSeoTitle = ({
   baseTitle,
-  pageDescription,
   pageTitle,
   titleTemplate,
 }: BuildDocsSeoTitleInput): string => {
@@ -44,13 +46,7 @@ export const buildDocsSeoTitle = ({
     : `%s · ${baseTitle}`;
   const suffixLength = template.replace("%s", "").length;
   const maxSegmentLength = Math.max(MAX_TITLE_LENGTH - suffixLength, 1);
-
-  const description = pageDescription?.trim();
-  const shouldCompose =
-    Boolean(description) && pageTitle.length < SHORT_PAGE_TITLE_LIMIT;
-
-  const rawSegment = shouldCompose ? `${pageTitle}: ${description}` : pageTitle;
-  const pageSegment = truncateAtWordBoundary(rawSegment, maxSegmentLength);
+  const pageSegment = truncateAtWordBoundary(pageTitle, maxSegmentLength);
 
   return template.replace("%s", pageSegment);
 };

@@ -21,6 +21,14 @@
   "navbar": {
     "links": [
       {
+        "label": "Website",
+        "href": "https://blode.md"
+      },
+      {
+        "label": "Pricing",
+        "href": "https://blode.md/pricing"
+      },
+      {
         "label": "GitHub",
         "href": "https://github.com/mblode/blodemd"
       }

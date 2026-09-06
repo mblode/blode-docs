@@ -19,6 +19,7 @@ export const CANONICAL_PATHS = [
   "/about",
   "/blog",
   "/changelog",
+  "/compare/mintlify",
   "/free-online-llms-txt-resources",
   "/pricing",
   "/privacy",
@@ -30,6 +31,11 @@ export type CanonicalPath = (typeof CANONICAL_PATHS)[number];
 
 export const marketingUrl = (path: string) => `${MARKETING_ORIGIN}${path}`;
 
+/** Static 1200x630 cards in `app/`; declared here because pages replace `openGraph` wholesale. */
+const OG_IMAGE = { height: 630, url: "/opengraph-image.png", width: 1200 };
+const TWITTER_IMAGE = "/twitter-image.png";
+export const TWITTER_CREATOR = "@mattblode";
+
 /**
  * Page metadata with a canonical URL and `og:url`.
  *
@@ -38,9 +44,10 @@ export const marketingUrl = (path: string) => `${MARKETING_ORIGIN}${path}`;
  * only, so `og:title` is resolved here by hand. The home page is the exception
  * and carries the full site title absolutely.
  *
- * Next also replaces `openGraph` wholesale rather than merging it, so a page
- * that set only `url` would drop the site name and type declared in the root
- * layout. Building the whole block here keeps every page complete.
+ * Next also replaces `openGraph` and `twitter` wholesale rather than merging
+ * them, so a page that set only `url` would drop the site name, type, card
+ * type, and the file-based images declared in the root layout. Building the
+ * whole block here keeps every page complete.
  */
 export const pageMetadata = ({
   description,
@@ -59,11 +66,17 @@ export const pageMetadata = ({
     description,
     openGraph: {
       description,
+      images: [OG_IMAGE],
       siteName: SITE_NAME,
       title: isHome ? title : `${title} | ${SITE_NAME}`,
       type,
       url: marketingUrl(path),
     },
     title: isHome ? { absolute: title } : title,
+    twitter: {
+      card: "summary_large_image",
+      creator: TWITTER_CREATOR,
+      images: [TWITTER_IMAGE],
+    },
   };
 };

@@ -1,26 +1,15 @@
 /**
  * Default Open Graph image URL for a docs site.
  *
- * Must stay path-aware: `seo.siteUrl` may include a zone path
- * (`https://blode.co/allmd/docs`). Multi-zone product cards live at the zone
- * root (`/allmd/opengraph-image`), not under the nested `/docs` segment, so a
- * siteUrl ending in `/docs` strips that suffix and advertises the extensionless
- * Next-generated route.
- *
- * Bare-origin siteUrls (`https://docs.example.com`) keep the static docs-app
- * file: `${origin}/opengraph-image.png`.
+ * Every docs deployment ships `opengraph-image.png` at its own root, and a
+ * proxied site serves it under the same base path (`/docs/opengraph-image.png`,
+ * `/allmd/docs/opengraph-image.png`). That is the only card URL guaranteed to
+ * resolve for every tenant: the zone or apex above the docs is somebody else's
+ * app, and whether it ships a generated `/opengraph-image` route or a static
+ * PNG is not knowable from here. Advertising a URL that may 404 is worse than a
+ * slightly less specific card.
  */
 export const defaultOgImageUrl = (origin: string, basePath = "") => {
   const normalizedBase = basePath.replace(/\/+$/, "");
-
-  if (!normalizedBase) {
-    return `${origin}/opengraph-image.png`;
-  }
-
-  if (normalizedBase === "/docs" || normalizedBase.endsWith("/docs")) {
-    const zoneBase = normalizedBase.replace(/\/docs$/, "");
-    return `${origin}${zoneBase}/opengraph-image`;
-  }
-
   return `${origin}${normalizedBase}/opengraph-image.png`;
 };

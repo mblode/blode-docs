@@ -33,6 +33,7 @@ export const siteConfig = {
           href: "/free-online-llms-txt-resources",
           label: "llms.txt resources",
         },
+        { href: "/compare/mintlify", label: "Blode.md vs Mintlify" },
         { href: "/docs/guides/proxy-vercel", label: "Proxy guides" },
         { href: "/docs/cli/overview", label: "CLI" },
         { href: "/docs/api/overview", label: "API" },

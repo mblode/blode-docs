@@ -12,51 +12,33 @@ describe("buildDocsSeoTitle", () => {
     ).toBe("Blode.md");
   });
 
-  it("uses pageTitle alone when it is not short, clamped to 60 chars", () => {
-    const pageTitle =
-      "A descriptive page title that is already long enough for SERP";
+  it("uses the page title alone and never appends the description", () => {
+    expect(
+      buildDocsSeoTitle({
+        baseTitle: "Blode.md",
+        pageDescription:
+          "Start a local development server for real-time docs preview with hot reload.",
+        pageTitle: "blodemd dev",
+      })
+    ).toBe("blodemd dev · Blode.md");
+  });
+
+  it("clamps a long page title to 60 chars at a word boundary", () => {
     const title = buildDocsSeoTitle({
       baseTitle: "Blode.md",
-      pageDescription: "Extra context that should not be composed.",
-      pageTitle,
+      pageTitle:
+        "A descriptive page title that is already long enough for SERP clipping",
     });
 
-    expect(title.endsWith(" · Blode.md")).toBe(true);
+    expect(title.endsWith("... · Blode.md")).toBe(true);
     expect(title.length).toBeLessThanOrEqual(60);
     expect(title.startsWith("A descriptive page title")).toBe(true);
-  });
-
-  it("composes short pageTitle with description under 60 chars", () => {
-    const title = buildDocsSeoTitle({
-      baseTitle: "Blode.md",
-      pageDescription:
-        "Start a local development server for real-time docs preview with hot reload.",
-      pageTitle: "blodemd dev",
-    });
-
-    expect(title.startsWith("blodemd dev: ")).toBe(true);
-    expect(title.endsWith(" · Blode.md")).toBe(true);
-    expect(title.length).toBeLessThanOrEqual(60);
-  });
-
-  it("truncates at a word boundary and appends ellipsis", () => {
-    const title = buildDocsSeoTitle({
-      baseTitle: "Blode.md",
-      pageDescription:
-        "Display multiple related code blocks with tabbed navigation across languages and tools for installers.",
-      pageTitle: "Code group",
-    });
-
-    expect(title.length).toBeLessThanOrEqual(60);
-    expect(title.endsWith("... · Blode.md")).toBe(true);
-    expect(title.startsWith("Code group: Display")).toBe(true);
   });
 
   it("hard-slices when a single token exceeds the budget", () => {
     const title = buildDocsSeoTitle({
       baseTitle: "Blode.md",
-      pageDescription: "x".repeat(80),
-      pageTitle: "Tabs",
+      pageTitle: "x".repeat(80),
     });
 
     expect(title.length).toBeLessThanOrEqual(60);
@@ -64,15 +46,13 @@ describe("buildDocsSeoTitle", () => {
   });
 
   it("respects a custom titleTemplate with %s", () => {
-    const title = buildDocsSeoTitle({
-      baseTitle: "Blode.md",
-      pageDescription: "Authenticate with GitHub in your browser.",
-      pageTitle: "login",
-      titleTemplate: "%s | Docs",
-    });
-
-    expect(title.startsWith("login: ")).toBe(true);
-    expect(title.endsWith(" | Docs")).toBe(true);
-    expect(title.length).toBeLessThanOrEqual(60);
+    expect(
+      buildDocsSeoTitle({
+        baseTitle: "Blode.md",
+        pageDescription: "Authenticate with GitHub in your browser.",
+        pageTitle: "login",
+        titleTemplate: "%s | Docs",
+      })
+    ).toBe("login | Docs");
   });
 });

@@ -12,24 +12,24 @@ describe("defaultOgImageUrl", () => {
     );
   });
 
-  it("strips a trailing /docs zone path to the product card", () => {
+  it("serves the docs app's own card under a zone base path", () => {
     expect(defaultOgImageUrl("https://blode.co", "/allmd/docs")).toBe(
-      "https://blode.co/allmd/opengraph-image"
+      "https://blode.co/allmd/docs/opengraph-image.png"
     );
   });
 
-  it("tolerates a trailing slash on the /docs base path", () => {
+  it("tolerates a trailing slash on the base path", () => {
     expect(defaultOgImageUrl("https://blode.co", "/allmd/docs/")).toBe(
-      "https://blode.co/allmd/opengraph-image"
+      "https://blode.co/allmd/docs/opengraph-image.png"
     );
   });
 
-  it("maps a root /docs siteUrl to the origin extensionless card", () => {
+  it("keeps a root /docs siteUrl on the docs app's static png", () => {
     expect(defaultOgImageUrl("https://example.com", "/docs")).toBe(
-      "https://example.com/opengraph-image"
+      "https://example.com/docs/opengraph-image.png"
     );
     expect(defaultOgImageUrl("https://example.com", "/docs/")).toBe(
-      "https://example.com/opengraph-image"
+      "https://example.com/docs/opengraph-image.png"
     );
   });
 });
