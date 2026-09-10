@@ -46,7 +46,7 @@
     "turbo": "^2.10.4",
     "typescript": "6.0.3",
     "ultracite": "7.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "rolldown-plugin-dts": {
